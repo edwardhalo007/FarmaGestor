@@ -1,4 +1,4 @@
-# 💊 FarmaGestor Municipal - Backend
+# 💊 FarmaGestor - Backend
 
 Este é o backend do sistema **FarmaGestor Municipal**, uma API robusta desenvolvida com **Django** e **Django REST Framework** para gerenciar medicamentos, controlar o estoque, emitir alertas automáticos de validade e gerar relatórios detalhados em um contexto de gestão pública municipal.
 
