@@ -18,6 +18,8 @@ O projeto tem como objetivo fornecer uma **solução eficiente e segura** para o
 - **SQLite (banco de dados padrão)**
 - **JWT ou Token Authentication**
 - **Docker (opcional)**
+- **Psycopg2 (Drivers PostgreSQL)
+- **python-decouple (lib de Sec)
 
 ---
 
