@@ -35,8 +35,10 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, (lambda: IsAuthenticated() and (self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.ADMINISTRADOR]))]
+            # Operacional, Gestor e Administrador podem modificar
+            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])]
         elif self.action in ['list', 'retrieve']:
+            # Todos autenticados podem visualizar
             self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
 
@@ -44,7 +46,7 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
 class MovimentacaoViewSet(viewsets.ModelViewSet):
     queryset = Movimentacao.objects.all().order_by('-data')
     serializer_class = MovimentacaoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated] # Permissão padrão que será refinada pelo get_permissions
 
     def perform_create(self, serializer):
         serializer.save(responsavel=self.request.user)
@@ -62,10 +64,19 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
         medicamento.save()
 
     def get_permissions(self):
+        # Ações de CRIAÇÃO, LISTAGEM e VISUALIZAÇÃO de movimentações:
+        # Permitido para usuários Operacionais, GESTORES e Administradores.
         if self.action in ['create', 'list', 'retrieve']:
-            self.permission_classes = [IsAuthenticated, (lambda: IsAuthenticated() and (self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.ADMINISTRADOR]))]
+            self.permission_classes = [
+                IsAuthenticated,
+                # Verifica se o usuário autenticado tem nível Operacional, GESTOR ou Administrador
+                (lambda: self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])
+            ]
+        # Ações de ATUALIZAÇÃO e EXCLUSÃO de movimentações:
+        # Permitido APENAS para Administradores.
         elif self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAuthenticated, IsAdminUser]
+            # Ou uma lambda mais explícita: (lambda: self.request.user.nivel_acesso == NivelAcesso.ADMINISTRADOR)
         return [permission() for permission in self.permission_classes]
 
 
@@ -106,6 +117,43 @@ def relatorios_movimentacao(request):
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
-    permission_classes = [IsAdminUser] # Apenas administradores
+
+    def get_permissions(self):
+        # Permissão para criar usuários: Administrador ou Gestor
+        if self.action == 'create':
+            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])]
+        # Permissão para listar/ver detalhes: Administrador ou Gestor
+        elif self.action in ['list', 'retrieve']:
+            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])]
+        # Permissão para atualizar/deletar: Apenas Administrador
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsAdminUser] # Ou você pode usar (lambda: self.request.user.nivel_acesso == NivelAcesso.ADMINISTRADOR)
+        else:
+            self.permission_classes = [IsAuthenticated] # Permissão padrão para outras ações
+
+        return [permission() for permission in self.permission_classes]
+
+    # Opcional: Para impedir que um Gestor crie um Administrador ou outro Gestor
+    def perform_create(self, serializer):
+        # Se o usuário logado não for Administrador, ele não pode criar usuários Administradores ou Gestores
+        if self.request.user.nivel_acesso != NivelAcesso.ADMINISTRADOR:
+            if serializer.validated_data.get('nivel_acesso') in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
+                raise serializers.ValidationError("Você não tem permissão para criar usuários com este nível de acesso.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        # Se o usuário logado não for Administrador, ele não pode alterar o nível de acesso para Administrador ou Gestor
+        if self.request.user.nivel_acesso != NivelAcesso.ADMINISTRADOR:
+            if serializer.validated_data.get('nivel_acesso') in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
+                raise serializers.ValidationError("Você não tem permissão para alterar o nível de acesso para este valor.")
+            # Adicionalmente, um Gestor não deve poder alterar o próprio nível de acesso ou o nível de outro Gestor/Admin
+            if self.request.user.nivel_acesso == NivelAcesso.GESTOR:
+                target_user = self.get_object()
+                if target_user.pk == self.request.user.pk or target_user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
+                     raise serializers.ValidationError("Você não tem permissão para modificar este usuário.")
+
+        serializer.save()
+
+
 
 
