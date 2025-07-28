@@ -127,30 +127,34 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])]
         # Permissão para atualizar/deletar: Apenas Administrador
         elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsAdminUser] # Ou você pode usar (lambda: self.request.user.nivel_acesso == NivelAcesso.ADMINISTRADOR)
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
         else:
-            self.permission_classes = [IsAuthenticated] # Permissão padrão para outras ações
-
+            self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
 
-    # Opcional: Para impedir que um Gestor crie um Administrador ou outro Gestor
     def perform_create(self, serializer):
-        # Se o usuário logado não for Administrador, ele não pode criar usuários Administradores ou Gestores
-        if self.request.user.nivel_acesso != NivelAcesso.ADMINISTRADOR:
-            if serializer.validated_data.get('nivel_acesso') in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
-                raise serializers.ValidationError("Você não tem permissão para criar usuários com este nível de acesso.")
+        # Lógica para impedir que Gestor crie Admin/Gestor
+        request_user_nivel = self.request.user.nivel_acesso
+        target_nivel_acesso = serializer.validated_data.get('nivel_acesso')
+
+        if request_user_nivel == NivelAcesso.GESTOR:
+            if target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
+                raise serializers.ValidationError({"detail": "Gestores não podem criar usuários com nível de Administrador ou Gestor."})
         serializer.save()
 
     def perform_update(self, serializer):
-        # Se o usuário logado não for Administrador, ele não pode alterar o nível de acesso para Administrador ou Gestor
-        if self.request.user.nivel_acesso != NivelAcesso.ADMINISTRADOR:
-            if serializer.validated_data.get('nivel_acesso') in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
-                raise serializers.ValidationError("Você não tem permissão para alterar o nível de acesso para este valor.")
-            # Adicionalmente, um Gestor não deve poder alterar o próprio nível de acesso ou o nível de outro Gestor/Admin
-            if self.request.user.nivel_acesso == NivelAcesso.GESTOR:
-                target_user = self.get_object()
-                if target_user.pk == self.request.user.pk or target_user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
-                     raise serializers.ValidationError("Você não tem permissão para modificar este usuário.")
+        # Lógica para impedir que Gestor modifique Admin/Gestor ou seu próprio nível
+        request_user_nivel = self.request.user.nivel_acesso
+        target_user = self.get_object()
+        new_target_nivel_acesso = serializer.validated_data.get('nivel_acesso', target_user.nivel_acesso)
+
+        if request_user_nivel == NivelAcesso.GESTOR:
+            if target_user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
+                raise serializers.ValidationError({"detail": "Gestores não podem modificar usuários Administradores ou outros Gestores."})
+            if target_user.pk == self.request.user.pk and new_target_nivel_acesso != request_user_nivel:
+                raise serializers.ValidationError({"detail": "Gestores não podem modificar o próprio nível de acesso."})
+            if new_target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
+                raise serializers.ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
 
         serializer.save()
 
