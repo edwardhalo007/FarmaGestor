@@ -69,8 +69,12 @@ WSGI_APPLICATION = 'Farmacia_core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'farmagestor_db',      # <<< Nome do banco de dados que você criou
+        'USER': 'Sadzin',             # <<< Seu usuário do PostgreSQL (o que você acabou de criar)
+        'PASSWORD': 'brigadeiro123',  # <<< A senha que você definiu para o usuário 'Sadzin'
+        'HOST': 'localhost',          # Geralmente 'localhost' se o PostgreSQL está no seu PC
+        'PORT': '5432',               # Porta padrão do PostgreSQL. Mantenha se não mudou.
     }
 }
 
