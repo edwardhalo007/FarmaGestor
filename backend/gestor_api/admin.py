@@ -64,7 +64,7 @@ class CustomUserAdmin(BaseUserAdmin): # Use BaseUserAdmin
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password', 'password2'), # Password2 é para confirmação de senha
+            'fields': ('username', 'password1', 'password2'), # Password2 é para confirmação de senha
         }),
         (('Nível de Acesso Customizado'), {'fields': ('nivel_acesso',)}), # Seu fieldset personalizado
         (('Informações Pessoais'), {'fields': ('first_name', 'last_name', 'email')}),
