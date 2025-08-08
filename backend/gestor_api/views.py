@@ -4,13 +4,28 @@ from datetime import date, timedelta
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser # Inclua IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-from .models import Medicamento, Usuario, Movimentacao, NivelAcesso # Importe todos os seus modelos
-from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer # Importe todos os seus serializers
-from django.db import IntegrityError # Importe IntegrityError para lidar com erros de criação de usuário se necessário
+from .models import Medicamento, Usuario, Movimentacao, NivelAcesso
+from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer
+from django.db import IntegrityError
+
+# --- Classe de Permissão Personalizada para Níveis de Acesso ---
+class NivelAcessoPermission(BasePermission):
+    message = "Você não tem permissão para realizar esta ação com seu nível de acesso."
+
+    def __init__(self, allowed_levels=None):
+        self.allowed_levels = allowed_levels if allowed_levels is not None else []
+
+    def has_permission(self, request, view): # <<<<<< 'view' é o argumento que estava faltando
+        if request.user and request.user.is_authenticated:
+            if not self.allowed_levels:
+                return True
+            return request.user.nivel_acesso in self.allowed_levels
+        return False
+
 
 # View para Login (endpoint /api/login/)
 class CustomAuthToken(ObtainAuthToken):
@@ -31,22 +46,27 @@ class CustomAuthToken(ObtainAuthToken):
 class MedicamentoViewSet(viewsets.ModelViewSet):
     queryset = Medicamento.objects.all()
     serializer_class = MedicamentoSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Operacional, Gestor e Administrador podem modificar
-            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])]
-        elif self.action in ['list', 'retrieve']:
-            # Todos autenticados podem visualizar
-            self.permission_classes = [IsAuthenticated]
-        return [permission() for permission in self.permission_classes]
+        # Ações de listagem e visualização (GET)
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()] # Já é uma instância
+
+        # Ações de criação, atualização e deleção (POST, PUT, PATCH, DELETE)
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                )
+            ]
+        # Permissão padrão para outras ações
+        return [IsAuthenticated()]
 
 # ViewSet para Movimentações
 class MovimentacaoViewSet(viewsets.ModelViewSet):
     queryset = Movimentacao.objects.all().order_by('-data')
     serializer_class = MovimentacaoSerializer
-    permission_classes = [IsAuthenticated] # Permissão padrão que será refinada pelo get_permissions
 
     def perform_create(self, serializer):
         serializer.save(responsavel=self.request.user)
@@ -65,24 +85,23 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         # Ações de CRIAÇÃO, LISTAGEM e VISUALIZAÇÃO de movimentações:
-        # Permitido para usuários Operacionais, GESTORES e Administradores.
         if self.action in ['create', 'list', 'retrieve']:
-            self.permission_classes = [
-                IsAuthenticated,
-                # Verifica se o usuário autenticado tem nível Operacional, GESTOR ou Administrador
-                (lambda: self.request.user.nivel_acesso in [NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                )
             ]
         # Ações de ATUALIZAÇÃO e EXCLUSÃO de movimentações:
-        # Permitido APENAS para Administradores.
         elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsAdminUser]
-            # Ou uma lambda mais explícita: (lambda: self.request.user.nivel_acesso == NivelAcesso.ADMINISTRADOR)
-        return [permission() for permission in self.permission_classes]
+            return [IsAuthenticated(), IsAdminUser()] # IsAdminUser já verifica is_superuser
+        # Permissão padrão para outras ações
+        return [IsAuthenticated()]
 
 
 # Views para Alertas de Validade (Seu Módulo)
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated]) # Alertas são visíveis para todos os usuários autenticados
 def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
@@ -95,25 +114,37 @@ def alertas_validade(request):
 
 # Views para Relatórios
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([
+    IsAuthenticated,
+    NivelAcessoPermission(allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])
+])
 def relatorios_movimentacao(request):
     medicamento_id = request.query_params.get('medicamento_id')
-    data_inicio = request.query_params.get('data_inicio')
-    data_fim = request.query_params.get('data_fim')
+    data_inicio_str = request.query_params.get('data_inicio')
+    data_fim_str = request.query_params.get('data_fim')
 
     movimentacoes = Movimentacao.objects.all()
 
     if medicamento_id:
         movimentacoes = movimentacoes.filter(medicamento__id=medicamento_id)
-    if data_inicio:
-        movimentacoes = movimentacoes.filter(data__gte=data_inicio)
-    if data_fim:
-        movimentacoes = movimentacoes.filter(data__lte=data_fim)
+    if data_inicio_str:
+        try:
+            data_inicio = date.fromisoformat(data_inicio_str)
+            movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
+        except ValueError:
+            return Response({"detail": "Formato de data_inicio inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+    if data_fim_str:
+        try:
+            data_fim = date.fromisoformat(data_fim_str)
+            movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
+        except ValueError:
+            return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = MovimentacaoSerializer(movimentacoes.order_by('data'), many=True)
+    movimentacoes = movimentacoes.order_by('data')
+    serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
 
-# View para gerenciamento de usuários (apenas para Administrador)
+# View para gerenciamento de usuários
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
@@ -121,19 +152,23 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Permissão para criar usuários: Administrador ou Gestor
         if self.action == 'create':
-            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])]
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
+            ]
         # Permissão para listar/ver detalhes: Administrador ou Gestor
         elif self.action in ['list', 'retrieve']:
-            self.permission_classes = [IsAuthenticated, (lambda: self.request.user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])]
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
+            ]
         # Permissão para atualizar/deletar: Apenas Administrador
         elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsAdminUser]
-        else:
-            self.permission_classes = [IsAuthenticated]
-        return [permission() for permission in self.permission_classes]
+            return [IsAuthenticated(), IsAdminUser()] # Apenas Administrador
+        # Permissão padrão para outras ações
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
-        # Lógica para impedir que Gestor crie Admin/Gestor
         request_user_nivel = self.request.user.nivel_acesso
         target_nivel_acesso = serializer.validated_data.get('nivel_acesso')
 
@@ -143,7 +178,6 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_update(self, serializer):
-        # Lógica para impedir que Gestor modifique Admin/Gestor ou seu próprio nível
         request_user_nivel = self.request.user.nivel_acesso
         target_user = self.get_object()
         new_target_nivel_acesso = serializer.validated_data.get('nivel_acesso', target_user.nivel_acesso)
@@ -157,7 +191,3 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 raise serializers.ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
 
         serializer.save()
-
-
-
-
