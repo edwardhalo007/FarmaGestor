@@ -129,7 +129,6 @@ CORS_ALLOW_ALL_ORIGINS = True # <<< Adicionado para desenvolvimento (ou CORS_ALL
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication', # Se fosse usar JWT
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated', # Exemplo: exige autenticação por padrão para todas as views

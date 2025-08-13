@@ -6,6 +6,10 @@ import './App.css';
 // Componentes que você já criou
 import LoginForm from './components/LoginForm';
 import Layout from './components/Layout'; // <<< IMPORTADO AQUI
+import AlertasPage from './components/AlertasPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
+import MedicamentosPage from './components/MedicamentosPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
+import MovimentacoesPage from './components/MovimentacoesPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
+import RelatoriosPage from './components/RelatoriosPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
 
 // --- Componentes Placeholder para as Páginas Protegidas ---
 // Eles agora recebem onLogout e userNivelAcesso via props do App,
@@ -14,24 +18,6 @@ const DashboardPage = ({ onLogout, userNivelAcesso }) => (
   <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
     <h2>Página do Dashboard</h2>
     <p>Bem-vindo! Seu nível de acesso é: {userNivelAcesso}</p>
-  </Layout>
-);
-
-const MedicamentosPage = ({ onLogout, userNivelAcesso }) => (
-  <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-    <h2>Página de Medicamentos</h2>
-  </Layout>
-);
-
-const AlertasPage = ({ onLogout, userNivelAcesso }) => (
-  <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-    <h2>Página de Alertas</h2>
-  </Layout>
-);
-
-const RelatoriosPage = ({ onLogout, userNivelAcesso }) => (
-  <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-    <h2>Página de Relatórios</h2>
   </Layout>
 );
 
@@ -95,15 +81,19 @@ function App() {
         />
         <Route
           path="/medicamentos"
-          element={isAuthenticated ? <MedicamentosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <MedicamentosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/movimentacoes"
+          element={isAuthenticated ? <MovimentacoesPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/alertas"
-          element={isAuthenticated ? <AlertasPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <AlertasPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/relatorios"
-          element={isAuthenticated ? <RelatoriosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <RelatoriosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/usuarios"

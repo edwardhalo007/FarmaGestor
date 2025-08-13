@@ -1,5 +1,6 @@
 // FarmaGestor/frontend/src/components/LoginForm.js
 import React, { useState } from 'react';
+import './LoginForm.css';
 
 function LoginForm({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -7,14 +8,12 @@ function LoginForm({ onLoginSuccess }) {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Impede o recarregamento da página
+    e.preventDefault();
 
     try {
       const response = await fetch('http://localhost:8000/api/login/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
@@ -32,31 +31,37 @@ function LoginForm({ onLoginSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login - FarmaGestor</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <div>
-        <label htmlFor="username">Usuário:</label>
-        <input
-          type="text"
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label htmlFor="password">Senha:</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit">Entrar</button>
-    </form>
+    <div className="login-container">
+      <h1 className="system-title">FarmaGestor</h1>
+      <form className="login-form-box" onSubmit={handleSubmit}>
+        <h2>Login</h2>
+        {error && <p className="error-message">{error}</p>}
+        
+        <div>
+          <label htmlFor="username">Usuário:</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password">Senha:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
   );
 }
 

@@ -1,8 +1,8 @@
 // FarmaGestor/frontend/src/components/Layout.js
-import React from 'react';
-import { Link } from 'react-router-dom'; // Para links de navegação
 
-// Este componente recebe 'children' (o conteúdo da página) e 'onLogout' (a função de logout)
+import React from 'react';
+import { Link } from 'react-router-dom';
+
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -12,9 +12,10 @@ function Layout({ children, onLogout, userNivelAcesso }) {
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           <li style={{ marginBottom: '10px' }}><Link to="/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link></li>
           <li style={{ marginBottom: '10px' }}><Link to="/medicamentos" style={{ color: 'white', textDecoration: 'none' }}>Medicamentos</Link></li>
+          <li style={{ marginBottom: '10px' }}><Link to="/movimentacoes" style={{ color: 'white', textDecoration: 'none' }}>Movimentações</Link></li> {/* <<< ADICIONE ESTA LINHA */}
           <li style={{ marginBottom: '10px' }}><Link to="/alertas" style={{ color: 'white', textDecoration: 'none' }}>Alertas</Link></li>
           <li style={{ marginBottom: '10px' }}><Link to="/relatorios" style={{ color: 'white', textDecoration: 'none' }}>Relatórios</Link></li>
-          {/* Opções de menu baseadas no nível de acesso */}
+          {/* Lógica de exibição do link "Usuários" baseada no nível de acesso */}
           {userNivelAcesso === 'GESTOR' || userNivelAcesso === 'ADMINISTRADOR' ? (
             <li style={{ marginBottom: '10px' }}><Link to="/usuarios" style={{ color: 'white', textDecoration: 'none' }}>Usuários</Link></li>
           ) : null}
@@ -26,7 +27,7 @@ function Layout({ children, onLogout, userNivelAcesso }) {
 
       {/* Conteúdo Principal da Página */}
       <main style={{ flexGrow: 1, padding: '20px', backgroundColor: '#f4f4f4' }}>
-        {children} {/* Aqui será renderizado o conteúdo específico de cada página */}
+        {children}
       </main>
     </div>
   );

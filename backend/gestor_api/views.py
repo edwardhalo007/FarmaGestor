@@ -19,7 +19,7 @@ class NivelAcessoPermission(BasePermission):
     def __init__(self, allowed_levels=None):
         self.allowed_levels = allowed_levels if allowed_levels is not None else []
 
-    def has_permission(self, request, view): # <<<<<< 'view' é o argumento que estava faltando
+    def has_permission(self, request, view):
         if request.user and request.user.is_authenticated:
             if not self.allowed_levels:
                 return True
@@ -48,11 +48,8 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
     serializer_class = MedicamentoSerializer
 
     def get_permissions(self):
-        # Ações de listagem e visualização (GET)
         if self.action in ['list', 'retrieve']:
-            return [IsAuthenticated()] # Já é uma instância
-
-        # Ações de criação, atualização e deleção (POST, PUT, PATCH, DELETE)
+            return [IsAuthenticated()]
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [
                 IsAuthenticated(),
@@ -60,7 +57,6 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
                     allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
                 )
             ]
-        # Permissão padrão para outras ações
         return [IsAuthenticated()]
 
 # ViewSet para Movimentações
@@ -84,7 +80,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
         medicamento.save()
 
     def get_permissions(self):
-        # Ações de CRIAÇÃO, LISTAGEM e VISUALIZAÇÃO de movimentações:
         if self.action in ['create', 'list', 'retrieve']:
             return [
                 IsAuthenticated(),
@@ -92,16 +87,13 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                     allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
                 )
             ]
-        # Ações de ATUALIZAÇÃO e EXCLUSÃO de movimentações:
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()] # IsAdminUser já verifica is_superuser
-        # Permissão padrão para outras ações
+            return [IsAuthenticated(), IsAdminUser()]
         return [IsAuthenticated()]
 
-
-# Views para Alertas de Validade (Seu Módulo)
+# Views para Alertas de Validade
 @api_view(['GET'])
-@permission_classes([IsAuthenticated]) # Alertas são visíveis para todos os usuários autenticados
+@permission_classes([IsAuthenticated])
 def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
@@ -114,11 +106,19 @@ def alertas_validade(request):
 
 # Views para Relatórios
 @api_view(['GET'])
-@permission_classes([
-    IsAuthenticated,
-    NivelAcessoPermission(allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR])
-])
+@permission_classes([IsAuthenticated])
 def relatorios_movimentacao(request):
+    if not request.user.is_authenticated:
+        return Response({"detail": "Não autenticado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if request.user.nivel_acesso not in [
+        NivelAcesso.OPERACIONAL,
+        NivelAcesso.GESTOR,
+        NivelAcesso.ADMINISTRADOR
+    ]:
+        return Response({"detail": "Você não tem permissão para acessar este recurso."},
+                        status=status.HTTP_403_FORBIDDEN)
+
     medicamento_id = request.query_params.get('medicamento_id')
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
@@ -150,22 +150,18 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
 
     def get_permissions(self):
-        # Permissão para criar usuários: Administrador ou Gestor
         if self.action == 'create':
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
             ]
-        # Permissão para listar/ver detalhes: Administrador ou Gestor
         elif self.action in ['list', 'retrieve']:
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
             ]
-        # Permissão para atualizar/deletar: Apenas Administrador
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()] # Apenas Administrador
-        # Permissão padrão para outras ações
+            return [IsAuthenticated(), IsAdminUser()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
