@@ -3,29 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 
-// Componentes que você já criou
+// --- Importação de Componentes ---
+// Importe os componentes que você já criou e que estão em arquivos separados
 import LoginForm from './components/LoginForm';
-import Layout from './components/Layout'; // <<< IMPORTADO AQUI
-import AlertasPage from './components/AlertasPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
-import MedicamentosPage from './components/MedicamentosPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
-import MovimentacoesPage from './components/MovimentacoesPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
-import RelatoriosPage from './components/RelatoriosPage'; // <<< IMPORTAÇÃO DE NOVO COMPONENTE
+import Layout from './components/Layout';
+import DashboardPage from './components/DashboardPage'; // Importado corretamente
+import MedicamentosPage from './components/MedicamentosPage'; // Importado corretamente
+import AlertasPage from './components/AlertasPage'; // Importado corretamente
+import MovimentacoesPage from './components/MovimentacoesPage'; // Importado corretamente
+import RelatoriosPage from './components/RelatoriosPage'; // Importado corretamente
+import UsuariosPage from './components/UsuariosPage'; // Importado corretamente
 
-// --- Componentes Placeholder para as Páginas Protegidas ---
-// Eles agora recebem onLogout e userNivelAcesso via props do App,
-// e então passam para o Layout.
-const DashboardPage = ({ onLogout, userNivelAcesso }) => (
-  <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-    <h2>Página do Dashboard</h2>
-    <p>Bem-vindo! Seu nível de acesso é: {userNivelAcesso}</p>
-  </Layout>
-);
-
-const UsuariosPage = ({ onLogout, userNivelAcesso }) => (
-  <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-    <h2>Página de Usuários</h2>
-  </Layout>
-);
 
 // --- Componente Principal da Aplicação ---
 function App() {
@@ -77,15 +65,15 @@ function App() {
         {/* Se não estiver autenticado, redireciona para /login */}
         <Route
           path="/dashboard"
-          element={isAuthenticated ? <DashboardPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/medicamentos"
-          element={isAuthenticated ? <MedicamentosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <DashboardPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/movimentacoes"
           element={isAuthenticated ? <MovimentacoesPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/medicamentos"
+          element={isAuthenticated ? <MedicamentosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/alertas"
@@ -97,7 +85,7 @@ function App() {
         />
         <Route
           path="/usuarios"
-          element={isAuthenticated ? <UsuariosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <UsuariosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
 
         {/* Rota padrão: se a URL não corresponder a nada, redireciona para /login */}
