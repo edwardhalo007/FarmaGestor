@@ -19,6 +19,9 @@ function Layout({ children, onLogout, userNivelAcesso }) {
           {userNivelAcesso === 'GESTOR' || userNivelAcesso === 'ADMINISTRADOR' ? (
             <li style={{ marginBottom: '10px' }}><Link to="/usuarios" style={{ color: 'white', textDecoration: 'none' }}>Usuários</Link></li>
           ) : null}
+          {userNivelAcesso === 'ADMINISTRADOR' && (
+            <li style={{ marginBottom: '10px' }}><Link to="/localidades" style={{ color: 'white', textDecoration: 'none' }}>Localidades</Link></li>
+          )}
         </ul>
         <button onClick={onLogout} style={{ marginTop: '20px', padding: '10px', backgroundColor: '#d9534f', color: 'white', border: 'none', cursor: 'pointer' }}>
           Sair

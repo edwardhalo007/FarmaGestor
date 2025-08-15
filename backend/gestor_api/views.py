@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, B
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-from .models import Medicamento, Usuario, Movimentacao, NivelAcesso
-from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer
+from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
+from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
 from django.db import IntegrityError
 
 # --- Classe de Permissão Personalizada para Níveis de Acesso ---
@@ -55,6 +55,22 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
                 IsAuthenticated(),
                 NivelAcessoPermission(
                     allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                )
+            ]
+        return [IsAuthenticated()]
+
+class LocalidadeViewSet(viewsets.ModelViewSet):
+    queryset = Localidade.objects.all()
+    serializer_class = LocalidadeSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[NivelAcesso.ADMINISTRADOR]
                 )
             ]
         return [IsAuthenticated()]

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Medicamento, Usuario, Movimentacao
+from .models import Medicamento, Usuario, Movimentacao, Localidade
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,11 +14,23 @@ class UsuarioSerializer(serializers.ModelSerializer):
             nivel_acesso=validated_data.get('nivel_acesso', 'VISUALIZACAO')
         )
         return user
+    
+class LocalidadeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Localidade
+        fields = '__all__'
 
 class MedicamentoSerializer(serializers.ModelSerializer):
+    localizacao_info = LocalidadeSerializer(source='localizacao', read_only=True)
+
     class Meta:
         model = Medicamento
-        fields = '__all__' 
+        fields = [
+            'id', 'nome', 'validade', 'quantidade', 'lote', 'fabricante', 
+            'localizacao',
+            'localizacao_info'
+        ]
+        extra_kwargs = {'localizacao': {'write_only': True}} 
 
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')

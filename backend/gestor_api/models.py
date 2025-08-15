@@ -32,12 +32,26 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+class Localidade(models.Model):
+    nome = models.CharField(max_length=255)
+    class TipoChoices(models.TextChoices):
+        ATT_BASICA = 'ATT_BASICA', 'Atenção Básica'
+        ANTIBIOTICO = 'ANTIBIOTICO', 'Antibiótico'
+        CONTROLADO = 'CONTROLADO', 'Armário Controlado'
+        HOSPITALAR = 'HOSPITALAR', 'Hospitalar'
+    tipo = models.CharField(max_length=20, choices=TipoChoices.choices)
+
+    def __str__(self):
+        return self.nome
+    
 class Medicamento(models.Model):
     nome = models.CharField(max_length=255)
     validade = models.DateField()
     quantidade = models.IntegerField(default=0)
     lote = models.CharField(max_length=100)
     fabricante = models.CharField(max_length=255)
+    localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.nome

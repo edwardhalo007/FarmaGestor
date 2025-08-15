@@ -13,7 +13,7 @@ import AlertasPage from './components/AlertasPage'; // Importado corretamente
 import MovimentacoesPage from './components/MovimentacoesPage'; // Importado corretamente
 import RelatoriosPage from './components/RelatoriosPage'; // Importado corretamente
 import UsuariosPage from './components/UsuariosPage'; // Importado corretamente
-
+import LocalidadesPage from './components/LocalidadesPage';
 
 // --- Componente Principal da Aplicação ---
 function App() {
@@ -86,6 +86,10 @@ function App() {
         <Route
           path="/usuarios"
           element={isAuthenticated ? <UsuariosPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/localidades"
+          element={isAuthenticated ? <LocalidadesPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} /> : <Navigate to="/login" replace />}
         />
 
         {/* Rota padrão: se a URL não corresponder a nada, redireciona para /login */}
