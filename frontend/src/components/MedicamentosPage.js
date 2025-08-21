@@ -1,88 +1,102 @@
 // FarmaGestor/frontend/src/components/MedicamentosPage.js
 import React, { useState, useEffect } from 'react';
-import Layout from './Layout';
+import Layout from './Layout'; // Importe o componente Layout
 
 function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [medicamentos, setMedicamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para as localidades
-  const [localidades, setLocalidades] = useState([]); 
-  const [novaLocalizacaoId, setNovaLocalizacaoId] = useState(''); 
-
   // --- Estados para o formulário de CRIAÇÃO ---
   const [novoNome, setNovoNome] = useState('');
+  const [novaDosagem, setNovaDosagem] = useState(''); // NOVO ESTADO
+  const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO'); // NOVO ESTADO (com valor padrão)
+  const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('UNIDADE'); // NOVO ESTADO (com valor padrão)
   const [novaValidade, setNovaValidade] = useState('');
   const [novaQuantidade, setNovaQuantidade] = useState('');
   const [novoLote, setNovoLote] = useState('');
   const [novoFabricante, setNovoFabricante] = useState('');
+  const [novaLocalizacao, setNovaLocalizacao] = useState(''); // NOVO ESTADO para ForeignKey
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  
-  const formatarData = (dataISO) => {
-    if (!dataISO) return '';
-    const data = new Date(dataISO);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(data);
-  };
+  // --- Fim dos Estados de CRIAÇÃO ---
 
+  // --- Estados para o formulário de EDIÇÃO ---
+  const [editingMedId, setEditingMedId] = useState(null);
+  const [editNome, setEditNome] = useState('');
+  const [editDosagem, setEditDosagem] = useState(''); // NOVO ESTADO
+  const [editFormaFarmaceutica, setEditFormaFarmaceutica] = useState(''); // NOVO ESTADO
+  const [editUnidadeMedida, setEditUnidadeMedida] = useState(''); // NOVO ESTADO
+  const [editValidade, setEditValidade] = useState('');
+  const [editQuantidade, setEditQuantidade] = useState('');
+  const [editLote, setEditLote] = useState('');
+  const [editFabricante, setEditFabricante] = useState('');
+  const [editLocalizacao, setEditLocalizacao] = useState(''); // NOVO ESTADO
+  // --- Fim dos Estados de EDIÇÃO ---
+
+  // --- Estados para Localidades (para o dropdown) ---
+  const [localidades, setLocalidades] = useState([]);
+
+
+  // --- useEffect para buscar medicamentos e localidades ---
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMedicamentos = async () => {
       try {
         setLoading(true);
         setError(null);
+        const response = await fetch('http://localhost:8000/api/medicamentos/', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${userToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-        // Promise.all para buscar os dados em paralelo
-        const [medResponse, locResponse] = await Promise.all([
-          fetch('http://localhost:8000/api/medicamentos/', {
-            headers: { 'Authorization': `Token ${userToken}` },
-          }),
-          fetch('http://localhost:8000/api/localidades/', {
-            headers: { 'Authorization': `Token ${userToken}` },
-          })
-        ]);
-
-        if (!medResponse.ok) throw new Error('Falha ao carregar medicamentos');
-        if (!locResponse.ok) throw new Error('Falha ao carregar localidades');
-
-        const medData = await medResponse.json();
-        const locData = await locResponse.json();
-
-        setMedicamentos(medData);
-        setLocalidades(locData);
-        
-        // Define um valor padrão para o select se houver localidades
-        if (locData.length > 0) {
-            setNovaLocalizacaoId(locData[0].id);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Falha ao carregar medicamentos');
         }
 
+        const data = await response.json();
+        setMedicamentos(data);
       } catch (err) {
         setError(err.message);
-        console.error('Erro ao buscar dados:', err);
+        console.error('Erro ao buscar medicamentos:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (userToken) {
-      fetchData();
-    }
-  }, [userToken, formSuccess]); // formSuccess recarrega tudo após a criação
+    const fetchLocalidades = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/localidades/', {
+          method: 'GET',
+          headers: { 'Authorization': `Token ${userToken}` },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Falha ao carregar localidades');
+        }
+        const data = await response.json();
+        setLocalidades(data);
+      } catch (err) {
+        console.error("Erro ao buscar localidades:", err);
+        // Poderia setar um erro específico para localidades se quisesse
+      }
+    };
 
+    if (userToken) {
+      fetchMedicamentos();
+      fetchLocalidades();
+    }
+  }, [userToken, formSuccess]); // formSuccess para recarregar após criar/editar/excluir
+
+
+  // --- Função para lidar com a CRIAÇÃO de um novo medicamento ---
   const handleCreateMedicamento = async (e) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
-
-    if (!novaLocalizacaoId) {
-        setFormError('Por favor, selecione uma localização.');
-        return;
-    }
 
     const canCreate = ['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canCreate) {
@@ -99,39 +113,142 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         },
         body: JSON.stringify({
           nome: novoNome,
+          dosagem: novaDosagem,
+          forma_farmaceutica: novaFormaFarmaceutica,
+          unidade_medida: novaUnidadeMedida,
           validade: novaValidade,
           quantidade: parseInt(novaQuantidade),
           lote: novoLote,
           fabricante: novoFabricante,
-          localizacao: parseInt(novaLocalizacaoId), // Envia o ID da localidade
+          localizacao: novaLocalizacao, // Envia o ID da localização
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = Object.entries(errorData).map(([key, value]) => `${key}: ${value.join(', ')}`).join('; ');
-        throw new Error(errorMessage || 'Falha ao criar medicamento.');
+        throw new Error(errorData.detail || 'Falha ao criar medicamento. Verifique os dados.');
       }
 
+      const novoMedicamento = await response.json();
       setFormSuccess('Medicamento criado com sucesso!');
-      setNovoNome('');
-      setNovaValidade('');
-      setNovaQuantidade('');
-      setNovoLote('');
-      setNovoFabricante('');
-      if (localidades.length > 0) {
-        setNovaLocalizacaoId(localidades[0].id);
-      }
+      // Atualiza a lista de medicamentos sem recarregar a página inteira
+      setMedicamentos([...medicamentos, novoMedicamento]);
+      // Limpa os campos do formulário
+      setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
+      setNovaUnidadeMedida('UNIDADE'); setNovaValidade(''); setNovaQuantidade('');
+      setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao criar medicamento:', err);
     }
   };
 
+
+  // --- Função para lidar com a EXCLUSÃO de um medicamento ---
+  const handleDeleteMedicamento = async (id) => {
+    const confirmDelete = window.confirm("Tem certeza que deseja excluir este medicamento?");
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/medicamentos/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Falha ao excluir medicamento: ${response.status} - ${errorText || 'Erro desconhecido'}`);
+      }
+
+      setMedicamentos(medicamentos.filter(med => med.id !== id));
+      setFormSuccess('Medicamento excluído com sucesso!');
+    } catch (err) {
+      setFormError(err.message);
+      console.error('Erro ao excluir medicamento:', err);
+    }
+  };
+
+
+  // --- Funções para lidar com a EDIÇÃO de um medicamento ---
+  const handleEditClick = (medicamento) => {
+    setEditingMedId(medicamento.id);
+    setEditNome(medicamento.nome);
+    setEditDosagem(medicamento.dosagem || ''); // Use || '' para evitar undefined
+    setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
+    setEditUnidadeMedida(medicamento.unidade_medida || 'UNIDADE');
+    setEditValidade(medicamento.validade); // Validade já deve vir no formato YYYY-MM-DD
+    setEditQuantidade(medicamento.quantidade);
+    setEditLote(medicamento.lote);
+    setEditFabricante(medicamento.fabricante);
+    setEditLocalizacao(medicamento.localizacao || ''); // ID da localização
+    setFormError('');
+    setFormSuccess('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMedId(null);
+  };
+
+  const handleUpdateMedicamento = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    const canUpdate = ['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
+    if (!canUpdate) {
+      setFormError('Você não tem permissão para editar medicamentos.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/medicamentos/${editingMedId}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingMedId, // Incluir o ID no corpo da requisição PUT
+          nome: editNome,
+          dosagem: editDosagem,
+          forma_farmaceutica: editFormaFarmaceutica,
+          unidade_medida: editUnidadeMedida,
+          validade: editValidade,
+          quantidade: parseInt(editQuantidade),
+          lote: editLote,
+          fabricante: editFabricante,
+          localizacao: editLocalizacao, // Envia o ID da localização
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Falha ao atualizar medicamento. Verifique os dados.');
+      }
+
+      const updatedMedicamento = await response.json();
+      setFormSuccess('Medicamento atualizado com sucesso!');
+      // Atualiza a lista no frontend com o item atualizado
+      setMedicamentos(medicamentos.map(med =>
+        med.id === updatedMedicamento.id ? updatedMedicamento : med
+      ));
+      setEditingMedId(null); // Sai do modo de edição
+    } catch (err) {
+      setFormError(err.message);
+      console.error('Erro ao atualizar medicamento:', err);
+    }
+  };
+
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Lista de Medicamentos</h2>
-      
+
+      {/* Formulário de Criação (visível apenas para usuários com permissão) */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
         <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Adicionar Novo Medicamento</h3>
@@ -139,54 +256,89 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
 
-             <div style={{ marginBottom: '10px' }}>
-               <label htmlFor="novoNome" style={{ display: 'block' }}>Nome:</label>
-               <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-             </div>
-             <div style={{ marginBottom: '10px' }}>
-               <label htmlFor="novaValidade" style={{ display: 'block' }}>Validade:</label>
-               <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-             </div>
-             <div style={{ marginBottom: '10px' }}>
-               <label htmlFor="novaQuantidade" style={{ display: 'block' }}>Quantidade:</label>
-               <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-             </div>
-             <div style={{ marginBottom: '10px' }}>
-               <label htmlFor="novoLote" style={{ display: 'block' }}>Lote:</label>
-               <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-             </div>
-             <div style={{ marginBottom: '10px' }}>
-               <label htmlFor="novoFabricante" style={{ display: 'block' }}>Fabricante:</label>
-               <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-             </div>
-
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novoNome" style={{ display: 'block' }}>Nome:</label>
+              <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novaDosagem" style={{ display: 'block' }}>Dosagem:</label>
+              <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
+              <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+                <option value="COMPRIMIDO">Comprimido</option>
+                <option value="CAPSULA">Cápsula</option>
+                <option value="INJETAVEL">Injetável</option>
+                <option value="SOLUCAO">Solução</option>
+                <option value="SUSPENSAO">Suspensão</option>
+                <option value="XAROPE">Xarope</option>
+                <option value="POMADA">Pomada</option>
+                <option value="CREME">Creme</option>
+                <option value="GEL">Gel</option>
+                <option value="SUPOSITORIO">Supositório</option>
+                <option value="AEROSOL">Aerossol</option>
+                <option value="PO">Pó</option>
+                <option value="GRANULADO">Granulado</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
+              <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+                <option value="MG">mg</option>
+                <option value="G">g</option>
+                <option value="ML">ml</option>
+                <option value="L">l</option>
+                <option value="UI">UI</option>
+                <option value="MCG">mcg</option>
+                <option value="MEQ">mEq</option>
+                <option value="UNIDADE">unidade</option>
+                <option value="AMPOLA">ampola</option>
+                <option value="FRASCO">frasco</option>
+                <option value="CAIXA">caixa</option>
+                <option value="COMP">comp.</option>
+                <option value="CAP">cáp.</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novaValidade" style={{ display: 'block' }}>Validade:</label>
+              <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novaQuantidade" style={{ display: 'block' }}>Quantidade:</label>
+              <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novoLote" style={{ display: 'block' }}>Lote:</label>
+              <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="novoFabricante" style={{ display: 'block' }}>Fabricante:</label>
+              <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            </div>
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaLocalizacao" style={{ display: 'block' }}>Localização:</label>
-              <select 
-                id="novaLocalizacao"
-                value={novaLocalizacaoId}
-                onChange={(e) => setNovaLocalizacaoId(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px' }}
-              >
-                <option value="" disabled>Selecione uma localização</option>
+              <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+                <option value="">Selecione...</option>
                 {localidades.map(loc => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.nome} ({loc.tipo})
-                  </option>
+                  <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
                 ))}
               </select>
             </div>
-            
             <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
               Criar Medicamento
             </button>
           </form>
         </div>
-      )}
+      )} {/* Fim da exibição condicional do formulário */}
 
-      {loading && <p>Carregando...</p>}
+      {loading && <p>Carregando medicamentos...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
+
+      {!loading && medicamentos.length === 0 && !error && (
+        <p>Não há medicamentos cadastrados.</p>
+      )}
 
       {!loading && medicamentos.length > 0 && (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
@@ -194,6 +346,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             <tr style={{ backgroundColor: '#f2f2f2' }}>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nome</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Dosagem</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Forma</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Unidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Validade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Lote</th>
@@ -207,18 +362,65 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {medicamentos.map((medicamento) => (
               <tr key={medicamento.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{formatarData(medicamento.validade)}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.localizacao_info?.nome || 'N/A'}</td>
-                {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                {/* Linha para o formulário de edição, se este medicamento estiver sendo editado */}
+                {editingMedId === medicamento.id ? (
+                  <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
+                      <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required style={{ flex: '1 1 150px', padding: '8px' }} />
+                      <input type="text" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
+                      <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ flex: '1 1 120px', padding: '8px' }}>
+                        <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                      </select>
+                      <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ flex: '1 1 80px', padding: '8px' }}>
+                        <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UI">UI</option><option value="MCG">mcg</option><option value="MEQ">mEq</option><option value="UNIDADE">unidade</option><option value="AMPOLA">ampola</option><option value="FRASCO">frasco</option><option value="CAIXA">caixa</option><option value="COMP">comp.</option><option value="CAP">cáp.</option>
+                      </select>
+                      <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ flex: '1 1 150px', padding: '8px' }} />
+                      <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Quantidade" required style={{ flex: '1 1 100px', padding: '8px' }} />
+                      <input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} placeholder="Lote" required style={{ flex: '1 1 120px', padding: '8px' }} />
+                      <input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} placeholder="Fabricante" required style={{ flex: '1 1 150px', padding: '8px' }} />
+                      <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} required style={{ flex: '1 1 150px', padding: '8px' }}>
+                        <option value="">Selecione...</option>
+                        {localidades.map(loc => (
+                          <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                        ))}
+                      </select>
+                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
+                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
+                    </form>
+                  </td>
+                ) : (
+                  <>
+                    {/* Linha normal da tabela se não estiver em modo de edição */}
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.id}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.nome}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.dosagem}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.forma_farmaceutica}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.unidade_medida}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.validade}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.quantidade}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                        <button style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Editar</button>
-                        <button style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
+                      {localidades.find(loc => loc.id === medicamento.localizacao)?.nome || 'N/A'}
                     </td>
+                    {/* Botões de Ação (Editar/Excluir) */}
+                    {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                            <button
+                                onClick={() => handleEditClick(medicamento)}
+                                style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                            >
+                                Editar
+                            </button>
+                            <button
+                                onClick={() => handleDeleteMedicamento(medicamento.id)}
+                                style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                            >
+                                Excluir
+                            </button>
+                        </td>
+                    )}
+                  </>
                 )}
               </tr>
             ))}
