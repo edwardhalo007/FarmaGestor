@@ -61,6 +61,7 @@ class FormaFarmaceuticaChoices(models.TextChoices):
     GRANULADO = 'GRANULADO', 'Granulado'
     OUTRO = 'OUTRO', 'Outro'
 
+# Esta classe define a unidade de medida do princípio ativo
 class UnidadeMedidaChoices(models.TextChoices):
     MG = 'MG', 'mg'
     G = 'G', 'g'
@@ -69,12 +70,6 @@ class UnidadeMedidaChoices(models.TextChoices):
     UI = 'UI', 'UI'
     MCG = 'MCG', 'mcg'
     MEQ = 'MEQ', 'mEq'
-    UNIDADE = 'UNIDADE', 'unidade' # Para comprimidos, cápsulas, etc.
-    AMPOLA = 'AMPOLA', 'ampola'
-    FRASCO = 'FRASCO', 'frasco'
-    CAIXA = 'CAIXA', 'caixa'
-    COMP = 'COMP', 'comp.' # Para comprimido
-    CAP = 'CAP', 'cáp.' # Para cápsula
 
 class Medicamento(models.Model):
     nome = models.CharField(max_length=255)

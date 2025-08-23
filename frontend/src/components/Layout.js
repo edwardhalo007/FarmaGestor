@@ -12,7 +12,11 @@ function Layout({ children, onLogout, userNivelAcesso }) {
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           <li style={{ marginBottom: '10px' }}><Link to="/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link></li>
           <li style={{ marginBottom: '10px' }}><Link to="/medicamentos" style={{ color: 'white', textDecoration: 'none' }}>Medicamentos</Link></li>
-          <li style={{ marginBottom: '10px' }}><Link to="/movimentacoes" style={{ color: 'white', textDecoration: 'none' }}>Movimentações</Link></li> {/* <<< ADICIONE ESTA LINHA */}
+          {userNivelAcesso !== 'VISUALIZACAO' && (
+          <li style={{ marginBottom: '10px' }}>
+            <Link to="/movimentacoes" style={{ color: 'white', textDecoration: 'none' }}>Movimentações</Link>
+          </li>
+        )}
           <li style={{ marginBottom: '10px' }}><Link to="/alertas" style={{ color: 'white', textDecoration: 'none' }}>Alertas</Link></li>
           <li style={{ marginBottom: '10px' }}><Link to="/relatorios" style={{ color: 'white', textDecoration: 'none' }}>Relatórios</Link></li>
           {/* Lógica de exibição do link "Usuários" baseada no nível de acesso */}
