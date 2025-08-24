@@ -401,7 +401,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                      {localidades.find(loc => loc.id === medicamento.localizacao)?.nome || 'N/A'}
+                      {medicamento.localizacao?.nome || 'N/A'}
                     </td>
                     {/* Botões de Ação (Editar/Excluir) */}
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (

@@ -54,19 +54,16 @@ class FormaFarmaceuticaChoices(models.TextChoices):
     XAROPE = 'XAROPE', 'Xarope'
     POMADA = 'POMADA', 'Pomada'
     CREME = 'CREME', 'Creme'
-    GEL = 'GEL', 'Gel'
     SUPOSITORIO = 'SUPOSITORIO', 'Supositório'
-    AEROSOL = 'AEROSOL', 'Aerossol'
     PO = 'PO', 'Pó'
-    GRANULADO = 'GRANULADO', 'Granulado'
     OUTRO = 'OUTRO', 'Outro'
 
-# Esta classe define a unidade de medida do princípio ativo
 class UnidadeMedidaChoices(models.TextChoices):
     MG = 'MG', 'mg'
     G = 'G', 'g'
     ML = 'ML', 'ml'
     L = 'L', 'l'
+    UNI = 'UNI', 'uni'
     UI = 'UI', 'UI'
     MCG = 'MCG', 'mcg'
     MEQ = 'MEQ', 'mEq'
@@ -77,12 +74,12 @@ class Medicamento(models.Model):
     forma_farmaceutica = models.CharField(
         max_length=20,
         choices=FormaFarmaceuticaChoices.choices,
-        default=FormaFarmaceuticaChoices.COMPRIMIDO, # Ou um valor padrão que faça sentido
+        default=FormaFarmaceuticaChoices.COMPRIMIDO, 
     )
     unidade_medida = models.CharField(
         max_length=10,
         choices=UnidadeMedidaChoices.choices,
-        default=UnidadeMedidaChoices.UNIDADE, # Ou um valor padrão
+        default=UnidadeMedidaChoices.UNI, 
     )
     validade = models.DateField()
     quantidade = models.IntegerField(default=0)
