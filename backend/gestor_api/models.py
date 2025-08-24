@@ -32,7 +32,7 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return self.username
-    
+
 class Localidade(models.Model):
     nome = models.CharField(max_length=255)
     class TipoChoices(models.TextChoices):
@@ -44,9 +44,46 @@ class Localidade(models.Model):
 
     def __str__(self):
         return self.nome
-    
+
+class FormaFarmaceuticaChoices(models.TextChoices):
+    COMPRIMIDO = 'COMPRIMIDO', 'Comprimido'
+    CAPSULA = 'CAPSULA', 'Cápsula'
+    INJETAVEL = 'INJETAVEL', 'Injetável'
+    SOLUCAO = 'SOLUCAO', 'Solução'
+    SUSPENSAO = 'SUSPENSAO', 'Suspensão'
+    XAROPE = 'XAROPE', 'Xarope'
+    POMADA = 'POMADA', 'Pomada'
+    CREME = 'CREME', 'Creme'
+    GEL = 'GEL', 'Gel'
+    SUPOSITORIO = 'SUPOSITORIO', 'Supositório'
+    AEROSOL = 'AEROSOL', 'Aerossol'
+    PO = 'PO', 'Pó'
+    GRANULADO = 'GRANULADO', 'Granulado'
+    OUTRO = 'OUTRO', 'Outro'
+
+# Esta classe define a unidade de medida do princípio ativo
+class UnidadeMedidaChoices(models.TextChoices):
+    MG = 'MG', 'mg'
+    G = 'G', 'g'
+    ML = 'ML', 'ml'
+    L = 'L', 'l'
+    UI = 'UI', 'UI'
+    MCG = 'MCG', 'mcg'
+    MEQ = 'MEQ', 'mEq'
+
 class Medicamento(models.Model):
     nome = models.CharField(max_length=255)
+    dosagem = models.CharField(max_length=100, blank=True, null=True) # Ex: "500 mg", "100 UI"
+    forma_farmaceutica = models.CharField(
+        max_length=20,
+        choices=FormaFarmaceuticaChoices.choices,
+        default=FormaFarmaceuticaChoices.COMPRIMIDO, # Ou um valor padrão que faça sentido
+    )
+    unidade_medida = models.CharField(
+        max_length=10,
+        choices=UnidadeMedidaChoices.choices,
+        default=UnidadeMedidaChoices.UNIDADE, # Ou um valor padrão
+    )
     validade = models.DateField()
     quantidade = models.IntegerField(default=0)
     lote = models.CharField(max_length=100)
