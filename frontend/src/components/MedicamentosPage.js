@@ -9,14 +9,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
   // --- Estados para o formulário de CRIAÇÃO ---
   const [novoNome, setNovoNome] = useState('');
-  const [novaDosagem, setNovaDosagem] = useState(''); // NOVO ESTADO
-  const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO'); // NOVO ESTADO (com valor padrão)
-  const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('UNIDADE'); // NOVO ESTADO (com valor padrão)
+  const [novaDosagem, setNovaDosagem] = useState('');
+  const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
+  const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('UNIDADE');
   const [novaValidade, setNovaValidade] = useState('');
   const [novaQuantidade, setNovaQuantidade] = useState('');
   const [novoLote, setNovoLote] = useState('');
   const [novoFabricante, setNovoFabricante] = useState('');
-  const [novaLocalizacao, setNovaLocalizacao] = useState(''); // NOVO ESTADO para ForeignKey
+  const [novaLocalizacao, setNovaLocalizacao] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   // --- Fim dos Estados de CRIAÇÃO ---
@@ -24,14 +24,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   // --- Estados para o formulário de EDIÇÃO ---
   const [editingMedId, setEditingMedId] = useState(null);
   const [editNome, setEditNome] = useState('');
-  const [editDosagem, setEditDosagem] = useState(''); // NOVO ESTADO
-  const [editFormaFarmaceutica, setEditFormaFarmaceutica] = useState(''); // NOVO ESTADO
-  const [editUnidadeMedida, setEditUnidadeMedida] = useState(''); // NOVO ESTADO
+  const [editDosagem, setEditDosagem] = useState('');
+  const [editFormaFarmaceutica, setEditFormaFarmaceutica] = useState('');
+  const [editUnidadeMedida, setEditUnidadeMedida] = useState('');
   const [editValidade, setEditValidade] = useState('');
   const [editQuantidade, setEditQuantidade] = useState('');
   const [editLote, setEditLote] = useState('');
   const [editFabricante, setEditFabricante] = useState('');
-  const [editLocalizacao, setEditLocalizacao] = useState(''); // NOVO ESTADO
+  const [editLocalizacao, setEditLocalizacao] = useState('');
   // --- Fim dos Estados de EDIÇÃO ---
 
   // --- Estados para Localidades (para o dropdown) ---
@@ -81,7 +81,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         setLocalidades(data);
       } catch (err) {
         console.error("Erro ao buscar localidades:", err);
-        // Poderia setar um erro específico para localidades se quisesse
       }
     };
 
@@ -89,7 +88,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-  }, [userToken, formSuccess]); // formSuccess para recarregar após criar/editar/excluir
+  }, [userToken, formSuccess]);
 
 
   // --- Função para lidar com a CRIAÇÃO de um novo medicamento ---
@@ -131,9 +130,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       const novoMedicamento = await response.json();
       setFormSuccess('Medicamento criado com sucesso!');
-      // Atualiza a lista de medicamentos sem recarregar a página inteira
       setMedicamentos([...medicamentos, novoMedicamento]);
-      // Limpa os campos do formulário
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
       setNovaUnidadeMedida('UNIDADE'); setNovaValidade(''); setNovaQuantidade('');
       setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
@@ -177,14 +174,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const handleEditClick = (medicamento) => {
     setEditingMedId(medicamento.id);
     setEditNome(medicamento.nome);
-    setEditDosagem(medicamento.dosagem || ''); // Use || '' para evitar undefined
+    setEditDosagem(medicamento.dosagem || '');
     setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
     setEditUnidadeMedida(medicamento.unidade_medida || 'UNIDADE');
-    setEditValidade(medicamento.validade); // Validade já deve vir no formato YYYY-MM-DD
+    setEditValidade(medicamento.validade);
     setEditQuantidade(medicamento.quantidade);
     setEditLote(medicamento.lote);
     setEditFabricante(medicamento.fabricante);
-    setEditLocalizacao(medicamento.localizacao || ''); // ID da localização
+    setEditLocalizacao(medicamento.localizacao_detalhe?.id || '');
     setFormError('');
     setFormSuccess('');
   };
@@ -212,7 +209,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: editingMedId, // Incluir o ID no corpo da requisição PUT
+          id: editingMedId,
           nome: editNome,
           dosagem: editDosagem,
           forma_farmaceutica: editFormaFarmaceutica,
@@ -232,11 +229,10 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       const updatedMedicamento = await response.json();
       setFormSuccess('Medicamento atualizado com sucesso!');
-      // Atualiza a lista no frontend com o item atualizado
       setMedicamentos(medicamentos.map(med =>
         med.id === updatedMedicamento.id ? updatedMedicamento : med
       ));
-      setEditingMedId(null); // Sai do modo de edição
+      setEditingMedId(null);
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao atualizar medicamento:', err);
@@ -248,7 +244,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Lista de Medicamentos</h2>
 
-      {/* Formulário de Criação (visível apenas para usuários com permissão) */}
+      {/* Formulário de Criação */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
         <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Adicionar Novo Medicamento</h3>
@@ -267,38 +263,13 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
               <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="COMPRIMIDO">Comprimido</option>
-                <option value="CAPSULA">Cápsula</option>
-                <option value="INJETAVEL">Injetável</option>
-                <option value="SOLUCAO">Solução</option>
-                <option value="SUSPENSAO">Suspensão</option>
-                <option value="XAROPE">Xarope</option>
-                <option value="POMADA">Pomada</option>
-                <option value="CREME">Creme</option>
-                <option value="GEL">Gel</option>
-                <option value="SUPOSITORIO">Supositório</option>
-                <option value="AEROSOL">Aerossol</option>
-                <option value="PO">Pó</option>
-                <option value="GRANULADO">Granulado</option>
-                <option value="OUTRO">Outro</option>
+                <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
               </select>
             </div>
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
               <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="MG">mg</option>
-                <option value="G">g</option>
-                <option value="ML">ml</option>
-                <option value="L">l</option>
-                <option value="UI">UI</option>
-                <option value="MCG">mcg</option>
-                <option value="MEQ">mEq</option>
-                <option value="UNIDADE">unidade</option>
-                <option value="AMPOLA">ampola</option>
-                <option value="FRASCO">frasco</option>
-                <option value="CAIXA">caixa</option>
-                <option value="COMP">comp.</option>
-                <option value="CAP">cáp.</option>
+                <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UNI">UI</option><option value="UI">mcg</option><option value="MCG">mEq</option><option value="MEQ">unidade</option>
               </select>
             </div>
             <div style={{ marginBottom: '10px' }}>
@@ -331,7 +302,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             </button>
           </form>
         </div>
-      )} {/* Fim da exibição condicional do formulário */}
+      )}
 
       {loading && <p>Carregando medicamentos...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
@@ -362,7 +333,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {medicamentos.map((medicamento) => (
               <tr key={medicamento.id}>
-                {/* Linha para o formulário de edição, se este medicamento estiver sendo editado */}
+                {/* Linha para o formulário de edição */}
                 {editingMedId === medicamento.id ? (
                   <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
                     <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
@@ -401,7 +372,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                      {medicamento.localizacao?.nome || 'N/A'}
+                      {medicamento.localizacao_detalhe?.nome || 'N/A'}
                     </td>
                     {/* Botões de Ação (Editar/Excluir) */}
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (

@@ -21,24 +21,24 @@ class LocalidadeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MedicamentoSerializer(serializers.ModelSerializer):
-    # Campo aninhado para exibir detalhes da localização
-    localizacao = LocalidadeSerializer(read_only=True)
+    localizacao_detalhe = LocalidadeSerializer(source='localizacao', read_only=True)
 
     class Meta:
         model = Medicamento
         fields = [
             'id',
             'nome',
-            'dosagem',          
-            'forma_farmaceutica', 
-            'unidade_medida',   
+            'dosagem',
+            'forma_farmaceutica',
+            'unidade_medida',
             'validade',
             'quantidade',
             'lote',
             'fabricante',
-            'localizacao',      
-            'localizacao'  
+            'localizacao',
+            'localizacao_detalhe' 
         ]
+        extra_kwargs = {'localizacao': {'write_only': True}}
 
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
