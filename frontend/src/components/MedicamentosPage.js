@@ -59,6 +59,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
         const data = await response.json();
         setMedicamentos(data);
+        console.log('Data from API:', data);
       } catch (err) {
         setError(err.message);
         console.error('Erro ao buscar medicamentos:', err);
@@ -239,6 +240,20 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
+  const getStatusColor = (status) => {
+  switch (status) {
+    case 'OK':
+      return 'green';
+    case 'Atenção':
+      return 'orange';
+    case 'Critico':
+      return 'red';
+    case 'vencido':
+      return '#6c757d'; 
+    default:
+      return 'black'; 
+    }
+  };
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
@@ -321,6 +336,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Forma</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Unidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Validade</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Vencimento</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Lote</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Fabricante</th>
@@ -368,12 +384,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.forma_farmaceutica}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.unidade_medida}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.validade}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px', color: getStatusColor(medicamento.vencimento_validade), fontWeight: 'bold'}}>{medicamento.vencimento_validade}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.quantidade}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                      {medicamento.localizacao_detalhe?.nome || 'N/A'}
-                    </td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.localizacao?.nome || 'N/A'}</td>
                     {/* Botões de Ação (Editar/Excluir) */}
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                         <td style={{ border: '1px solid #ddd', padding: '8px' }}>
