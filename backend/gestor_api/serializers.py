@@ -33,6 +33,7 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'forma_farmaceutica', 
             'unidade_medida',   
             'validade',
+            'vencimento_validade',
             'quantidade',
             'lote',
             'fabricante',

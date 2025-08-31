@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 class NivelAcesso(models.TextChoices):
     VISUALIZACAO = 'VISUALIZACAO', 'Visualização'
@@ -86,6 +87,20 @@ class Medicamento(models.Model):
     lote = models.CharField(max_length=100)
     fabricante = models.CharField(max_length=255)
     localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)
+
+    @property
+    def vencimento_validade(self):
+        hoje = timezone.now().date()
+        vencimento = (self.validade - hoje).days
+
+        if vencimento > 30:
+            return 'OK'
+        elif 15 < vencimento <= 30:
+            return 'Atenção'
+        elif 0 < vencimento <= 15:
+            return 'Critico'
+        elif vencimento <= 0:
+            return 'Vencido'
 
     def __str__(self):
         return self.nome
