@@ -7,41 +7,238 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchUsuarios = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:8000/api/usuarios/', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Token ${userToken}`, // Envia o token de autenticação
-            'Content-Type': 'application/json',
-          },
-        });
+  // --- Estados para o formulário de CRIAÇÃO ---
+  const [novoUsername, setNovoUsername] = useState('');
+  const [novoEmail, setNovoEmail] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [novoNivelAcesso, setNovoNivelAcesso] = useState('VISUALIZACAO');
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Falha ao carregar usuários');
-        }
+  // --- Estados para o formulário de EDIÇÃO ---
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editNivelAcesso, setEditNivelAcesso] = useState('');
+  const [editNovaSenha, setEditNovaSenha] = useState('');
 
-        const data = await response.json();
-        setUsuarios(data);
-      } catch (err) {
-        setError(err.message);
-        console.error('Erro ao buscar usuários:', err);
-      } finally {
-        setLoading(false);
+  // Níveis de Acesso para os dropdowns
+  const niveisDeAcesso = ['VISUALIZACAO', 'OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'];
+
+  const fetchUsuarios = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/usuarios/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Falha ao carregar usuários');
       }
-    };
 
-    if (userToken) { // Só busca usuários se o token estiver disponível
+      const data = await response.json();
+      setUsuarios(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Erro ao buscar usuários:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userToken) {
       fetchUsuarios();
     }
-  }, [userToken]); // Refaz a busca se o token mudar
+  }, [userToken, formSuccess]);
+
+  // --- Função para lidar com a CRIAÇÃO de um novo usuário ---
+  const handleCreateUsuario = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/usuarios/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: novoUsername,
+          email: novoEmail,
+          password: novaSenha,
+          nivel_acesso: novoNivelAcesso,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        let errorMessage = 'Falha ao criar usuário. Verifique os dados.';
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.username) {
+          errorMessage = `Nome de usuário: ${errorData.username[0]}`;
+        } else if (errorData.email) {
+          errorMessage = `Email: ${errorData.email[0]}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      setFormSuccess('Usuário criado com sucesso!');
+      fetchUsuarios();
+      setNovoUsername(''); setNovoEmail(''); setNovaSenha(''); setNovoNivelAcesso('VISUALIZACAO');
+    } catch (err) {
+      // Formata a mensagem de erro do backend para exibição
+      let errorMessage = 'Falha ao criar usuário. Verifique os dados.';
+      if (err.message) {
+        // Se a API retornou uma mensagem simples de erro
+        errorMessage = err.message;
+      } else if (err.email) {
+        // Se o erro for específico do campo email
+        errorMessage = `Erro de Email: ${err.email[0]}`;
+      } else if (err.password) {
+        // Se o erro for específico do campo password (ex: "Sua senha é muito comum.")
+        errorMessage = `Erro de Senha: ${err.password[0]}`;
+      } else {
+        // Erro genérico
+        errorMessage = 'Falha desconhecida ao criar usuário.';
+      }
+
+      setFormError(errorMessage);
+      console.error('Erro ao criar usuário:', err);
+    }
+  };
+
+  // --- Funções para lidar com a EDIÇÃO de um usuário ---
+  const handleEditClick = (usuario) => {
+    setEditingUserId(usuario.id);
+    setEditUsername(usuario.username);
+    setEditEmail(usuario.email);
+    setEditNivelAcesso(usuario.nivel_acesso);
+    setEditNovaSenha(''); // Limpa a senha para não enviar a antiga
+    setFormError('');
+    setFormSuccess('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUserId(null);
+  };
+
+  const handleUpdateUsuario = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    const bodyData = {
+      username: editUsername,
+      email: editEmail,
+      nivel_acesso: editNivelAcesso,
+    };
+    // Adiciona a senha apenas se o campo não estiver vazio
+    if (editNovaSenha) {
+      bodyData.password = editNovaSenha;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/usuarios/${editingUserId}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bodyData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Falha ao atualizar usuário.');
+      }
+
+      setFormSuccess('Usuário atualizado com sucesso!');
+      fetchUsuarios();
+      setEditingUserId(null);
+    } catch (err) {
+      setFormError(err.message);
+      console.error('Erro ao atualizar usuário:', err);
+    }
+  };
+
+  // --- Função para lidar com a EXCLUSÃO de um usuário ---
+  const handleDeleteUsuario = async (id, username) => {
+    const confirmDelete = window.confirm(`Tem certeza que deseja excluir o usuário "${username}"?`);
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/usuarios/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Falha ao excluir usuário: ${response.status} - ${errorText || 'Erro desconhecido'}`);
+      }
+
+      setFormSuccess('Usuário excluído com sucesso!');
+      fetchUsuarios(); // Recarrega a lista de usuários após a exclusão
+    } catch (err) {
+      setFormError(err.message);
+      console.error('Erro ao excluir usuário:', err);
+    }
+  };
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Gerenciamento de Usuários</h2>
+
+      {/* Formulário de Criação (apenas para Admin e Gestor) */}
+      {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
+        <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+          <h3>Criar Novo Usuário</h3>
+          <form onSubmit={handleCreateUsuario}>
+            {formError && <p style={{ color: 'red' }}>{formError}</p>}
+            {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Usuário:</label>
+                <input type="text" value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
+                <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Senha:</label>
+                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Nível de Acesso:</label>
+                <select value={novoNivelAcesso} onChange={(e) => setNovoNivelAcesso(e.target.value)} style={{ width: '100%', padding: '8px' }}>
+                  {niveisDeAcesso.map(nivel => (
+                    <option key={nivel} value={nivel}>{nivel}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+              Criar Usuário
+            </button>
+          </form>
+        </div>
+      )}
+
       {loading && <p>Carregando usuários...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
@@ -57,16 +254,54 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Usuário</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Email</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nível de Acesso</th>
-              {/* Futuramente: Colunas para ações como Editar/Excluir */}
+              {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {usuarios.map((usuario) => (
               <tr key={usuario.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
+                {/* Linha para o formulário de edição */}
+                {editingUserId === usuario.id ? (
+                  <td colSpan="5" style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <form onSubmit={handleUpdateUsuario} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
+                      <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Usuário" required style={{ flex: '1 1 120px', padding: '8px' }} />
+                      <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email" required style={{ flex: '1 1 150px', padding: '8px' }} />
+                      <select value={editNivelAcesso} onChange={(e) => setEditNivelAcesso(e.target.value)} style={{ flex: '1 1 120px', padding: '8px' }}>
+                        {niveisDeAcesso.map(nivel => (
+                          <option key={nivel} value={nivel}>{nivel}</option>
+                        ))}
+                      </select>
+                      <input type="password" value={editNovaSenha} onChange={(e) => setEditNovaSenha(e.target.value)} placeholder="Nova Senha (opcional)" style={{ flex: '1 1 150px', padding: '8px' }} />
+                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
+                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
+                    </form>
+                  </td>
+                ) : (
+                  <>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
+                    {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                        <button
+                          onClick={() => handleEditClick(usuario)}
+                          style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
+                          style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    )}
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-
+from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
 from django.db import IntegrityError
@@ -165,6 +165,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
+class UsuarioViewSet(viewsets.ModelViewSet):
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+
     def get_permissions(self):
         if self.action == 'create':
             return [
@@ -177,7 +181,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()]
+            # Agora permite a edição e exclusão para GESTOR e ADMINISTRADOR
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
+            ]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
