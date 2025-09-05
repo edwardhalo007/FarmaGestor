@@ -2,6 +2,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
+class NivelAcesso(models.TextChoices):
+        VISUALIZACAO = 'VISUALIZACAO', 'Visualização'
+        OPERACIONAL = 'OPERACIONAL', 'Operacional'
+        GESTOR = 'GESTOR', 'Gestor'
+        ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
+        
 class Usuario(AbstractUser):
 
     class NivelAcesso(models.TextChoices):
