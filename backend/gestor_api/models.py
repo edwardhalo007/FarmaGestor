@@ -2,13 +2,14 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
-class NivelAcesso(models.TextChoices):
-    VISUALIZACAO = 'VISUALIZACAO', 'Visualização'
-    OPERACIONAL = 'OPERACIONAL', 'Operacional'
-    GESTOR = 'GESTOR', 'Gestor'
-    ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
-
 class Usuario(AbstractUser):
+
+    class NivelAcesso(models.TextChoices):
+        VISUALIZACAO = 'VISUALIZACAO', 'Visualização'
+        OPERACIONAL = 'OPERACIONAL', 'Operacional'
+        GESTOR = 'GESTOR', 'Gestor'
+        ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
+
     nivel_acesso = models.CharField(
         max_length=20,
         choices=NivelAcesso.choices,
@@ -19,7 +20,7 @@ class Usuario(AbstractUser):
         verbose_name='groups',
         blank=True,
         help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-        related_name='gestor_api_usuarios_groups', # <--- Mude aqui
+        related_name='gestor_api_usuarios_groups', 
         related_query_name='gestor_api_usuario',
     )
     user_permissions = models.ManyToManyField(
@@ -27,7 +28,7 @@ class Usuario(AbstractUser):
         verbose_name='user permissions',
         blank=True,
         help_text='Specific permissions for this user.',
-        related_name='gestor_api_usuarios_permissions', # <--- Mude aqui
+        related_name='gestor_api_usuarios_permissions', 
         related_query_name='gestor_api_usuario',
     )
 
@@ -36,12 +37,12 @@ class Usuario(AbstractUser):
 
 class Localidade(models.Model):
     nome = models.CharField(max_length=255)
-    class TipoChoices(models.TextChoices):
+    class TipoLocalidades(models.TextChoices):
         ATT_BASICA = 'ATT_BASICA', 'Atenção Básica'
         ANTIBIOTICO = 'ANTIBIOTICO', 'Antibiótico'
         CONTROLADO = 'CONTROLADO', 'Armário Controlado'
         HOSPITALAR = 'HOSPITALAR', 'Hospitalar'
-    tipo = models.CharField(max_length=20, choices=TipoChoices.choices)
+    tipo = models.CharField(max_length=20, choices=TipoLocalidades.choices)
 
     def __str__(self):
         return self.nome
@@ -71,17 +72,9 @@ class UnidadeMedidaChoices(models.TextChoices):
 
 class Medicamento(models.Model):
     nome = models.CharField(max_length=255)
-    dosagem = models.CharField(max_length=100, blank=True, null=True) # Ex: "500 mg", "100 UI"
-    forma_farmaceutica = models.CharField(
-        max_length=20,
-        choices=FormaFarmaceuticaChoices.choices,
-        default=FormaFarmaceuticaChoices.COMPRIMIDO, 
-    )
-    unidade_medida = models.CharField(
-        max_length=10,
-        choices=UnidadeMedidaChoices.choices,
-        default=UnidadeMedidaChoices.UNI, 
-    )
+    dosagem = models.CharField(max_length=100, blank=True, null=True) 
+    forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
+    unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.UNI,)
     validade = models.DateField()
     quantidade = models.IntegerField(default=0)
     lote = models.CharField(max_length=100)

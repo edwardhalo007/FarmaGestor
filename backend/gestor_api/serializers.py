@@ -21,7 +21,7 @@ class LocalidadeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MedicamentoSerializer(serializers.ModelSerializer):
-    localizacao_info = LocalidadeSerializer(source='localizacao', read_only=True)
+    #localizacao = LocalidadeSerializer(source='localizacao', read_only=True)
 
     class Meta:
         model = Medicamento
@@ -37,7 +37,7 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'lote',
             'fabricante',
             'localizacao',
-            'localizacao_info' 
+            'localizacao' 
         ]
         extra_kwargs = {'localizacao': {'write_only': True}}
 
