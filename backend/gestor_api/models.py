@@ -46,7 +46,7 @@ class Localidade(models.Model):
 
     def __str__(self):
         return self.nome
-    
+
 class Medicamento(models.Model):
 
     class FormaFarmaceuticaChoices(models.TextChoices):
