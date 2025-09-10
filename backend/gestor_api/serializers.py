@@ -61,6 +61,7 @@ class LocalidadeSerializer(serializers.ModelSerializer):
 
 class MedicamentoSerializer(serializers.ModelSerializer):
     localizacao_detalhe = LocalidadeSerializer(source='localizacao', read_only=True)
+    vencimento_validade = serializers.ReadOnlyField() # <<< ADICIONE ESTA LINHA
 
     class Meta:
         model = Medicamento
@@ -76,26 +77,9 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'lote',
             'fabricante',
             'localizacao',
-            'localizacao_detalhe'
+            'localizacao_detalhe' 
         ]
         extra_kwargs = {'localizacao': {'write_only': True}}
-
-    def validate_nome(self, value):
-        """
-        Valida que o nome do medicamento seja único.
-        """
-        # Verifica se já existe um medicamento com o mesmo nome
-        queryset = Medicamento.objects.filter(nome=value)
-
-        # Se estiver em modo de atualização, exclui o próprio objeto da verificação
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-
-        # Se a queryset ainda tiver resultados, o nome já está em uso
-        if queryset.exists():
-            raise serializers.ValidationError("Já existe um medicamento com este nome.")
-
-        return value
 
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
