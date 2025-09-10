@@ -7,14 +7,8 @@ class NivelAcesso(models.TextChoices):
         OPERACIONAL = 'OPERACIONAL', 'Operacional'
         GESTOR = 'GESTOR', 'Gestor'
         ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
-        
-class Usuario(AbstractUser):
 
-    class NivelAcesso(models.TextChoices):
-        VISUALIZACAO = 'VISUALIZACAO', 'Visualização'
-        OPERACIONAL = 'OPERACIONAL', 'Operacional'
-        GESTOR = 'GESTOR', 'Gestor'
-        ADMINISTRADOR = 'ADMINISTRADOR', 'Administrador'
+class Usuario(AbstractUser):
 
     nivel_acesso = models.CharField(
         max_length=20,
@@ -53,30 +47,31 @@ class Localidade(models.Model):
     def __str__(self):
         return self.nome
 
-class FormaFarmaceuticaChoices(models.TextChoices):
-    COMPRIMIDO = 'COMPRIMIDO', 'Comprimido'
-    CAPSULA = 'CAPSULA', 'Cápsula'
-    INJETAVEL = 'INJETAVEL', 'Injetável'
-    SOLUCAO = 'SOLUCAO', 'Solução'
-    SUSPENSAO = 'SUSPENSAO', 'Suspensão'
-    XAROPE = 'XAROPE', 'Xarope'
-    POMADA = 'POMADA', 'Pomada'
-    CREME = 'CREME', 'Creme'
-    SUPOSITORIO = 'SUPOSITORIO', 'Supositório'
-    PO = 'PO', 'Pó'
-    OUTRO = 'OUTRO', 'Outro'
-
-class UnidadeMedidaChoices(models.TextChoices):
-    MG = 'MG', 'mg'
-    G = 'G', 'g'
-    ML = 'ML', 'ml'
-    L = 'L', 'l'
-    UNI = 'UNI', 'uni'
-    UI = 'UI', 'UI'
-    MCG = 'MCG', 'mcg'
-    MEQ = 'MEQ', 'mEq'
-
 class Medicamento(models.Model):
+
+    class FormaFarmaceuticaChoices(models.TextChoices):
+        COMPRIMIDO = 'COMPRIMIDO', 'Comprimido'
+        CAPSULA = 'CAPSULA', 'Cápsula'
+        INJETAVEL = 'INJETAVEL', 'Injetável'
+        SOLUCAO = 'SOLUCAO', 'Solução'
+        SUSPENSAO = 'SUSPENSAO', 'Suspensão'
+        XAROPE = 'XAROPE', 'Xarope'
+        POMADA = 'POMADA', 'Pomada'
+        CREME = 'CREME', 'Creme'
+        SUPOSITORIO = 'SUPOSITORIO', 'Supositório'
+        PO = 'PO', 'Pó'
+        OUTRO = 'OUTRO', 'Outro'
+
+    class UnidadeMedidaChoices(models.TextChoices):
+        MG = 'MG', 'mg'
+        G = 'G', 'g'
+        ML = 'ML', 'ml'
+        L = 'L', 'l'
+        UNI = 'UNI', 'uni'
+        UI = 'UI', 'UI'
+        MCG = 'MCG', 'mcg'
+        MEQ = 'MEQ', 'mEq'
+
     nome = models.CharField(max_length=255)
     dosagem = models.CharField(max_length=100, blank=True, null=True) 
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )

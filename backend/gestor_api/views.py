@@ -26,7 +26,6 @@ class NivelAcessoPermission(BasePermission):
             return request.user.nivel_acesso in self.allowed_levels
         return False
 
-
 # View para Login (endpoint /api/login/)
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -159,11 +158,6 @@ def relatorios_movimentacao(request):
     movimentacoes = movimentacoes.order_by('data')
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
-
-# View para gerenciamento de usuários
-class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all()
-    serializer_class = UsuarioSerializer
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
