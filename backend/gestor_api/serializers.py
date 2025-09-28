@@ -61,7 +61,7 @@ class LocalidadeSerializer(serializers.ModelSerializer):
 
 class MedicamentoSerializer(serializers.ModelSerializer):
     localizacao_detalhe = LocalidadeSerializer(source='localizacao', read_only=True)
-    vencimento_validade = serializers.ReadOnlyField() # <<< ADICIONE ESTA LINHA
+    vencimento_validade = serializers.ReadOnlyField()
 
     class Meta:
         model = Medicamento

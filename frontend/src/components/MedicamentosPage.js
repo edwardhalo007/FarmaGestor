@@ -11,7 +11,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [novoNome, setNovoNome] = useState('');
   const [novaDosagem, setNovaDosagem] = useState('');
   const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
-  const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('UNIDADE');
+  const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('MG');
   const [novaValidade, setNovaValidade] = useState('');
   const [novaQuantidade, setNovaQuantidade] = useState('');
   const [novoLote, setNovoLote] = useState('');
@@ -113,14 +113,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         },
         body: JSON.stringify({
           nome: novoNome,
-          dosagem: novaDosagem,
+          dosagem: parseInt(novaDosagem),
           forma_farmaceutica: novaFormaFarmaceutica,
           unidade_medida: novaUnidadeMedida,
           validade: novaValidade,
           quantidade: parseInt(novaQuantidade),
           lote: novoLote,
           fabricante: novoFabricante,
-          localizacao: novaLocalizacao, // Envia o ID da localização
+          localizacao: novaLocalizacao,
         }),
       });
 
@@ -212,7 +212,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         body: JSON.stringify({
           id: editingMedId,
           nome: editNome,
-          dosagem: editDosagem,
+          dosagem: parseInt(editDosagem),
           forma_farmaceutica: editFormaFarmaceutica,
           unidade_medida: editUnidadeMedida,
           validade: editValidade,
@@ -284,7 +284,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
               <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UNI">UI</option><option value="UI">mcg</option><option value="MCG">mEq</option><option value="MEQ">unidade</option>
+                <option value="MG">mg</option>
+                <option value="G">g</option>
+                <option value="ML">ml</option>
+                <option value="L">l</option>
+                <option value="UNI">uni</option>
+                <option value="UI">UI</option>
+                <option value="MCG">mcg</option>
+                <option value="MEQ">mEq</option>
               </select>
             </div>
             <div style={{ marginBottom: '10px' }}>
