@@ -72,7 +72,7 @@ class Medicamento(models.Model):
         MCG = 'MCG', 'mcg'
         MEQ = 'MEQ', 'mEq'
 
-    nome = models.CharField(max_length=255)
+    nome = models.CharField(max_length=255, unique=True)
     dosagem = models.IntegerField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
     unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.MG,)

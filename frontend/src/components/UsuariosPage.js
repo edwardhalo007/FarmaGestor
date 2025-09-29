@@ -8,22 +8,27 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   const [error, setError] = useState(null);
 
   // --- Estados para o formulário de CRIAÇÃO ---
-  const [novoUsername, setNovoUsername] = useState('');
-  const [novoEmail, setNovoEmail] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [novoNivelAcesso, setNovoNivelAcesso] = useState('VISUALIZACAO');
+  const INITIAL_USER_STATE = {
+    id: null,
+    username: '',
+    email: '',
+    senha: '',
+    nivel_acesso: 'VISUALIZACAO',
+  };
+  const [formData, setFormData] = useState(INITIAL_USER_STATE);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  // --- Estados para o formulário de EDIÇÃO ---
-  const [editingUserId, setEditingUserId] = useState(null);
-  const [editUsername, setEditUsername] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editNivelAcesso, setEditNivelAcesso] = useState('');
-  const [editNovaSenha, setEditNovaSenha] = useState('');
-
   // Níveis de Acesso para os dropdowns
   const niveisDeAcesso = ['VISUALIZACAO', 'OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(currentData =>({ 
+      ...currentData, 
+      [name]: value 
+    }));
+  };
 
   const fetchUsuarios = async () => {
     try {
@@ -70,12 +75,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: novoUsername,
-          email: novoEmail,
-          password: novaSenha,
-          nivel_acesso: novoNivelAcesso,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -93,7 +93,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
       setFormSuccess('Usuário criado com sucesso!');
       fetchUsuarios();
-      setNovoUsername(''); setNovoEmail(''); setNovaSenha(''); setNovoNivelAcesso('VISUALIZACAO');
+      setFormData(INITIAL_USER_STATE);
     } catch (err) {
       // Formata a mensagem de erro do backend para exibição
       let errorMessage = 'Falha ao criar usuário. Verifique os dados.';
@@ -118,17 +118,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
   // --- Funções para lidar com a EDIÇÃO de um usuário ---
   const handleEditClick = (usuario) => {
-    setEditingUserId(usuario.id);
-    setEditUsername(usuario.username);
-    setEditEmail(usuario.email);
-    setEditNivelAcesso(usuario.nivel_acesso);
-    setEditNovaSenha(''); // Limpa a senha para não enviar a antiga
+    setFormData(usuario);
     setFormError('');
     setFormSuccess('');
   };
 
   const handleCancelEdit = () => {
-    setEditingUserId(null);
+    setFormData(INITIAL_USER_STATE);
   };
 
   const handleUpdateUsuario = async (e) => {
@@ -137,17 +133,17 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     setFormSuccess('');
 
     const bodyData = {
-      username: editUsername,
-      email: editEmail,
-      nivel_acesso: editNivelAcesso,
+      username: formData.username,
+      email: formData.email,
+      nivel_acesso: formData.nivel_acesso,
     };
     // Adiciona a senha apenas se o campo não estiver vazio
-    if (editNovaSenha) {
-      bodyData.password = editNovaSenha;
+    if (formData.senha) {
+      bodyData.password = formData.senha;
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/usuarios/${editingUserId}/`, {
+      const response = await fetch(`http://localhost:8000/api/usuarios/${formData.id}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -163,7 +159,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
       setFormSuccess('Usuário atualizado com sucesso!');
       fetchUsuarios();
-      setEditingUserId(null);
+      formData(INITIAL_USER_STATE);
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao atualizar usuário:', err);
@@ -213,19 +209,19 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Usuário:</label>
-                <input type="text" value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+                <input type="text" value={formData.username} name="username" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-                <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+                <input type="email" value={formData.email} name="email" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Senha:</label>
-                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+                <input type="password" value={formData.senha} name="senha" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Nível de Acesso:</label>
-                <select value={novoNivelAcesso} onChange={(e) => setNovoNivelAcesso(e.target.value)} style={{ width: '100%', padding: '8px' }}>
+                <select value={formData.nivel_acesso} name="nivel_acesso" onChange={handleInputChange} style={{ width: '100%', padding: '8px' }}>
                   {niveisDeAcesso.map(nivel => (
                     <option key={nivel} value={nivel}>{nivel}</option>
                   ))}
@@ -262,45 +258,25 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {usuarios.map((usuario) => (
               <tr key={usuario.id}>
-                {/* Linha para o formulário de edição */}
-                {editingUserId === usuario.id ? (
-                  <td colSpan="5" style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <form onSubmit={handleUpdateUsuario} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
-                      <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Usuário" required style={{ flex: '1 1 120px', padding: '8px' }} />
-                      <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <select value={editNivelAcesso} onChange={(e) => setEditNivelAcesso(e.target.value)} style={{ flex: '1 1 120px', padding: '8px' }}>
-                        {niveisDeAcesso.map(nivel => (
-                          <option key={nivel} value={nivel}>{nivel}</option>
-                        ))}
-                      </select>
-                      <input type="password" value={editNovaSenha} onChange={(e) => setEditNovaSenha(e.target.value)} placeholder="Nova Senha (opcional)" style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
-                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
-                    </form>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
+                {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <button
+                      onClick={() => handleEditClick(usuario)}
+                      style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
+                      style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Excluir
+                    </button>
                   </td>
-                ) : (
-                  <>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
-                    {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
-                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                        <button
-                          onClick={() => handleEditClick(usuario)}
-                          style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
-                          style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                        >
-                          Excluir
-                        </button>
-                      </td>
-                    )}
-                  </>
                 )}
               </tr>
             ))}

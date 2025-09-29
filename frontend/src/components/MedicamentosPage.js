@@ -126,18 +126,23 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao criar medicamento. Verifique os dados.');
+        const errorMessage = Object.entries(errorData)
+            .map(([key, value]) => `${key}: ${value.join(' ')}`)
+            .join(', ');
+
+        setFormError(`Falha ao criar medicamento: ${errorMessage}`);
+        return;
       }
 
       const novoMedicamento = await response.json();
       setFormSuccess('Medicamento criado com sucesso!');
       setMedicamentos([...medicamentos, novoMedicamento]);
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
-      setNovaUnidadeMedida('UNIDADE'); setNovaValidade(''); setNovaQuantidade('');
+      setNovaUnidadeMedida('MG'); setNovaValidade(''); setNovaQuantidade('');
       setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
     } catch (err) {
-      setFormError(err.message);
-      console.error('Erro ao criar medicamento:', err);
+      setFormError('Falha ao conectar ao servidor. Verifique sua conexão.');
+      console.error('Erro na requisição:', err);
     }
   };
 
@@ -177,7 +182,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     setEditNome(medicamento.nome);
     setEditDosagem(medicamento.dosagem || '');
     setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
-    setEditUnidadeMedida(medicamento.unidade_medida || 'UNIDADE');
+    setEditUnidadeMedida(medicamento.unidade_medida || 'MG');
     setEditValidade(medicamento.validade);
     setEditQuantidade(medicamento.quantidade);
     setEditLote(medicamento.lote);
@@ -273,7 +278,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             </div>
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaDosagem" style={{ display: 'block' }}>Dosagem:</label>
-              <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              <input type="number" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
             </div>
             <div style={{ marginBottom: '10px' }}>
               <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
@@ -361,12 +366,19 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                   <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
                     <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
                       <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="text" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
+                      <input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
                       <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ flex: '1 1 120px', padding: '8px' }}>
                         <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
                       </select>
                       <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ flex: '1 1 80px', padding: '8px' }}>
-                        <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UI">UI</option><option value="MCG">mcg</option><option value="MEQ">mEq</option><option value="UNIDADE">unidade</option><option value="AMPOLA">ampola</option><option value="FRASCO">frasco</option><option value="CAIXA">caixa</option><option value="COMP">comp.</option><option value="CAP">cáp.</option>
+                        <option value="MG">mg</option>
+                        <option value="G">g</option>
+                        <option value="ML">ml</option>
+                        <option value="L">l</option>
+                        <option value="UNI">uni</option>
+                        <option value="UI">UI</option>
+                        <option value="MCG">mcg</option>
+                        <option value="MEQ">mEq</option>
                       </select>
                       <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ flex: '1 1 150px', padding: '8px' }} />
                       <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Quantidade" required style={{ flex: '1 1 100px', padding: '8px' }} />

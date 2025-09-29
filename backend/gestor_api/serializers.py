@@ -3,6 +3,7 @@
 from rest_framework import serializers
 from .models import Medicamento, Usuario, Movimentacao, Localidade
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,6 +81,11 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'localizacao_detalhe' 
         ]
         extra_kwargs = {'localizacao': {'write_only': True}}
+
+    def validate_validade(self, value):
+        if value < timezone.now().date():
+            raise serializers.ValidationError("A data de validade não pode ser no passado.")
+        return value
 
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
