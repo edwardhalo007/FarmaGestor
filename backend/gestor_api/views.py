@@ -10,7 +10,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
-from django.db import IntegrityError
+from django.db import IntegrityError, models, transaction
+
 
 # --- Classe de Permissão Personalizada para Níveis de Acesso ---
 class NivelAcessoPermission(BasePermission):
@@ -45,6 +46,20 @@ class CustomAuthToken(ObtainAuthToken):
 class MedicamentoViewSet(viewsets.ModelViewSet):
     queryset = Medicamento.objects.all()
     serializer_class = MedicamentoSerializer
+
+    def get_queryset(self):
+
+        queryset = Medicamento.objects.all()
+        search_term = self.request.query_params.get('search', None)
+
+        if search_term:
+            # Filtra onde o nome ou a dosagem contêm o termo de busca (case-insensitive)
+            queryset = queryset.filter(
+                models.Q(nome__icontains=search_term) |
+                models.Q(dosagem__icontains=search_term)
+            )
+
+        return queryset.order_by('nome')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -99,12 +114,57 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(
-                    allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                    allowed_levels=[
+                        NivelAcesso.OPERACIONAL,
+                        NivelAcesso.GESTOR,
+                        NivelAcesso.ADMINISTRADOR
+                    ]
                 )
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()]
+            return [
+                IsAuthenticated,
+                NivelAcessoPermission(
+                    allowed_levels=[
+                        NivelAcesso.Gestor,
+                        NivelAcesso.ADMINISTRADOR
+                    ]
+                )
+            ]
         return [IsAuthenticated()]
+    
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        medicamento = instance.medicamento
+        if instance.tipo == 'ENTRADA':
+            medicamento.quantidade -= instance.quantidade
+        elif instance.tipo == 'SAIDA':
+            medicamento.quantidade += instance.quantidade
+        
+        medicamento.save()
+        instance.delete()
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        movimentacao_antiga = self.get_object()
+        medicamento = movimentacao_antiga.medicamento
+        
+        if movimentacao_antiga.tipo == 'ENTRADA':
+            medicamento.quantidade -= movimentacao_antiga.quantidade
+        else: 
+            medicamento.quantidade += movimentacao_antiga.quantidade
+        
+        tipo_novo = serializer.validated_data.get('tipo', movimentacao_antiga.tipo)
+        quantidade_nova = serializer.validated_data.get('quantidade', movimentacao_antiga.quantidade)
+
+        if tipo_novo == 'ENTRADA':
+            medicamento.quantidade += quantidade_nova
+        else:
+            if medicamento.quantidade < quantidade_nova:
+                raise serializers.ValidationError({"detail": "Estoque insuficiente para a nova quantidade de saída."})
+            medicamento.quantidade -= quantidade_nova
+        medicamento.save()
+        serializer.save()
 
 # Views para Alertas de Validade
 @api_view(['GET'])

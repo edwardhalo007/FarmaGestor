@@ -21,6 +21,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [formSuccess, setFormSuccess] = useState('');
   // --- Fim dos Estados de CRIAÇÃO ---
 
+  // --- Estados para Pesquisa e Filtro (NOVOS) ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [triggerSearch, setTriggerSearch] = useState(0); 
+  // --- Fim dos Estados de Pesquisa ---
+
   // --- Estados para o formulário de EDIÇÃO ---
   const [editingMedId, setEditingMedId] = useState(null);
   const [editNome, setEditNome] = useState('');
@@ -44,7 +49,18 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('http://localhost:8000/api/medicamentos/', {
+        
+        let apiUrl = 'http://localhost:8000/api/medicamentos/';
+        
+        // >>> LÓGICA DE PESQUISA ADICIONADA: Constrói a URL com o filtro <<<
+        if (searchTerm) {
+             const params = new URLSearchParams();
+             params.append('search', searchTerm);
+             apiUrl += `?${params.toString()}`;
+        }
+        // >>> FIM DA LÓGICA DE PESQUISA ADICIONADA <<<
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${userToken}`,
@@ -89,7 +105,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-  }, [userToken, formSuccess]);
+    // >>> CORREÇÃO DO AVISO: searchTerm foi adicionado às dependências <<<
+  }, [userToken, formSuccess, triggerSearch, searchTerm]); 
 
 
   // --- Função para lidar com a CRIAÇÃO de um novo medicamento ---
@@ -258,6 +275,38 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Lista de Medicamentos</h2>
+
+      {/* --- SEÇÃO DE FILTRO DE PESQUISA (ADICIONADA) --- */}
+      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
+          <h3>Filtro de Medicamentos</h3>
+          <div style={{ display: 'flex', gap: '10px' }}>
+              <input 
+                  type="text" 
+                  placeholder="Pesquisar por Nome ou Dosagem..." 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => { // Permite buscar ao pressionar Enter
+                      if (e.key === 'Enter') {
+                          setTriggerSearch(prev => prev + 1);
+                      }
+                  }}
+                  style={{ flexGrow: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <button 
+                  onClick={() => setTriggerSearch(prev => prev + 1)} // Força o useEffect a rodar
+                  style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                  Pesquisar
+              </button>
+              <button 
+                  onClick={() => {setSearchTerm(''); setTriggerSearch(prev => prev + 1);}} // Limpa e força o useEffect
+                  style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                  Limpar
+              </button>
+          </div>
+      </div>
+      {/* --- FIM DA SEÇÃO DE FILTRO --- */}
 
       {/* Formulário de Criação */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
