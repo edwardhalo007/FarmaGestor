@@ -109,8 +109,10 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
             medicamento.quantidade -= quantidade_movimentada
         medicamento.save()
 
+
     def get_permissions(self):
         if self.action in ['create', 'list', 'retrieve']:
+            # Operacional, Gestor e Admin podem criar, listar e ver
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(
@@ -122,11 +124,12 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                 )
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
+            # Apenas Gestor e Admin podem editar ou excluir
             return [
-                IsAuthenticated,
+                IsAuthenticated(),
                 NivelAcessoPermission(
                     allowed_levels=[
-                        NivelAcesso.Gestor,
+                        NivelAcesso.GESTOR,
                         NivelAcesso.ADMINISTRADOR
                     ]
                 )

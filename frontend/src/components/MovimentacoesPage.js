@@ -20,12 +20,16 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroMedicamento, setFiltroMedicamento] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState('');
 
+  // --- Estado de Gatilho para Recarregar Dados ---
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
   useEffect(() => {
     // A função fetchData agora é definida dentro do useEffect
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setFormSuccess(''); // Limpa mensagens de sucesso ao recarregar
 
         // Busca a lista de medicamentos para o dropdown do formulário
         const medsResponse = await fetch('http://localhost:8000/api/medicamentos/', {
@@ -69,7 +73,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchData();
     }
-  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel]);
+    // Adiciona o refetchTrigger às dependências
+  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, refetchTrigger]);
 
   // --- Função para lidar com a submissão do formulário de criação ---
   const handleCreateMovimentacao = async (e) => {
@@ -100,21 +105,80 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao registrar movimentação.');
+        // Tenta pegar a mensagem de erro específica (ex: "Estoque insuficiente")
+        let errorMessage = 'Falha ao registrar movimentação.';
+        if (errorData.detail) {
+            errorMessage = errorData.detail;
+        } else if (errorData.non_field_errors) {
+            errorMessage = errorData.non_field_errors[0];
+        }
+        throw new Error(errorMessage);
       }
 
       setFormSuccess('Movimentação registrada com sucesso!');
-      // Limpar o formulário e recarregar os dados
+      // Limpar o formulário
       setTipoMovimentacao('ENTRADA');
       setSelectedMedicamento('');
       setQuantidade('');
-      // Ao invés de chamar fetchData(), a mudança de estado abaixo irá disparar o useEffect
-      setFiltroMedicamento(filtroMedicamento); // Apenas para forçar a renderização e o fetch
+      // Dispara o useEffect para recarregar os dados
+      setRefetchTrigger(t => t + 1);
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao criar movimentação:', err);
     }
   };
+
+  // --- Função para lidar com a EXCLUSÃO de uma movimentação ---
+  const handleDeleteMovimentacao = async (id, tipo, medNome, qtd) => {
+    // Validação de front-end (embora o backend já esteja protegendo)
+    const canDelete = ['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
+    if (!canDelete) {
+      setFormError('Você não tem permissão para excluir movimentações.');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir esta movimentação?
+      
+      ID: ${id}
+      Tipo: ${tipo}
+      Medicamento: ${medNome}
+      Quantidade: ${qtd}
+      
+      ATENÇÃO: Esta ação irá reverter a alteração no estoque.`
+    );
+      
+    if (!confirmDelete) {
+      return;
+    }
+
+    setFormError('');
+    setFormSuccess('');
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/movimentacoes/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Falha ao excluir movimentação: ${response.status} - ${errorText || 'Erro desconhecido'}`);
+      }
+
+      setFormSuccess('Movimentação excluída e estoque revertido com sucesso!');
+      // Dispara o useEffect para recarregar os dados
+      setRefetchTrigger(t => t + 1);
+    } catch (err)      {
+      setFormError(err.message);
+      console.error('Erro ao excluir movimentação:', err);
+    }
+  };
+  
+  // A função handleEditClick foi removida pois o botão não existe mais
+
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
@@ -148,7 +212,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
                   <option value="">Selecione um medicamento...</option>
                   {medicamentos.map(med => (
-                    <option key={med.id} value={med.id}>{med.nome} ({med.dosagem})</option>
+                    <option key={med.id} value={med.id}>{med.nome} (Estoque: {med.quantidade})</option>
                   ))}
                 </select>
               </div>
@@ -202,7 +266,11 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+              
+              {/* (AJUSTE 1) Coluna Ações agora só aparece para GESTOR ou ADMIN */}
+              {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -214,15 +282,21 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{new Date(movimentacao.data).toLocaleString()}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                  {/* Os botões de ação 'Editar' e 'Excluir' estão restritos a administradores no backend */}
-                  {userNivelAcesso === 'ADMINISTRADOR' && (
-                    <>
-                      <button style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Editar</button>
-                      <button style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
-                    </>
-                  )}
-                </td>
+
+                {/* (AJUSTE 2) Célula de Ações agora só aparece para GESTOR ou ADMIN */}
+                {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    
+                    {/* (AJUSTE 3) Botão Editar foi removido */}
+                    
+                    <button 
+                      onClick={() => handleDeleteMovimentacao(movimentacao.id, movimentacao.tipo, movimentacao.medicamento_nome, movimentacao.quantidade)}
+                      style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
