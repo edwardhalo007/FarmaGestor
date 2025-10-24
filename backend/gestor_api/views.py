@@ -105,7 +105,7 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
             medicamento.quantidade += quantidade_movimentada
         elif tipo_movimentacao == 'SAIDA':
             if medicamento.quantidade < quantidade_movimentada:
-                raise serializers.ValidationError("Quantidade em estoque insuficiente.")
+                raise ValidationError("Quantidade em estoque insuficiente.")
             medicamento.quantidade -= quantidade_movimentada
         medicamento.save()
 
@@ -173,8 +173,7 @@ def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
     medicamentos_proximos = Medicamento.objects.filter(
-        validade__lte=data_limite,
-        validade__gte=data_hoje
+        validade__lte=data_limite   
     ).order_by('validade')
     serializer = MedicamentoSerializer(medicamentos_proximos, many=True)
     return Response(serializer.data)
@@ -248,7 +247,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         if request_user_nivel == NivelAcesso.GESTOR:
             if target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
-                raise serializers.ValidationError({"detail": "Gestores não podem criar usuários com nível de Administrador ou Gestor."})
+                raise ValidationError({"detail": "Gestores não podem criar usuários com nível de Administrador ou Gestor."})
         serializer.save()
 
     def perform_update(self, serializer):
@@ -258,10 +257,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         if request_user_nivel == NivelAcesso.GESTOR:
             if target_user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
-                raise serializers.ValidationError({"detail": "Gestores não podem modificar usuários Administradores ou outros Gestores."})
+                raise ValidationError({"detail": "Gestores não podem modificar usuários Administradores ou outros Gestores."})
             if target_user.pk == self.request.user.pk and new_target_nivel_acesso != request_user_nivel:
-                raise serializers.ValidationError({"detail": "Gestores não podem modificar o próprio nível de acesso."})
+                raise ValidationError({"detail": "Gestores não podem modificar o próprio nível de acesso."})
             if new_target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
-                raise serializers.ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
+                raise ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
 
         serializer.save()

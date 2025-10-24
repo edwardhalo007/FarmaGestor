@@ -270,7 +270,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       return 'orange';
     case 'Critico':
       return 'red';
-    case 'vencido':
+    case 'Vencido':
       return '#6c757d'; 
     default:
       return 'black'; 
