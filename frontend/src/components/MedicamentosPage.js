@@ -143,11 +143,16 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = Object.entries(errorData)
-            .map(([key, value]) => `${key}: ${value.join(' ')}`)
-            .join(', ');
-
-        setFormError(`Falha ao criar medicamento: ${errorMessage}`);
+        let errorMessage = 'Falha ao criar medicamento: Erro desconhecido.';
+        if (errorData.non_field_errors) {
+            errorMessage = errorData.non_field_errors.join(' ');
+        } else {
+            const fieldErrors = Object.entries(errorData)
+                .map(([key, value]) => `${key}: ${value.join(' ')}`)
+                .join('; ');
+            errorMessage = `Falha ao criar medicamento: ${fieldErrors}`;
+        }
+        setFormError(errorMessage);
         return;
       }
 

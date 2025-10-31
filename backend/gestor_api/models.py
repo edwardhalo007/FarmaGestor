@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import UniqueConstraint, constraints
 from django.utils import timezone
 
 class NivelAcesso(models.TextChoices):
@@ -72,7 +73,7 @@ class Medicamento(models.Model):
         MCG = 'MCG', 'mcg'
         MEQ = 'MEQ', 'mEq'
 
-    nome = models.CharField(max_length=255, unique=True)
+    nome = models.CharField(max_length=255)
     dosagem = models.IntegerField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
     unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.MG,)
@@ -98,6 +99,15 @@ class Medicamento(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','validade','lote','fabricante','localizacao'],
+                name="lote_medicamento",
+            )
+        ]
 
 class Movimentacao(models.Model):
     TIPO_MOVIMENTACAO_CHOICES = [

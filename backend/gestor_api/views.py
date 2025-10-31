@@ -11,6 +11,8 @@ from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
 from django.db import IntegrityError, models, transaction
+from django.http import HttpResponse
+import csv
 
 
 # --- Classe de Permissão Personalizada para Níveis de Acesso ---
@@ -196,14 +198,16 @@ def relatorios_movimentacao(request):
         return Response({"detail": "Você não tem permissão para acessar este recurso."},
                         status=status.HTTP_403_FORBIDDEN)
 
-    medicamento_id = request.query_params.get('medicamento_id')
+    medicamento_nome = request.query_params.get('medicamento_nome')
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
+    export_format = request.query_params.get('export')
 
-    movimentacoes = Movimentacao.objects.all()
 
-    if medicamento_id:
-        movimentacoes = movimentacoes.filter(medicamento__id=medicamento_id)
+    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel').all()
+
+    if medicamento_nome:
+        movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
@@ -216,6 +220,27 @@ def relatorios_movimentacao(request):
             movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if export_format == "csv":
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={'Content-Disposition': 'attachment; filename="relatorio-movimentacoes.csv"'}
+        )
+        writer = csv.writer(response)
+
+        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Responsável'])
+
+        for mov in movimentacoes:
+            writer.writerow([
+                mov.id,
+                mov.data.strftime('%d/%m/%Y'),
+                mov.tipo,
+                mov.quantidade,
+                mov.medicamento.nome,
+                mov.responsavel.username
+            ])
+
+        return response
 
     movimentacoes = movimentacoes.order_by('data')
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
