@@ -5,6 +5,7 @@ import Layout from './Layout'; // Importe o componente Layout
 function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [medicamentos, setMedicamentos] = useState([]); // Para a lista de medicamentos no formulário
+  const [localidades, setLocalidades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,6 +13,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [tipoMovimentacao, setTipoMovimentacao] = useState('ENTRADA');
   const [selectedMedicamento, setSelectedMedicamento] = useState('');
   const [quantidade, setQuantidade] = useState('');
+  const [selectedLocalidade, setSeletectedLocalidade] = useState('')
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
@@ -19,6 +21,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroData, setFiltroData] = useState('');
   const [filtroMedicamento, setFiltroMedicamento] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState('');
+  const [filtroLocalidade, setFiltroLocalidade] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('');
 
   // --- Estado de Gatilho para Recarregar Dados ---
   const [refetchTrigger, setRefetchTrigger] = useState(0);
@@ -40,25 +44,49 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const medsData = await medsResponse.json();
         setMedicamentos(medsData);
 
+        const locsResponse = await fetch('http://localhost:8000/api/localidades/', {
+          method: 'GET',
+          headers: { 'Authorization': `Token ${userToken}` },
+        });
+        if (!locsResponse.ok) throw new Error('Falha ao carregar lista de localidades.');
+        const locsData = await locsResponse.json();
+        setLocalidades(locsData);
+
         // Constrói a URL de movimentações com os filtros
         const params = new URLSearchParams();
+
+        if (filtroMedicamento) { 
+          params.append('medicamento_id', filtroMedicamento);
+        }
         if (filtroData) {
           params.append('data_inicio', filtroData);
           params.append('data_fim', filtroData);
         }
-        const movsResponse = await fetch('http://localhost:8000/api/movimentacoes/', {
-          method: 'GET',
-          headers: { 'Authorization': `Token ${userToken}` },
+        if (filtroLocalidade){
+          params.append('localidade_id', filtroLocalidade)
+        }
+        if (filtroTipo) { // <<< NOVO FILTRO TIPO
+          params.append('tipo', filtroTipo);
+      }
+
+        let apiUrl = 'http://localhost:8000/api/movimentacoes/';
+        if (params.toString()) {
+             apiUrl += `?${params.toString()}`;
+        }
+        const movsResponse = await fetch(apiUrl, { // Usamos a URL com os filtros
+            method: 'GET',
+            headers: { 'Authorization': `Token ${userToken}` },
         });
+
         if (!movsResponse.ok) throw new Error('Falha ao carregar movimentações.');
         let movsData = await movsResponse.json();
 
         // Aplica os filtros no frontend
         const filteredMovs = movsData.filter(mov => {
+          const matchesLocalidade = filtroLocalidade ? String(mov.localidade) === filtroLocalidade : true;
           const matchesMedicamento = filtroMedicamento ? mov.medicamento_nome.toLowerCase().includes(filtroMedicamento.toLowerCase()) : true;
           const matchesResponsavel = filtroResponsavel ? mov.responsavel_username.toLowerCase().includes(filtroResponsavel.toLowerCase()) : true;
-          const matchesData = filtroData ? new Date(mov.data).toISOString().slice(0, 10) === filtroData : true;
-          return matchesMedicamento && matchesResponsavel && matchesData;
+          return matchesMedicamento && matchesResponsavel && matchesLocalidade;
         });
 
         setMovimentacoes(filteredMovs);
@@ -74,7 +102,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       fetchData();
     }
     // Adiciona o refetchTrigger às dependências
-  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, refetchTrigger]);
+  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, filtroLocalidade, filtroTipo, refetchTrigger]);
 
   // --- Função para lidar com a submissão do formulário de criação ---
   const handleCreateMovimentacao = async (e) => {
@@ -100,6 +128,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           tipo: tipoMovimentacao,
           medicamento: selectedMedicamento,
           quantidade: parseInt(quantidade),
+          localidade: selectedLocalidade
         }),
       });
 
@@ -210,16 +239,38 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               <div style={{ flex: '1 1 200px' }}>
                 <label htmlFor="selectMedicamento" style={{ display: 'block', marginBottom: '5px' }}>Medicamento *</label>
                 <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                  <option value="">Selecione um medicamento...</option>
+                  <option value="">Selecione um medicamento</option>
                   {medicamentos.map(med => (
                     <option key={med.id} value={med.id}>{med.nome} (Estoque: {med.quantidade})</option>
                   ))}
                 </select>
               </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label htmlFor="localidade" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Localidade:
+                </label>
+                <select
+                    id="localidade"
+                    name="localidade" // MUST MATCH the state key: formData.localidade
+                    value={selectedLocalidade}
+                    onChange={(e) => setSeletectedLocalidade(e.target.value)}
+                    required
+                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                >
+                    <option value="">Selecione a Localidade</option>
+                    {/* Mapeia a lista de localidades que foi buscada na API */}
+                    {localidades.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                            {loc.nome} {/* Assumes the Localidade model has a 'nome' field */}
+                        </option>
+                    ))}
+                </select>
+            </div>
               <div style={{ flex: '1 1 100px' }}>
                 <label htmlFor="quantidade" style={{ display: 'block', marginBottom: '5px' }}>Quantidade *</label>
                 <input type="number" id="quantidade" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required min="1" style={{ width: '100%', padding: '8px' }} />
               </div>
+            
             </div>
 
             <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
@@ -246,6 +297,30 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             <input type="text" id="filtroResponsavel" value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} placeholder="Nome do responsável" style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
           </div>
         </div>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px'}}>
+          <div>
+            <label htmlFor="filtroLocalidade" style={{ display: 'block', marginBottom: '5px' }}>Localidade:</label>
+            <select id="filtroLocalidade" value={filtroLocalidade} onChange={(e) => setFiltroLocalidade(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <option value="">Todas as Localidades</option>
+                {localidades.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.nome}</option>
+                ))}
+            </select>
+          </div>
+          <div> 
+            <label htmlFor="filtroTipo" style={{ display: 'block', marginBottom: '5px' }}>Tipo:</label>
+            <select
+                id="filtroTipo"
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+            >
+                <option value="">Todos</option>
+                <option value="ENTRADA">Entrada</option>
+                <option value="SAIDA">Saída</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Tabela de Movimentações */}
@@ -265,6 +340,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Medicamento</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
+              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Local</th>
               <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
               
               {/* (AJUSTE 1) Coluna Ações agora só aparece para GESTOR ou ADMIN */}
@@ -280,7 +356,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <td style={{ border: '1px solid #ddd', padding: '8px', color: movimentacao.tipo === 'ENTRADA' ? 'green' : 'red' }}>{movimentacao.tipo}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.medicamento_nome}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{new Date(movimentacao.data).toLocaleString()}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.data ? new Date(movimentacao.data).toLocaleDateString('pt-BR') : ''}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.localidade_nome}</td>
                 <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
 
                 {/* (AJUSTE 2) Célula de Ações agora só aparece para GESTOR ou ADMIN */}

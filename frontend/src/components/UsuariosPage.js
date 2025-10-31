@@ -1,5 +1,5 @@
 // FarmaGestor/frontend/src/components/UsuariosPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
 
 function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
@@ -30,7 +30,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     }));
   };
 
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/api/usuarios/', {
@@ -54,13 +54,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     } finally {
       setLoading(false);
     }
-  };
+  },[userToken]);
 
   useEffect(() => {
     if (userToken) {
       fetchUsuarios();
     }
-  }, [userToken, formSuccess]);
+  }, [userToken, formSuccess, fetchUsuarios]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo usuário ---
   const handleCreateUsuario = async (e) => {
@@ -117,20 +117,62 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   // --- Funções para lidar com a EDIÇÃO de um usuário ---
-  const handleEditClick = (usuario) => {
-    setFormData(usuario);
-    setFormError('');
-    setFormSuccess('');
-  };
-
-  const handleCancelEdit = () => {
-    setFormData(INITIAL_USER_STATE);
-  };
-
   const handleUpdateUsuario = async (e) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
+
+    const userId = formData.id;
+    if (!userId) {
+        setFormError('ID do usuário para atualização não encontrado.');
+        return;
+    }
+
+    const url = `http://localhost:8000/api/usuarios/${userId}/`;
+    
+    const dataToSend = { ...formData };
+    delete dataToSend.id; 
+    
+    if (!dataToSend.senha) {
+        delete dataToSend.senha; 
+    }
+    if (dataToSend.senha) {
+    }
+
+
+    try {
+        const response = await fetch(url, {
+            method: 'PATCH', 
+            headers: {
+                'Authorization': `Token ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            let errorMessage = 'Falha ao atualizar usuário.';
+            
+            // Tratamento de erros detalhado, similar ao seu handleCreateUsuario
+            if (errorData.detail) {
+                errorMessage = errorData.detail;
+            } else if (errorData.username) {
+                errorMessage = `Nome de usuário: ${errorData.username[0]}`;
+            } else if (errorData.email) {
+                errorMessage = `Email: ${errorData.email[0]}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        setFormSuccess('Usuário atualizado com sucesso!');
+        fetchUsuarios(); // Recarrega a lista
+        setFormData(INITIAL_USER_STATE); // Limpa o formulário/fecha o modo edição
+    } catch (err) {
+        setFormError(`Erro ao atualizar usuário: ${err.message || 'Erro desconhecido.'}`);
+        console.error('Erro ao atualizar usuário:', err);
+    }
+
 
     const bodyData = {
       username: formData.username,
@@ -141,32 +183,25 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     if (formData.senha) {
       bodyData.password = formData.senha;
     }
-
-    try {
-      const response = await fetch(`http://localhost:8000/api/usuarios/${formData.id}/`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Token ${userToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao atualizar usuário.');
-      }
-
-      setFormSuccess('Usuário atualizado com sucesso!');
-      fetchUsuarios();
-      formData(INITIAL_USER_STATE);
-    } catch (err) {
-      setFormError(err.message);
-      console.error('Erro ao atualizar usuário:', err);
-    }
-  };
+  }
 
   // --- Função para lidar com a EXCLUSÃO de um usuário ---
+  const handleEditClick = (usuario) => {
+    // 1. Copia os dados do usuário para o estado do formulário (inclui o ID)
+    setFormData({ 
+        ...usuario,
+        senha: '', // Limpa o campo de senha para não enviar a hash de volta
+    });
+    setFormError('');
+    setFormSuccess('');
+};
+
+const handleCancelEdit = () => {
+    // Volta o formulário para o estado inicial de criação
+    setFormData(INITIAL_USER_STATE);
+    setFormError('');
+    setFormSuccess('');
+};
   const handleDeleteUsuario = async (id, username) => {
     const confirmDelete = window.confirm(`Tem certeza que deseja excluir o usuário "${username}"?`);
     if (!confirmDelete) {
@@ -202,7 +237,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
         <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Criar Novo Usuário</h3>
-          <form onSubmit={handleCreateUsuario}>
+          <form onSubmit={formData.id ? handleUpdateUsuario : handleCreateUsuario}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
             
@@ -228,9 +263,28 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
               </div>
             </div>
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-              Criar Usuário
-            </button>
+            <div style={{ marginTop: '15px' }}>
+                <button 
+                    type="submit" 
+                    style={{ 
+                        padding: '10px 20px', 
+                        // Usa cor diferente para Update vs. Create para clareza visual
+                        backgroundColor: formData.id ? '#007bff' : '#28a745', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '5px', 
+                        cursor: 'pointer', 
+                        marginRight: '10px' 
+                    }}
+                >
+                    {formData.id ? 'Salvar Alterações' : 'Criar Usuário'} 
+                </button>
+                {formData.id && (
+                  <button type="button" onClick={handleCancelEdit} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                      Cancelar Edição
+                  </button>
+                )}
+            </div>
           </form>
         </div>
       )}

@@ -117,8 +117,9 @@ class Movimentacao(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMENTACAO_CHOICES)
     medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE, related_name='movimentacoes')
     quantidade = models.IntegerField()
-    data = models.DateTimeField(auto_now_add=True)
+    data = models.DateField(auto_now_add=True)
     responsavel = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
+    localidade = models.ForeignKey(Localidade, on_delete=models.PROTECT, related_name='movimentacoes')
 
     def __str__(self):
         return f"{self.tipo} de {self.quantidade} {self.medicamento.nome}"

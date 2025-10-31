@@ -41,7 +41,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
           countUnidades += med.quantidade;
 
           // Contagem de medicamentos em falta (quantidade <= 0)
-          if (med.quantidade <= 0) {
+          if (med.quantidade <= 15) {
             countEmFalta++;
           }
 

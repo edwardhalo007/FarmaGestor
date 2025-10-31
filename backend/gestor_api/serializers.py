@@ -101,6 +101,7 @@ class MedicamentoSerializer(serializers.ModelSerializer):
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
     responsavel_username = serializers.ReadOnlyField(source='responsavel.username')
+    localidade_nome = serializers.ReadOnlyField(source='localidade.nome')
 
     class Meta:
         model = Movimentacao
