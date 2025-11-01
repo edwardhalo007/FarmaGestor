@@ -12,7 +12,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     id: null,
     username: '',
     email: '',
-    senha: '',
+    password: '',
     nivel_acesso: 'VISUALIZACAO',
   };
   const [formData, setFormData] = useState(INITIAL_USER_STATE);
@@ -30,16 +30,27 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     }));
   };
 
-  const fetchUsuarios = useCallback(async () => {
+  // <<< MUDANÇA 1: A função agora aceita um parâmetro para ignorar o cache >>>
+  const fetchUsuarios = useCallback(async (bypassCache = false) => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/usuarios/', {
+
+      // <<< MUDANÇA 2: Definimos as opções do fetch dinamicamente >>>
+      const fetchOptions = {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-      });
+      };
+
+      // Se bypassCache for true, adicionamos a opção para NÃO usar o cache
+      if (bypassCache) {
+        fetchOptions.cache = 'no-store'; // 'no-store' é mais forte que 'no-cache' para garantir dados novos
+      }
+
+      const response = await fetch('http://localhost:8000/api/usuarios/', fetchOptions); // Usa as opções
+      // <<< FIM DA MUDANÇA 2 >>>
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -58,9 +69,10 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
   useEffect(() => {
     if (userToken) {
-      fetchUsuarios();
+      fetchUsuarios(); // Esta chamada inicial usará o cache (bypassCache = false por padrão)
     }
-  }, [userToken, formSuccess, fetchUsuarios]);
+    // <<< MUDANÇA 3: Removemos 'formSuccess' para evitar uma busca duplicada desnecessária >>>
+  }, [userToken, fetchUsuarios]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo usuário ---
   const handleCreateUsuario = async (e) => {
@@ -92,22 +104,21 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       }
 
       setFormSuccess('Usuário criado com sucesso!');
-      fetchUsuarios();
+      
+      // <<< MUDANÇA 4: Forçamos a busca de dados novos ignorando o cache >>>
+      fetchUsuarios(true); 
+
       setFormData(INITIAL_USER_STATE);
     } catch (err) {
       // Formata a mensagem de erro do backend para exibição
       let errorMessage = 'Falha ao criar usuário. Verifique os dados.';
       if (err.message) {
-        // Se a API retornou uma mensagem simples de erro
         errorMessage = err.message;
       } else if (err.email) {
-        // Se o erro for específico do campo email
         errorMessage = `Erro de Email: ${err.email[0]}`;
       } else if (err.password) {
-        // Se o erro for específico do campo password (ex: "Sua senha é muito comum.")
         errorMessage = `Erro de Senha: ${err.password[0]}`;
       } else {
-        // Erro genérico
         errorMessage = 'Falha desconhecida ao criar usuário.';
       }
 
@@ -133,10 +144,10 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     const dataToSend = { ...formData };
     delete dataToSend.id; 
     
-    if (!dataToSend.senha) {
-        delete dataToSend.senha; 
+    if (!dataToSend.password) {
+        delete dataToSend.password; 
     }
-    if (dataToSend.senha) {
+    if (dataToSend.password) {
     }
 
 
@@ -154,7 +165,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
             const errorData = await response.json();
             let errorMessage = 'Falha ao atualizar usuário.';
             
-            // Tratamento de erros detalhado, similar ao seu handleCreateUsuario
             if (errorData.detail) {
                 errorMessage = errorData.detail;
             } else if (errorData.username) {
@@ -166,8 +176,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         setFormSuccess('Usuário atualizado com sucesso!');
-        fetchUsuarios(); // Recarrega a lista
-        setFormData(INITIAL_USER_STATE); // Limpa o formulário/fecha o modo edição
+        
+        // <<< MUDANÇA 5: Forçamos a busca de dados novos ignorando o cache >>>
+        fetchUsuarios(true); 
+        
+        setFormData(INITIAL_USER_STATE);
     } catch (err) {
         setFormError(`Erro ao atualizar usuário: ${err.message || 'Erro desconhecido.'}`);
         console.error('Erro ao atualizar usuário:', err);
@@ -179,25 +192,22 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       email: formData.email,
       nivel_acesso: formData.nivel_acesso,
     };
-    // Adiciona a senha apenas se o campo não estiver vazio
-    if (formData.senha) {
-      bodyData.password = formData.senha;
+    if (formData.password) {
+      bodyData.password = formData.password;
     }
   }
 
   // --- Função para lidar com a EXCLUSÃO de um usuário ---
   const handleEditClick = (usuario) => {
-    // 1. Copia os dados do usuário para o estado do formulário (inclui o ID)
     setFormData({ 
         ...usuario,
-        senha: '', // Limpa o campo de senha para não enviar a hash de volta
+        password: '', 
     });
     setFormError('');
     setFormSuccess('');
 };
 
 const handleCancelEdit = () => {
-    // Volta o formulário para o estado inicial de criação
     setFormData(INITIAL_USER_STATE);
     setFormError('');
     setFormSuccess('');
@@ -222,7 +232,9 @@ const handleCancelEdit = () => {
       }
 
       setFormSuccess('Usuário excluído com sucesso!');
-      fetchUsuarios(); // Recarrega a lista de usuários após a exclusão
+      
+      // <<< MUDANÇA 6: Forçamos a busca de dados novos ignorando o cache >>>
+      fetchUsuarios(true); 
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao excluir usuário:', err);
@@ -233,7 +245,6 @@ const handleCancelEdit = () => {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Gerenciamento de Usuários</h2>
 
-      {/* Formulário de Criação (apenas para Admin e Gestor) */}
       {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
         <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Criar Novo Usuário</h3>
@@ -252,7 +263,7 @@ const handleCancelEdit = () => {
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Senha:</label>
-                <input type="password" value={formData.senha} name="senha" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
+                <input type="password" value={formData.password} name="password" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Nível de Acesso:</label>
@@ -268,7 +279,6 @@ const handleCancelEdit = () => {
                     type="submit" 
                     style={{ 
                         padding: '10px 20px', 
-                        // Usa cor diferente para Update vs. Create para clareza visual
                         backgroundColor: formData.id ? '#007bff' : '#28a745', 
                         color: 'white', 
                         border: 'none', 
