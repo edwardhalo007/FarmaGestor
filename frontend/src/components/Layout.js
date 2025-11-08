@@ -1,39 +1,38 @@
 // FarmaGestor/frontend/src/components/Layout.js
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="layout-container">
       {/* Menu Lateral */}
-      <nav style={{ width: '200px', backgroundColor: '#333', padding: '20px', color: 'white' }}>
-        <h3 style={{ color: '#0f0' }}>FarmaGestor</h3>
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          <li style={{ marginBottom: '10px' }}><Link to="/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link></li>
-          <li style={{ marginBottom: '10px' }}><Link to="/medicamentos" style={{ color: 'white', textDecoration: 'none' }}>Medicamentos</Link></li>
+      <nav className="sidebar">
+        <h3 className="system-logo">FarmaGestor</h3>
+        <ul className="nav-list">
+          <li className="nav-item"><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
+          <li className="nav-item"><Link to="/medicamentos" className="nav-link">Medicamentos</Link></li>
           {userNivelAcesso !== 'VISUALIZACAO' && (
-            <li style={{ marginBottom: '10px' }}><Link to="/movimentacoes" style={{ color: 'white', textDecoration: 'none' }}>Movimentações</Link></li>
+            <li className="nav-item"><Link to="/movimentacoes" className="nav-link">Movimentações</Link></li>
           )}
-          <li style={{ marginBottom: '10px' }}><Link to="/alertas" style={{ color: 'white', textDecoration: 'none' }}>Alertas</Link></li>
+          <li className="nav-item"><Link to="/alertas" className="nav-link">Alertas</Link></li>
           {userNivelAcesso !== 'VISUALIZACAO' && (
-            <li style={{ marginBottom: '10px' }}><Link to="/relatorios" style={{ color: 'white', textDecoration: 'none' }}>Relatórios</Link></li>
+            <li className="nav-item"><Link to="/relatorios" className="nav-link">Relatórios</Link></li>
           )}
-            {/* Lógica de exibição do link "Usuários" baseada no nível de acesso */}
+          {/* Lógica de exibição do link "Usuários" baseada no nível de acesso */}
           {userNivelAcesso === 'GESTOR' || userNivelAcesso === 'ADMINISTRADOR' ? (
-            <li style={{ marginBottom: '10px' }}><Link to="/usuarios" style={{ color: 'white', textDecoration: 'none' }}>Usuários</Link></li>
+            <li className="nav-item"><Link to="/usuarios" className="nav-link">Usuários</Link></li>
           ) : null}
           {userNivelAcesso === 'ADMINISTRADOR' && (
-            <li style={{ marginBottom: '10px' }}><Link to="/localidades" style={{ color: 'white', textDecoration: 'none' }}>Localidades</Link></li>
+            <li className="nav-item"><Link to="/localidades" className="nav-link">Localidades</Link></li>
           )}
         </ul>
-        <button onClick={onLogout} style={{ marginTop: '20px', padding: '10px', backgroundColor: '#d9534f', color: 'white', border: 'none', cursor: 'pointer' }}>
+        <button onClick={onLogout} className="logout-button">
           Sair
         </button>
       </nav>
 
       {/* Conteúdo Principal da Página */}
-      <main style={{ flexGrow: 1, padding: '20px', backgroundColor: '#f4f4f4' }}>
+      <main className="main-content">
         {children}
       </main>
     </div>

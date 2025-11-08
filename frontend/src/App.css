@@ -1,0 +1,378 @@
+/* FarmaGestor/frontend/src/App.css */
+
+/* Global Reset and Body Styling */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #eef1f5; /* Fundo leve para o body */
+    color: #333;
+}
+
+.App-wrapper {
+    min-height: 100vh;
+}
+
+/* Layout Component Styling */
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar (Menu Lateral) */
+.sidebar {
+    width: 200px;
+    background-color: #1a202c; /* Fundo escuro, mais moderno que #333 */
+    padding: 20px;
+    color: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.system-logo {
+    color: #4f46e5; /* Cor primária do login */
+    font-weight: 700;
+    margin-bottom: 30px;
+    font-size: 1.5em;
+    letter-spacing: 0.5px;
+}
+
+.nav-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.nav-item {
+    margin-bottom: 5px;
+}
+
+.nav-link {
+    color: #a0aec0; /* Cor de link padrão (cinza claro) */
+    text-decoration: none;
+    padding: 10px 0;
+    display: block;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    color: white;
+    background-color: #2d3748; /* Fundo levemente escuro ao passar o mouse */
+    padding-left: 10px;
+}
+
+.logout-button {
+    margin-top: 30px;
+    padding: 10px;
+    background-color: #e53e3e; /* Vermelho forte para ação de sair */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+    background-color: #c53030;
+}
+
+/* Main Content Area */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #f7f9fc; /* Cor de fundo clara para o conteúdo */
+}
+
+h2 {
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Common Card/Box Styling (e.g., for form, filters, or dashboard cards) */
+.box-container {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Table Styling (General) */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    text-align: left;
+}
+
+.data-table thead tr {
+    background-color: #edf2f7;
+}
+
+/* Form Controls */
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Garante que padding não altere o width */
+}
+
+/* Primary Button Style */
+.btn-primary {
+    padding: 10px 20px;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #4338ca;
+}
+
+/* FarmaGestor/frontend/src/App.css (Append this to the existing content) */
+
+/* Dashboard Layout */
+.dashboard-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+/* Dashboard Card Styling */
+.dashboard-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    text-align: center;
+    min-width: 220px;
+    flex: 1; /* Permite que o card cresça e se distribua */
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+
+.card-metrics-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.metric-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1;
+}
+
+.metric-label {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Color Overrides for Metrics based on Status */
+.color-primary {
+    color: #007bff; /* Azul padrão */
+}
+
+.color-danger {
+    color: #d9534f; /* Vermelho para Alertas e Estoque Crítico */
+}
+
+.color-warning {
+    color: #ffc107; /* Amarelo para Atenção na Validade */
+}
+
+.color-success {
+    color: #5cb85c; /* Verde para status OK */
+}
+
+/* FarmaGestor/frontend/src/App.css (Append this to the existing content) */
+
+/* --- Form and Input Styling --- */
+
+.form-group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 1px #4f46e5;
+}
+
+.btn-success {
+    padding: 10px 20px;
+    background-color: #38a169; /* Verde para Criação */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-success:hover {
+    background-color: #2f855a;
+}
+
+/* --- Table Styling Enhancements --- */
+
+.status-ok {
+    color: green;
+    font-weight: bold;
+}
+
+.status-attention {
+    color: orange;
+    font-weight: bold;
+}
+
+.status-critical {
+    color: red;
+    font-weight: bold;
+}
+
+.status-expired {
+    color: #6c757d; /* Cinza para Vencido */
+    font-weight: bold;
+}
+
+/* Edit Row Styling */
+.edit-row-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    padding: 5px 0;
+}
+
+.edit-row-form input, .edit-row-form select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex-grow: 1;
+    min-width: 80px; /* Garante que os campos não fiquem muito pequenos */
+}
+
+/* Action Buttons within table */
+.btn-action-group {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-edit {
+    padding: 6px 10px;
+    background-color: #ffc107;
+    color: #333;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-delete {
+    padding: 6px 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-save {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    padding: 8px 12px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+
+/* FarmaGestor/frontend/src/App.css (Append this to the existing content) */
+
+/* --- Movimentacoes Page Styling --- */
+
+/* Layout for two-column groups within the form */
+.mov-form-flex {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.mov-form-group-item {
+    /* Allows the input to grow but ensures a minimum useful size */
+    flex: 1 1 200px;
+}
+
+/* Layout for the filter section */
+.filter-section-grid {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+/* Movement Type Colors in Table */
+.type-entrada {
+    color: #28a745; /* Green - Success */
+    font-weight: 600;
+}
+
+.type-saida {
+    color: #dc3545; /* Red - Danger */
+    font-weight: 600;
+}

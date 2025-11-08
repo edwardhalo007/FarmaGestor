@@ -77,6 +77,9 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
     }
   }, [userToken]);
 
+  const emFaltaColorClass = medicamentosEmFalta > 0 ? 'color-danger' : 'color-success';
+  const atencaoColorClass = medicamentosAtencao > 0 ? 'color-warning' : 'color-success';
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Página do Dashboard</h2>
@@ -86,45 +89,45 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
       {!loading && !error && (
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '30px' }}>
+        <div className="dashboard-grid">
           {/* Card de Medicamentos */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Medicamentos</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginTop: '10px' }}>
+          <div className="dashboard-card">
+            <h3 className="card-title">Medicamentos</h3>
+            <div className="card-metrics-container">
               <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#007bff' }}>{totalMedicamentos}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>variedades</p>
+                <p className={`metric-value color-primary`}>{totalMedicamentos}</p>
+                <p className="metric-label">variedades</p>
               </div>
               <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#007bff' }}>{totalUnidades}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>unidades</p>
+                <p className={`metric-value color-primary`}>{totalUnidades}</p>
+                <p className="metric-label">unidades</p>
               </div>
             </div>
           </div>
 
           {/* Card de Alertas (vermelho) */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Alertas</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginTop: '10px' }}>
+          <div className="dashboard-card">
+            <h3 className="card-title">Alertas</h3>
+            <div className="card-metrics-container">
               <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#d9534f' }}>{totalAlertas}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>totais</p>
+                <p className={`metric-value color-danger`}>{totalAlertas}</p>
+                <p className="metric-label">totais</p>
               </div>
             </div>
           </div>
           
           {/* Card de Medicamentos em falta */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Medicamentos em falta</h3>
-            <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: medicamentosEmFalta > 0 ? '#d9534f' : '#5cb85c' }}>{medicamentosEmFalta}</p>
-            <p style={{ fontSize: '0.9em', color: '#6c757d' }}>Estoque crítico ou zerado</p>
+          <div className="dashboard-card">
+            <h3 className="card-title">Medicamentos em falta</h3>
+            <p className={`metric-value ${emFaltaColorClass}`}>{medicamentosEmFalta}</p>
+            <p className="metric-label">Estoque crítico ou zerado</p>
           </div>
 
           {/* Card de Validade (amarelo) */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Validade</h3>
-            <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: medicamentosAtencao > 0 ? '#ffc107' : '#5cb85c' }}>{medicamentosAtencao}</p>
-            <p style={{ fontSize: '0.9em', color: '#6c757d' }}>requerem atenção</p>
+          <div className="dashboard-card">
+            <h3 className="card-title">Validade</h3>
+            <p className={`metric-value ${atencaoColorClass}`}>{medicamentosAtencao}</p>
+            <p className="metric-label">requerem atenção</p>
           </div>
 
         </div>

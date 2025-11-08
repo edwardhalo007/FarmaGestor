@@ -122,17 +122,17 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       
       {/* Formulário de Adição */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-        <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+        <div className="box-container">
           <h3>Adicionar Nova Movimentação</h3>
           <form onSubmit={handleCreateMovimentacao}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
 
             {/* Tipo de Movimentação */}
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Tipo de Movimentação *</label>
-              <div>
-                <label style={{ marginRight: '15px' }}>
+            <div className="form-group">
+              <label className="form-label">Tipo de Movimentação *</label>
+              <div className="radio-group">
+                <label>
                   <input type="radio" value="ENTRADA" checked={tipoMovimentacao === 'ENTRADA'} onChange={() => setTipoMovimentacao('ENTRADA')} /> Entrada
                 </label>
                 <label>
@@ -142,23 +142,23 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             </div>
 
             {/* Medicamento e Quantidade */}
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '15px' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label htmlFor="selectMedicamento" style={{ display: 'block', marginBottom: '5px' }}>Medicamento *</label>
-                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
+            <div className="mov-form-flex">
+              <div className="mov-form-group-item">
+                <label htmlFor="selectMedicamento" className="form-label">Medicamento *</label>
+                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required className="form-select">
                   <option value="">Selecione um medicamento...</option>
                   {medicamentos.map(med => (
                     <option key={med.id} value={med.id}>{med.nome} ({med.dosagem})</option>
                   ))}
                 </select>
               </div>
-              <div style={{ flex: '1 1 100px' }}>
-                <label htmlFor="quantidade" style={{ display: 'block', marginBottom: '5px' }}>Quantidade *</label>
-                <input type="number" id="quantidade" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required min="1" style={{ width: '100%', padding: '8px' }} />
+              <div className="mov-form-group-item" style={{ flex: '1 1 100px' }}>
+                <label htmlFor="quantidade" className="form-label">Quantidade *</label>
+                <input type="number" id="quantidade" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required min="1" className="form-input" />
               </div>
             </div>
 
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+            <button type="submit" className="btn-primary">
               Registrar Movimentação
             </button>
           </form>
@@ -166,20 +166,20 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {/* Seção de Filtros */}
-      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+      <div className="box-container">
         <h3>Filtros</h3>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px' }}>
+        <div className="filter-section-grid">
           <div>
-            <label htmlFor="filtroData" style={{ display: 'block', marginBottom: '5px' }}>Data:</label>
-            <input type="date" id="filtroData" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            <label htmlFor="filtroData" className="form-label">Data:</label>
+            <input type="date" id="filtroData" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} className="form-input" />
           </div>
           <div>
-            <label htmlFor="filtroMedicamento" style={{ display: 'block', marginBottom: '5px' }}>Medicamento:</label>
-            <input type="text" id="filtroMedicamento" value={filtroMedicamento} onChange={(e) => setFiltroMedicamento(e.target.value)} placeholder="Nome do medicamento" style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            <label htmlFor="filtroMedicamento" className="form-label">Medicamento:</label>
+            <input type="text" id="filtroMedicamento" value={filtroMedicamento} onChange={(e) => setFiltroMedicamento(e.target.value)} placeholder="Nome do medicamento" className="form-input" />
           </div>
           <div>
-            <label htmlFor="filtroResponsavel" style={{ display: 'block', marginBottom: '5px' }}>Responsável:</label>
-            <input type="text" id="filtroResponsavel" value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} placeholder="Nome do responsável" style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+            <label htmlFor="filtroResponsavel" className="form-label">Responsável:</label>
+            <input type="text" id="filtroResponsavel" value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} placeholder="Nome do responsável" className="form-input" />
           </div>
         </div>
       </div>
@@ -193,34 +193,34 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && movimentacoes.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Tipo</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Medicamento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Medicamento</th>
+              <th>Quantidade</th>
+              <th>Data</th>
+              <th>Responsável</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {movimentacoes.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px', color: movimentacao.tipo === 'ENTRADA' ? 'green' : 'red' }}>{movimentacao.tipo}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.medicamento_nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{new Date(movimentacao.data).toLocaleString()}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                <td>{movimentacao.id}</td>
+                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
+                <td>{movimentacao.medicamento_nome}</td>
+                <td>{movimentacao.quantidade}</td>
+                <td>{movimentacao.data.slice(0, 10)}</td>
+                <td>{movimentacao.responsavel_username}</td>
+                <td>
                   {/* Os botões de ação 'Editar' e 'Excluir' estão restritos a administradores no backend */}
                   {userNivelAcesso === 'ADMINISTRADOR' && (
-                    <>
-                      <button style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Editar</button>
-                      <button style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
-                    </>
+                    <div className="btn-action-group">
+                      <button className="btn-edit">Editar</button>
+                      <button className="btn-delete">Excluir</button>
+                    </div>
                   )}
                 </td>
               </tr>

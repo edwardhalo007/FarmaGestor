@@ -133,7 +133,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setFormSuccess('Medicamento criado com sucesso!');
       setMedicamentos([...medicamentos, novoMedicamento]);
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
-      setNovaUnidadeMedida('UNIDADE'); setNovaValidade(''); setNovaQuantidade('');
+      setNovaUnidadeMedida('MG'); setNovaValidade(''); setNovaQuantidade(''); // Alterei 'UNIDADE' para 'MG' para bater com o padrão de form
       setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
     } catch (err) {
       setFormError(err.message);
@@ -177,7 +177,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     setEditNome(medicamento.nome);
     setEditDosagem(medicamento.dosagem || '');
     setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
-    setEditUnidadeMedida(medicamento.unidade_medida || 'UNIDADE');
+    setEditUnidadeMedida(medicamento.unidade_medida || 'MG'); // Alterei 'UNIDADE' para 'MG' para bater com o padrão de form
     setEditValidade(medicamento.validade);
     setEditQuantidade(medicamento.quantidade);
     setEditLote(medicamento.lote);
@@ -240,18 +240,18 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
-  const getStatusColor = (status) => {
-  switch (status) {
-    case 'OK':
-      return 'green';
-    case 'Atenção':
-      return 'orange';
-    case 'Critico':
-      return 'red';
-    case 'vencido':
-      return '#6c757d'; 
-    default:
-      return 'black'; 
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'OK':
+        return 'status-ok';
+      case 'Atenção':
+        return 'status-attention';
+      case 'Critico':
+        return 'status-critical';
+      case 'vencido':
+        return 'status-expired'; 
+      default:
+        return ''; 
     }
   };
 
@@ -261,65 +261,67 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       {/* Formulário de Criação */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-        <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+        <div className="box-container">
           <h3>Adicionar Novo Medicamento</h3>
           <form onSubmit={handleCreateMedicamento}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
 
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoNome" style={{ display: 'block' }}>Nome:</label>
-              <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <div className="form-group-grid">
+              <div>
+                <label htmlFor="novoNome" className="form-label">Nome:</label>
+                <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaDosagem" className="form-label">Dosagem:</label>
+                <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaFormaFarmaceutica" className="form-label">Forma Farmacêutica:</label>
+                <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required className="form-select">
+                  <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida:</label>
+                <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required className="form-select">
+                  <option value="MG">mg</option>
+                  <option value="G">g</option>
+                  <option value="ML">ml</option>
+                  <option value="L">l</option>
+                  <option value="UNI">uni</option>
+                  <option value="UI">UI</option>
+                  <option value="MCG">mcg</option>
+                  <option value="MEQ">mEq</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="novaValidade" className="form-label">Validade:</label>
+                <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaQuantidade" className="form-label">Quantidade:</label>
+                <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novoLote" className="form-label">Lote:</label>
+                <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novoFabricante" className="form-label">Fabricante:</label>
+                <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaLocalizacao" className="form-label">Localização:</label>
+                <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required className="form-select">
+                  <option value="">Selecione...</option>
+                  {localidades.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaDosagem" style={{ display: 'block' }}>Dosagem:</label>
-              <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
-              <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
-              <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="MG">mg</option>
-                <option value="G">g</option>
-                <option value="ML">ml</option>
-                <option value="L">l</option>
-                <option value="UNI">uni</option>
-                <option value="UI">UI</option>
-                <option value="MCG">mcg</option>
-                <option value="MEQ">mEq</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaValidade" style={{ display: 'block' }}>Validade:</label>
-              <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaQuantidade" style={{ display: 'block' }}>Quantidade:</label>
-              <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoLote" style={{ display: 'block' }}>Lote:</label>
-              <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoFabricante" style={{ display: 'block' }}>Fabricante:</label>
-              <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaLocalizacao" style={{ display: 'block' }}>Localização:</label>
-              <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="">Selecione...</option>
-                {localidades.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+            <button type="submit" className="btn-success" style={{ marginTop: '20px' }}>
               Criar Medicamento
             </button>
           </form>
@@ -334,22 +336,22 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && medicamentos.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nome</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Dosagem</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Forma</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Unidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Validade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Vencimento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Lote</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Fabricante</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Localização</th>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Dosagem</th>
+              <th>Forma</th>
+              <th>Unidade</th>
+              <th>Validade</th>
+              <th>Vencimento</th>
+              <th>Quantidade</th>
+              <th>Lote</th>
+              <th>Fabricante</th>
+              <th>Localização</th>
               {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                  <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+                  <th>Ações</th>
               )}
             </tr>
           </thead>
@@ -358,59 +360,61 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
               <tr key={medicamento.id}>
                 {/* Linha para o formulário de edição */}
                 {editingMedId === medicamento.id ? (
-                  <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
-                      <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="text" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
-                      <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ flex: '1 1 120px', padding: '8px' }}>
+                  <td colSpan="12">
+                    <form onSubmit={handleUpdateMedicamento} className="edit-row-form">
+                      <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required />
+                      <input type="text" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ width: '100px' }} />
+                      <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ minWidth: '120px' }}>
                         <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
                       </select>
-                      <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ flex: '1 1 80px', padding: '8px' }}>
-                        <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UI">UI</option><option value="MCG">mcg</option><option value="MEQ">mEq</option><option value="UNIDADE">unidade</option><option value="AMPOLA">ampola</option><option value="FRASCO">frasco</option><option value="CAIXA">caixa</option><option value="COMP">comp.</option><option value="CAP">cáp.</option>
+                      <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ width: '80px' }}>
+                        <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="L">l</option><option value="UNI">uni</option><option value="UI">UI</option><option value="MCG">mcg</option><option value="MEQ">mEq</option><option value="AMPOLA">ampola</option><option value="FRASCO">frasco</option><option value="CAIXA">caixa</option><option value="COMP">comp.</option><option value="CAP">cáp.</option>
                       </select>
-                      <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Quantidade" required style={{ flex: '1 1 100px', padding: '8px' }} />
-                      <input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} placeholder="Lote" required style={{ flex: '1 1 120px', padding: '8px' }} />
-                      <input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} placeholder="Fabricante" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} required style={{ flex: '1 1 150px', padding: '8px' }}>
+                      <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ minWidth: '150px' }} />
+                      <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Qtd" required style={{ width: '60px' }} />
+                      <input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} placeholder="Lote" required style={{ minWidth: '120px' }} />
+                      <input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} placeholder="Fabricante" required style={{ minWidth: '150px' }} />
+                      <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} required style={{ minWidth: '150px' }}>
                         <option value="">Selecione...</option>
                         {localidades.map(loc => (
                           <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
                         ))}
                       </select>
-                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
-                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
+                      <button type="submit" className="btn-save">Salvar</button>
+                      <button type="button" onClick={handleCancelEdit} className="btn-cancel">Cancelar</button>
                     </form>
                   </td>
                 ) : (
                   <>
                     {/* Linha normal da tabela se não estiver em modo de edição */}
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.id}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.nome}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.dosagem}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.forma_farmaceutica}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.unidade_medida}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.validade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px', color: getStatusColor(medicamento.vencimento_validade), fontWeight: 'bold'}}>{medicamento.vencimento_validade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.quantidade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
+                    <td>{medicamento.id}</td>
+                    <td>{medicamento.nome}</td>
+                    <td>{medicamento.dosagem}</td>
+                    <td>{medicamento.forma_farmaceutica}</td>
+                    <td>{medicamento.unidade_medida}</td>
+                    <td>{medicamento.validade}</td>
+                    <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
+                    <td>{medicamento.quantidade}</td>
+                    <td>{medicamento.lote}</td>
+                    <td>{medicamento.fabricante}</td>
+                    <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
                     {/* Botões de Ação (Editar/Excluir) */}
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                            <button
-                                onClick={() => handleEditClick(medicamento)}
-                                style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                            >
-                                Editar
-                            </button>
-                            <button
-                                onClick={() => handleDeleteMedicamento(medicamento.id)}
-                                style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                            >
-                                Excluir
-                            </button>
+                        <td>
+                            <div className="btn-action-group">
+                                <button
+                                    onClick={() => handleEditClick(medicamento)}
+                                    className="btn-edit"
+                                >
+                                    Editar
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteMedicamento(medicamento.id)}
+                                    className="btn-delete"
+                                >
+                                    Excluir
+                                </button>
+                            </div>
                         </td>
                     )}
                   </>
