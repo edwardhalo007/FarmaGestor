@@ -50,26 +50,26 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && alertas.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nome</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Validade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Lote</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Fabricante</th>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Validade</th>
+              <th>Quantidade</th>
+              <th>Lote</th>
+              <th>Fabricante</th>
             </tr>
           </thead>
           <tbody>
             {alertas.map((alerta) => (
               <tr key={alerta.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.validade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.lote}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{alerta.fabricante}</td>
+                <td>{alerta.id}</td>
+                <td>{alerta.nome}</td>
+                <td>{alerta.validade}</td>
+                <td>{alerta.quantidade}</td>
+                <td>{alerta.lote}</td>
+                <td>{alerta.fabricante}</td>
               </tr>
             ))}
           </tbody>

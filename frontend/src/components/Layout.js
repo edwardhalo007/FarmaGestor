@@ -1,12 +1,15 @@
-// FarmaGestor/frontend/src/components/Layout.js
+// FarmaGestor/frontend/src/components/Layout.js (MODIFIED)
+
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Header from './Header'; // Importe o novo componente Header
 
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
     <div className="layout-container">
-      {/* Menu Lateral */}
+      {/* Menu Lateral (Sidebar - Fixed) */}
       <nav className="sidebar">
+        {/* Mantive o logo no sidebar também, pois é a identidade do menu */}
         <h3 className="system-logo">FarmaGestor</h3>
         <ul className="nav-list">
           <li className="nav-item"><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
@@ -33,6 +36,7 @@ function Layout({ children, onLogout, userNivelAcesso }) {
 
       {/* Conteúdo Principal da Página */}
       <main className="main-content">
+        <Header /> 
         {children}
       </main>
     </div>

@@ -204,35 +204,35 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
       {/* Formulário de Criação (apenas para Admin e Gestor) */}
       {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
-        <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+        <div className="box-container">
           <h3>Criar Novo Usuário</h3>
           <form onSubmit={handleCreateUsuario}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
-              <div style={{ marginBottom: '10px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Usuário:</label>
-                <input type="text" value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            <div className="user-form-grid">
+              <div>
+                <label className="form-label">Usuário:</label>
+                <input type="text" value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} required className="form-input" />
               </div>
-              <div style={{ marginBottom: '10px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-                <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              <div>
+                <label className="form-label">Email:</label>
+                <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required className="form-input" />
               </div>
-              <div style={{ marginBottom: '10px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Senha:</label>
-                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+              <div>
+                <label className="form-label">Senha:</label>
+                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required className="form-input" />
               </div>
-              <div style={{ marginBottom: '10px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Nível de Acesso:</label>
-                <select value={novoNivelAcesso} onChange={(e) => setNovoNivelAcesso(e.target.value)} style={{ width: '100%', padding: '8px' }}>
+              <div>
+                <label className="form-label">Nível de Acesso:</label>
+                <select value={novoNivelAcesso} onChange={(e) => setNovoNivelAcesso(e.target.value)} className="form-select">
                   {niveisDeAcesso.map(nivel => (
                     <option key={nivel} value={nivel}>{nivel}</option>
                   ))}
                 </select>
               </div>
             </div>
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+            <button type="submit" className="btn-success">
               Criar Usuário
             </button>
           </form>
@@ -247,15 +247,15 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && usuarios.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Usuário</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Email</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nível de Acesso</th>
+            <tr>
+              <th>ID</th>
+              <th>Usuário</th>
+              <th>Email</th>
+              <th>Nível de Acesso</th>
               {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+                <th>Ações</th>
               )}
             </tr>
           </thead>
@@ -264,40 +264,42 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
               <tr key={usuario.id}>
                 {/* Linha para o formulário de edição */}
                 {editingUserId === usuario.id ? (
-                  <td colSpan="5" style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <form onSubmit={handleUpdateUsuario} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
-                      <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Usuário" required style={{ flex: '1 1 120px', padding: '8px' }} />
-                      <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <select value={editNivelAcesso} onChange={(e) => setEditNivelAcesso(e.target.value)} style={{ flex: '1 1 120px', padding: '8px' }}>
+                  <td colSpan="5">
+                    <form onSubmit={handleUpdateUsuario} className="edit-row-form">
+                      <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Usuário" required />
+                      <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email" required />
+                      <select value={editNivelAcesso} onChange={(e) => setEditNivelAcesso(e.target.value)} >
                         {niveisDeAcesso.map(nivel => (
                           <option key={nivel} value={nivel}>{nivel}</option>
                         ))}
                       </select>
-                      <input type="password" value={editNovaSenha} onChange={(e) => setEditNovaSenha(e.target.value)} placeholder="Nova Senha (opcional)" style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
-                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
+                      <input type="password" value={editNovaSenha} onChange={(e) => setEditNovaSenha(e.target.value)} placeholder="Nova Senha (opcional)" />
+                      <button type="submit" className="btn-save">Salvar</button>
+                      <button type="button" onClick={handleCancelEdit} className="btn-cancel">Cancelar</button>
                     </form>
                   </td>
                 ) : (
                   <>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
+                    <td>{usuario.id}</td>
+                    <td>{usuario.username}</td>
+                    <td>{usuario.email}</td>
+                    <td>{usuario.nivel_acesso}</td>
                     {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
-                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                        <button
-                          onClick={() => handleEditClick(usuario)}
-                          style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
-                          style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                        >
-                          Excluir
-                        </button>
+                      <td>
+                        <div className="btn-action-group">
+                          <button
+                            onClick={() => handleEditClick(usuario)}
+                            className="btn-edit"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
+                            className="btn-delete"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </td>
                     )}
                   </>

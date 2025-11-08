@@ -82,51 +82,44 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       <h2>Relatórios de Movimentação</h2>
 
       {/* Seção de Filtros */}
-      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+      <div className="box-container">
         <h3>Filtros</h3>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px' }}>
+        <div className="filter-section-grid">
           <div>
-            <label htmlFor="medicamentoId" style={{ display: 'block', marginBottom: '5px' }}>ID Medicamento:</label>
+            <label htmlFor="medicamentoId" className="form-label">ID Medicamento:</label>
             <input
               type="text"
               id="medicamentoId"
               value={filtroMedicamentoId}
               onChange={(e) => setFiltroMedicamentoId(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className="form-input"
               placeholder="Ex: 1"
             />
           </div>
           <div>
-            <label htmlFor="dataInicio" style={{ display: 'block', marginBottom: '5px' }}>Data Início:</label>
+            <label htmlFor="dataInicio" className="form-label">Data Início:</label>
             <input
               type="date"
               id="dataInicio"
               value={filtroDataInicio}
               onChange={(e) => setFiltroDataInicio(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className="form-input"
             />
           </div>
           <div>
-            <label htmlFor="dataFim" style={{ display: 'block', marginBottom: '5px' }}>Data Fim:</label>
+            <label htmlFor="dataFim" className="form-label">Data Fim:</label>
             <input
               type="date"
               id="dataFim"
               value={filtroDataFim}
               onChange={(e) => setFiltroDataFim(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className="form-input"
             />
           </div>
           <button
             onClick={handleAplicarFiltros} // Dispara a função que, por sua vez, dispara o useEffect
-            style={{
-              padding: '10px 15px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              alignSelf: 'flex-end', /* Alinha o botão com os campos */
-            }}
+            className="btn-primary"
+            style={{ alignSelf: 'flex-end', height: 'fit-content' }}
           >
             Aplicar Filtros
           </button>
@@ -142,26 +135,27 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && relatorios.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Tipo</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Medicamento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Medicamento</th>
+              <th>Quantidade</th>
+              <th>Data</th>
+              <th>Responsável</th>
             </tr>
           </thead>
           <tbody>
             {relatorios.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.tipo}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.medicamento_nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{new Date(movimentacao.data).toLocaleString()}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
+                <td>{movimentacao.id}</td>
+                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
+                <td>{movimentacao.medicamento_nome}</td>
+                <td>{movimentacao.quantidade}</td>
+                {/* Data display is now standardized */}
+                <td>{movimentacao.data.slice(0, 10)}</td>
+                <td>{movimentacao.responsavel_username}</td>
               </tr>
             ))}
           </tbody>
