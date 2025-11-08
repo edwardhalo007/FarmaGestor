@@ -1,5 +1,5 @@
 // FarmaGestor/frontend/src/components/UsuariosPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import Layout from './Layout'; // Importe o componente Layout
 
 function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
@@ -25,7 +25,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   // Níveis de Acesso para os dropdowns
   const niveisDeAcesso = ['VISUALIZACAO', 'OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'];
 
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/api/usuarios/', {
@@ -49,13 +49,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userToken]);
 
   useEffect(() => {
     if (userToken) {
       fetchUsuarios();
     }
-  }, [userToken, formSuccess]);
+  }, [userToken, formSuccess,fetchUsuarios]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo usuário ---
   const handleCreateUsuario = async (e) => {
