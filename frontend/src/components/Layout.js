@@ -1,5 +1,4 @@
-// FarmaGestor/frontend/src/components/Layout.js (MODIFIED)
-
+// FarmaGestor/frontend/src/components/Layout.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from './Header'; // Importe o novo componente Header
@@ -7,10 +6,14 @@ import Header from './Header'; // Importe o novo componente Header
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
     <div className="layout-container">
+      {/* HEADER: Fixed, full-width header */}
+      <Header /> 
+
       {/* Menu Lateral (Sidebar - Fixed) */}
       <nav className="sidebar">
-        {/* Mantive o logo no sidebar também, pois é a identidade do menu */}
-        <h3 className="system-logo">FarmaGestor</h3>
+        {/* REMOVED: Redundant h3 logo element */}
+        {/* <h3 className="system-logo">FarmaGestor</h3> */} 
+        
         <ul className="nav-list">
           <li className="nav-item"><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
           <li className="nav-item"><Link to="/medicamentos" className="nav-link">Medicamentos</Link></li>
@@ -21,7 +24,6 @@ function Layout({ children, onLogout, userNivelAcesso }) {
           {userNivelAcesso !== 'VISUALIZACAO' && (
             <li className="nav-item"><Link to="/relatorios" className="nav-link">Relatórios</Link></li>
           )}
-          {/* Lógica de exibição do link "Usuários" baseada no nível de acesso */}
           {userNivelAcesso === 'GESTOR' || userNivelAcesso === 'ADMINISTRADOR' ? (
             <li className="nav-item"><Link to="/usuarios" className="nav-link">Usuários</Link></li>
           ) : null}
@@ -36,11 +38,13 @@ function Layout({ children, onLogout, userNivelAcesso }) {
 
       {/* Conteúdo Principal da Página */}
       <main className="main-content">
-        <Header /> 
-        {children}
+        {/* Content wrapper with padding */}
+        <div className="page-content-wrapper">
+          {children}
+        </div>
       </main>
     </div>
   );
 }
 
-export default Layout;
+export default Layout;  
