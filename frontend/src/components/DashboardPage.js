@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/DashboardPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './DashboardPage.css'; // <<< ADICIONE ESTA LINHA
 
 function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
   const [totalMedicamentos, setTotalMedicamentos] = useState(0);

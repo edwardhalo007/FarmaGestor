@@ -1,0 +1,24 @@
+/* FarmaGestor/frontend/src/components/MovimentacoesPage.css */
+/* Estilos específicos da página de Movimentações */
+
+/* Layout for two-column groups within the form */
+.mov-form-flex {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.mov-form-group-item {
+    /* Allows the input to grow but ensures a minimum useful size */
+    flex: 1 1 200px;
+}
+
+/* .filter-section-grid, .type-entrada, .type-saida 
+  FORAM MOVIDOS PARA App.css (global) 
+*/
+
+/* --- Radio Group Styling --- */
+.radio-group label {
+    margin-right: 15px;
+}

@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/MovimentacoesPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './MovimentacoesPage.css'; // <<< ADICIONE ESTA LINHA
 
 function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [movimentacoes, setMovimentacoes] = useState([]);
@@ -141,7 +142,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               </div>
             </div>
 
-            {/* Medicamento e Quantidade */}
+            {/* Medicamento e Quantidade (Classes CSS lidas do novo .css) */}
             <div className="mov-form-flex">
               <div className="mov-form-group-item">
                 <label htmlFor="selectMedicamento" className="form-label">Medicamento *</label>
@@ -165,7 +166,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
-      {/* Seção de Filtros */}
+      {/* Seção de Filtros (Classes CSS lidas do novo .css) */}
       <div className="box-container">
         <h3>Filtros</h3>
         <div className="filter-section-grid">
@@ -209,6 +210,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             {movimentacoes.map((movimentacao) => (
               <tr key={movimentacao.id}>
                 <td>{movimentacao.id}</td>
+                {/* Classes CSS lidas do novo .css */}
                 <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
                 <td>{movimentacao.medicamento_nome}</td>
                 <td>{movimentacao.quantidade}</td>

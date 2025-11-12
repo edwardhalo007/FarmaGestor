@@ -1,0 +1,28 @@
+/* FarmaGestor/frontend/src/components/LocalidadesPage.css */
+/* Estilos específicos da página de Localidades */
+
+/* --- Localidades Type Buttons Styling --- */
+.type-button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.type-button {
+    padding: 10px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f8f9fa; /* Light grey background */
+    color: #4a5568;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.type-button:hover {
+    background-color: #edf2f7;
+}
+
+.type-button-active {
+    background-color: #4f46e5; /* Primary color (active state) */
+    color: white;
+    border-color: #4f46e5;
+}

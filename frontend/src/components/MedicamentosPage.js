@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/MedicamentosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './MedicamentosPage.css'; // <<< ADICIONE ESTA LINHA
 
 function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [medicamentos, setMedicamentos] = useState([]);
@@ -248,7 +249,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         return 'status-attention';
       case 'Critico':
         return 'status-critical';
-      case 'vencido':
+      case 'Vencido': // Corrigido de 'vencido' para 'Vencido' para bater com o models.py
         return 'status-expired'; 
       default:
         return ''; 
@@ -267,6 +268,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
 
+            {/* A classe "form-group-grid" agora será lida do MedicamentosPage.css */}
             <div className="form-group-grid">
               <div>
                 <label htmlFor="novoNome" className="form-label">Nome:</label>
@@ -393,6 +395,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     <td>{medicamento.forma_farmaceutica}</td>
                     <td>{medicamento.unidade_medida}</td>
                     <td>{medicamento.validade}</td>
+                    {/* A classe de status agora será lida do MedicamentosPage.css */}
                     <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
                     <td>{medicamento.quantidade}</td>
                     <td>{medicamento.lote}</td>
