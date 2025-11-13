@@ -10,7 +10,10 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
-from django.db import IntegrityError
+from django.db import IntegrityError, models, transaction
+from django.http import HttpResponse
+import csv
+
 
 # --- Classe de Permissão Personalizada para Níveis de Acesso ---
 class NivelAcessoPermission(BasePermission):
@@ -45,6 +48,20 @@ class CustomAuthToken(ObtainAuthToken):
 class MedicamentoViewSet(viewsets.ModelViewSet):
     queryset = Medicamento.objects.all()
     serializer_class = MedicamentoSerializer
+
+    def get_queryset(self):
+
+        queryset = Medicamento.objects.all()
+        search_term = self.request.query_params.get('search', None)
+
+        if search_term:
+            # Filtra onde o nome ou a dosagem contêm o termo de busca (case-insensitive)
+            queryset = queryset.filter(
+                models.Q(nome__icontains=search_term) |
+                models.Q(dosagem__icontains=search_term)
+            )
+
+        return queryset.order_by('nome')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -90,21 +107,69 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
             medicamento.quantidade += quantidade_movimentada
         elif tipo_movimentacao == 'SAIDA':
             if medicamento.quantidade < quantidade_movimentada:
-                raise serializers.ValidationError("Quantidade em estoque insuficiente.")
+                raise ValidationError("Quantidade em estoque insuficiente.")
             medicamento.quantidade -= quantidade_movimentada
         medicamento.save()
 
+
     def get_permissions(self):
         if self.action in ['create', 'list', 'retrieve']:
+            # Operacional, Gestor e Admin podem criar, listar e ver
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(
-                    allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                    allowed_levels=[
+                        NivelAcesso.OPERACIONAL,
+                        NivelAcesso.GESTOR,
+                        NivelAcesso.ADMINISTRADOR
+                    ]
                 )
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdminUser()]
+            # Apenas Gestor e Admin podem editar ou excluir
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[
+                        NivelAcesso.GESTOR,
+                        NivelAcesso.ADMINISTRADOR
+                    ]
+                )
+            ]
         return [IsAuthenticated()]
+    
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        medicamento = instance.medicamento
+        if instance.tipo == 'ENTRADA':
+            medicamento.quantidade -= instance.quantidade
+        elif instance.tipo == 'SAIDA':
+            medicamento.quantidade += instance.quantidade
+        
+        medicamento.save()
+        instance.delete()
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        movimentacao_antiga = self.get_object()
+        medicamento = movimentacao_antiga.medicamento
+        
+        if movimentacao_antiga.tipo == 'ENTRADA':
+            medicamento.quantidade -= movimentacao_antiga.quantidade
+        else: 
+            medicamento.quantidade += movimentacao_antiga.quantidade
+        
+        tipo_novo = serializer.validated_data.get('tipo', movimentacao_antiga.tipo)
+        quantidade_nova = serializer.validated_data.get('quantidade', movimentacao_antiga.quantidade)
+
+        if tipo_novo == 'ENTRADA':
+            medicamento.quantidade += quantidade_nova
+        else:
+            if medicamento.quantidade < quantidade_nova:
+                raise serializers.ValidationError({"detail": "Estoque insuficiente para a nova quantidade de saída."})
+            medicamento.quantidade -= quantidade_nova
+        medicamento.save()
+        serializer.save()
 
 # Views para Alertas de Validade
 @api_view(['GET'])
@@ -113,8 +178,7 @@ def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
     medicamentos_proximos = Medicamento.objects.filter(
-        validade__lte=data_limite,
-        validade__gte=data_hoje
+        validade__lte=data_limite   
     ).order_by('validade')
     serializer = MedicamentoSerializer(medicamentos_proximos, many=True)
     return Response(serializer.data)
@@ -134,14 +198,16 @@ def relatorios_movimentacao(request):
         return Response({"detail": "Você não tem permissão para acessar este recurso."},
                         status=status.HTTP_403_FORBIDDEN)
 
-    medicamento_id = request.query_params.get('medicamento_id')
+    medicamento_nome = request.query_params.get('medicamento_nome')
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
+    export_format = request.query_params.get('export')
 
-    movimentacoes = Movimentacao.objects.all()
 
-    if medicamento_id:
-        movimentacoes = movimentacoes.filter(medicamento__id=medicamento_id)
+    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel').all()
+
+    if medicamento_nome:
+        movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
@@ -154,6 +220,27 @@ def relatorios_movimentacao(request):
             movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if export_format == "csv":
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={'Content-Disposition': 'attachment; filename="relatorio-movimentacoes.csv"'}
+        )
+        writer = csv.writer(response)
+
+        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Responsável'])
+
+        for mov in movimentacoes:
+            writer.writerow([
+                mov.id,
+                mov.data.strftime('%d/%m/%Y'),
+                mov.tipo,
+                mov.quantidade,
+                mov.medicamento.nome,
+                mov.responsavel.username
+            ])
+
+        return response
 
     movimentacoes = movimentacoes.order_by('data')
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
@@ -188,7 +275,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         if request_user_nivel == NivelAcesso.GESTOR:
             if target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR]:
-                raise serializers.ValidationError({"detail": "Gestores não podem criar usuários com nível de Administrador ou Gestor."})
+                raise ValidationError({"detail": "Gestores não podem criar usuários com nível de Administrador ou Gestor."})
         serializer.save()
 
     def perform_update(self, serializer):
@@ -198,10 +285,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         if request_user_nivel == NivelAcesso.GESTOR:
             if target_user.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
-                raise serializers.ValidationError({"detail": "Gestores não podem modificar usuários Administradores ou outros Gestores."})
+                raise ValidationError({"detail": "Gestores não podem modificar usuários Administradores ou outros Gestores."})
             if target_user.pk == self.request.user.pk and new_target_nivel_acesso != request_user_nivel:
-                raise serializers.ValidationError({"detail": "Gestores não podem modificar o próprio nível de acesso."})
+                raise ValidationError({"detail": "Gestores não podem modificar o próprio nível de acesso."})
             if new_target_nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and target_user.pk != self.request.user.pk:
-                raise serializers.ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
+                raise ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
 
         serializer.save()

@@ -14,5 +14,5 @@ Thumbs.db
 local_settings.py
 pip-log.txt
 pip-delete-this-directory.txt
-/backend/gestor_api_/migrations
+/backend/gestor_api/migrations
 venv

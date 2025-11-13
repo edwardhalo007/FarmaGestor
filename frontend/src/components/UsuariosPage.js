@@ -1,5 +1,6 @@
 // FarmaGestor/frontend/src/components/UsuariosPage.js
 import React, { useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
 
 function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
@@ -8,33 +9,50 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   const [error, setError] = useState(null);
 
   // --- Estados para o formulário de CRIAÇÃO ---
-  const [novoUsername, setNovoUsername] = useState('');
-  const [novoEmail, setNovoEmail] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [novoNivelAcesso, setNovoNivelAcesso] = useState('VISUALIZACAO');
+  const INITIAL_USER_STATE = {
+    id: null,
+    username: '',
+    email: '',
+    password: '',
+    nivel_acesso: 'VISUALIZACAO',
+  };
+  const [formData, setFormData] = useState(INITIAL_USER_STATE);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-
-  // --- Estados para o formulário de EDIÇÃO ---
-  const [editingUserId, setEditingUserId] = useState(null);
-  const [editUsername, setEditUsername] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editNivelAcesso, setEditNivelAcesso] = useState('');
-  const [editNovaSenha, setEditNovaSenha] = useState('');
 
   // Níveis de Acesso para os dropdowns
   const niveisDeAcesso = ['VISUALIZACAO', 'OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'];
 
   const fetchUsuarios = useCallback(async () => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(currentData =>({ 
+      ...currentData, 
+      [name]: value 
+    }));
+  };
+
+  // <<< MUDANÇA 1: A função agora aceita um parâmetro para ignorar o cache >>>
+  const fetchUsuarios = useCallback(async (bypassCache = false) => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/usuarios/', {
+
+      // <<< MUDANÇA 2: Definimos as opções do fetch dinamicamente >>>
+      const fetchOptions = {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-      });
+      };
+
+      // Se bypassCache for true, adicionamos a opção para NÃO usar o cache
+      if (bypassCache) {
+        fetchOptions.cache = 'no-store'; // 'no-store' é mais forte que 'no-cache' para garantir dados novos
+      }
+
+      const response = await fetch('http://localhost:8000/api/usuarios/', fetchOptions); // Usa as opções
+      // <<< FIM DA MUDANÇA 2 >>>
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -50,12 +68,15 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       setLoading(false);
     }
   }, [userToken]);
+  },[userToken]);
 
   useEffect(() => {
     if (userToken) {
-      fetchUsuarios();
+      fetchUsuarios(); // Esta chamada inicial usará o cache (bypassCache = false por padrão)
     }
   }, [userToken, formSuccess,fetchUsuarios]);
+    // <<< MUDANÇA 3: Removemos 'formSuccess' para evitar uma busca duplicada desnecessária >>>
+  }, [userToken, fetchUsuarios]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo usuário ---
   const handleCreateUsuario = async (e) => {
@@ -70,12 +91,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: novoUsername,
-          email: novoEmail,
-          password: novaSenha,
-          nivel_acesso: novoNivelAcesso,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -92,22 +108,21 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       }
 
       setFormSuccess('Usuário criado com sucesso!');
-      fetchUsuarios();
-      setNovoUsername(''); setNovoEmail(''); setNovaSenha(''); setNovoNivelAcesso('VISUALIZACAO');
+      
+      // <<< MUDANÇA 4: Forçamos a busca de dados novos ignorando o cache >>>
+      fetchUsuarios(true); 
+
+      setFormData(INITIAL_USER_STATE);
     } catch (err) {
       // Formata a mensagem de erro do backend para exibição
       let errorMessage = 'Falha ao criar usuário. Verifique os dados.';
       if (err.message) {
-        // Se a API retornou uma mensagem simples de erro
         errorMessage = err.message;
       } else if (err.email) {
-        // Se o erro for específico do campo email
         errorMessage = `Erro de Email: ${err.email[0]}`;
       } else if (err.password) {
-        // Se o erro for específico do campo password (ex: "Sua senha é muito comum.")
         errorMessage = `Erro de Senha: ${err.password[0]}`;
       } else {
-        // Erro genérico
         errorMessage = 'Falha desconhecida ao criar usuário.';
       }
 
@@ -117,60 +132,90 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   // --- Funções para lidar com a EDIÇÃO de um usuário ---
-  const handleEditClick = (usuario) => {
-    setEditingUserId(usuario.id);
-    setEditUsername(usuario.username);
-    setEditEmail(usuario.email);
-    setEditNivelAcesso(usuario.nivel_acesso);
-    setEditNovaSenha(''); // Limpa a senha para não enviar a antiga
-    setFormError('');
-    setFormSuccess('');
-  };
-
-  const handleCancelEdit = () => {
-    setEditingUserId(null);
-  };
-
   const handleUpdateUsuario = async (e) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
 
-    const bodyData = {
-      username: editUsername,
-      email: editEmail,
-      nivel_acesso: editNivelAcesso,
-    };
-    // Adiciona a senha apenas se o campo não estiver vazio
-    if (editNovaSenha) {
-      bodyData.password = editNovaSenha;
+    const userId = formData.id;
+    if (!userId) {
+        setFormError('ID do usuário para atualização não encontrado.');
+        return;
     }
+
+    const url = `http://localhost:8000/api/usuarios/${userId}/`;
+    
+    const dataToSend = { ...formData };
+    delete dataToSend.id; 
+    
+    if (!dataToSend.password) {
+        delete dataToSend.password; 
+    }
+    if (dataToSend.password) {
+    }
+
 
     try {
-      const response = await fetch(`http://localhost:8000/api/usuarios/${editingUserId}/`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Token ${userToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyData),
-      });
+        const response = await fetch(url, {
+            method: 'PATCH', 
+            headers: {
+                'Authorization': `Token ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao atualizar usuário.');
-      }
+        if (!response.ok) {
+            const errorData = await response.json();
+            let errorMessage = 'Falha ao atualizar usuário.';
+            
+            if (errorData.detail) {
+                errorMessage = errorData.detail;
+            } else if (errorData.username) {
+                errorMessage = `Nome de usuário: ${errorData.username[0]}`;
+            } else if (errorData.email) {
+                errorMessage = `Email: ${errorData.email[0]}`;
+            }
+            throw new Error(errorMessage);
+        }
 
-      setFormSuccess('Usuário atualizado com sucesso!');
-      fetchUsuarios();
-      setEditingUserId(null);
+        setFormSuccess('Usuário atualizado com sucesso!');
+        
+        // <<< MUDANÇA 5: Forçamos a busca de dados novos ignorando o cache >>>
+        fetchUsuarios(true); 
+        
+        setFormData(INITIAL_USER_STATE);
     } catch (err) {
-      setFormError(err.message);
-      console.error('Erro ao atualizar usuário:', err);
+        setFormError(`Erro ao atualizar usuário: ${err.message || 'Erro desconhecido.'}`);
+        console.error('Erro ao atualizar usuário:', err);
     }
-  };
+
+
+    const bodyData = {
+      username: formData.username,
+      email: formData.email,
+      nivel_acesso: formData.nivel_acesso,
+    };
+    if (formData.password) {
+      bodyData.password = formData.password;
+    }
+  }
 
   // --- Função para lidar com a EXCLUSÃO de um usuário ---
+  const handleEditClick = (usuario) => {
+    setFormData({ 
+        ...usuario,
+        password: '', 
+    });
+    setFormError('');
+    setFormSuccess('');
+};
+
+const handleCancelEdit = () => {
+    setFormData(INITIAL_USER_STATE);
+    setFormError('');
+    setFormSuccess('');
+};
   const handleDeleteUsuario = async (id, username) => {
     const confirmDelete = window.confirm(`Tem certeza que deseja excluir o usuário "${username}"?`);
     if (!confirmDelete) {
@@ -191,7 +236,9 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       }
 
       setFormSuccess('Usuário excluído com sucesso!');
-      fetchUsuarios(); // Recarrega a lista de usuários após a exclusão
+      
+      // <<< MUDANÇA 6: Forçamos a busca de dados novos ignorando o cache >>>
+      fetchUsuarios(true); 
     } catch (err) {
       setFormError(err.message);
       console.error('Erro ao excluir usuário:', err);
@@ -202,11 +249,10 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Gerenciamento de Usuários</h2>
 
-      {/* Formulário de Criação (apenas para Admin e Gestor) */}
       {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
         <div className="box-container">
           <h3>Criar Novo Usuário</h3>
-          <form onSubmit={handleCreateUsuario}>
+          <form onSubmit={formData.id ? handleUpdateUsuario : handleCreateUsuario}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
             
@@ -214,18 +260,31 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
               <div>
                 <label className="form-label">Usuário:</label>
                 <input type="text" value={novoUsername} onChange={(e) => setNovoUsername(e.target.value)} required className="form-input" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Usuário:</label>
+                <input type="text" value={formData.username} name="username" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div>
                 <label className="form-label">Email:</label>
                 <input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)} required className="form-input" />
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
+                <input type="email" value={formData.email} name="email" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div>
                 <label className="form-label">Senha:</label>
                 <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} required className="form-input" />
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Senha:</label>
+                <input type="password" value={formData.password} name="password" onChange={handleInputChange} required style={{ width: '100%', padding: '8px' }} />
               </div>
               <div>
                 <label className="form-label">Nível de Acesso:</label>
                 <select value={novoNivelAcesso} onChange={(e) => setNovoNivelAcesso(e.target.value)} className="form-select">
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Nível de Acesso:</label>
+                <select value={formData.nivel_acesso} name="nivel_acesso" onChange={handleInputChange} style={{ width: '100%', padding: '8px' }}>
                   {niveisDeAcesso.map(nivel => (
                     <option key={nivel} value={nivel}>{nivel}</option>
                   ))}
@@ -235,6 +294,27 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
             <button type="submit" className="btn-success">
               Criar Usuário
             </button>
+            <div style={{ marginTop: '15px' }}>
+                <button 
+                    type="submit" 
+                    style={{ 
+                        padding: '10px 20px', 
+                        backgroundColor: formData.id ? '#007bff' : '#28a745', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '5px', 
+                        cursor: 'pointer', 
+                        marginRight: '10px' 
+                    }}
+                >
+                    {formData.id ? 'Salvar Alterações' : 'Criar Usuário'} 
+                </button>
+                {formData.id && (
+                  <button type="button" onClick={handleCancelEdit} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                      Cancelar Edição
+                  </button>
+                )}
+            </div>
           </form>
         </div>
       )}
@@ -303,6 +383,25 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
                       </td>
                     )}
                   </>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.id}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.username}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.email}</td>
+                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{usuario.nivel_acesso}</td>
+                {['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso) && (
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <button
+                      onClick={() => handleEditClick(usuario)}
+                      style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUsuario(usuario.id, usuario.username)}
+                      style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                    >
+                      Excluir
+                    </button>
+                  </td>
                 )}
               </tr>
             ))}

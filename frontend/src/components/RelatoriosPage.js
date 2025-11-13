@@ -8,7 +8,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [error, setError] = useState(null);
 
   // Estados para os filtros
-  const [filtroMedicamentoId, setFiltroMedicamentoId] = useState('');
+  const [filtroMedicamentoNome, setFiltroMedicamentoNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
 
@@ -23,8 +23,8 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         let apiUrl = 'http://localhost:8000/api/relatorios/';
         const params = new URLSearchParams();
 
-        if (filtroMedicamentoId) {
-          params.append('medicamento_id', filtroMedicamentoId);
+        if (filtroMedicamentoNome) {
+          params.append('medicamento_nome', filtroMedicamentoNome);
         }
         if (filtroDataInicio) {
           params.append('data_inicio', filtroDataInicio);
@@ -68,7 +68,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) { // Só busca relatórios se o token estiver disponível
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoId, filtroDataInicio, filtroDataFim]); // Dependências do useEffect
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim]); // Dependências do useEffect
 
   // Função para aplicar os filtros (agora apenas dispara o useEffect indiretamente)
   const handleAplicarFiltros = () => {
@@ -76,6 +76,64 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     // Nenhuma lógica extra é necessária aqui além de garantir que os estados mudam
     // O useEffect com suas dependências já cuida da re-requisição
   };
+
+  const handleExportCsv = async () => {
+    try {
+      let apiUrl = 'http://localhost:8000/api/relatorios/';
+      const params = new URLSearchParams();
+
+      if (filtroMedicamentoNome) {
+        params.append('medicamento_nome', filtroMedicamentoNome);
+      }
+      if (filtroDataFim) {
+        params.append('data_fim', filtroDataFim)
+      }
+      if (filtroDataInicio) {
+        params.append('data_inicio', filtroDataInicio)
+      }
+
+      params.append('export', 'csv')
+
+      if (params.toString()) {
+        apiUrl += `?${params.toString()}`
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Token ${userToken}`
+        } 
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha na exportação: ${response.status} ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'relatorio.csv'
+
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/i)
+        if (fileNameMatch && fileNameMatch.length === 2) {
+          filename = fileNameMatch[1]
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Erro ao exportar CSV:', err)
+      setError(`Erro ao exportar: ${err.message}`)
+    }
+  }
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
@@ -86,14 +144,14 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         <h3>Filtros</h3>
         <div className="filter-section-grid">
           <div>
-            <label htmlFor="medicamentoId" className="form-label">ID Medicamento:</label>
+            <label htmlFor="medicamentoNome" style={{ display: 'block', marginBottom: '5px' }}>Nome do Medicamento:</label>
             <input
               type="text"
-              id="medicamentoId"
-              value={filtroMedicamentoId}
-              onChange={(e) => setFiltroMedicamentoId(e.target.value)}
-              className="form-input"
-              placeholder="Ex: 1"
+              id="medicamentoNome"
+              value={filtroMedicamentoNome}
+              onChange={(e) => setFiltroMedicamentoNome(e.target.value)}
+              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              placeholder="Ex: Paracetamol"
             />
           </div>
           <div>
@@ -124,6 +182,23 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             Aplicar Filtros
           </button>
         </div>
+      </div>
+      <div>
+        <button
+              onClick={handleExportCsv}
+              disabled={loading}
+              style={{
+                  padding: '10px 15px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-end',
+              }}
+          >
+              Exportar CSV
+        </button>
       </div>
 
       {/* Exibição dos Relatórios */}

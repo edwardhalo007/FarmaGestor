@@ -72,6 +72,59 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
+  const handleDeleteLocalidade = async (id, nome) => {
+    // 1. Basic Permission Check
+    if (userNivelAcesso !== 'ADMINISTRADOR') {
+        setFormError('Você não tem permissão para excluir localidades.');
+        return;
+    }
+
+    // 2. User Confirmation
+    const confirmDelete = window.confirm(
+        `Tem certeza que deseja excluir a localidade "${nome}" (ID: ${id})? 
+        
+        AVISO: A exclusão falhará se houverem movimentações de medicamentos associadas.`
+    );
+    if (!confirmDelete) {
+        return;
+    }
+
+    setFormError('');
+    setFormSuccess('');
+
+    try {
+        // 3. API Call
+        const response = await fetch(`http://localhost:8000/api/localidades/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Token ${userToken}`,
+            },
+        });
+
+        if (response.status === 204) { // Success: HTTP 204 No Content
+            setFormSuccess('Localidade excluída com sucesso!');
+            // Triggers useEffect to reload list
+        } else {
+            // Read error response, useful if Django returns a ProtectedError (400/500)
+            const errorText = await response.text();
+            
+            let errorMessage = `Falha ao excluir localidade: ${response.status}.`;
+            if (response.status === 403) {
+                errorMessage = "Erro de Permissão: Você não tem acesso a esta ação.";
+            } else if (errorText.includes('ProtectedError')) {
+                // Specific message for the database block
+                errorMessage = "ERRO: Não é possível excluir esta localidade. Ela ainda possui Movimentações de Medicamentos registradas.";
+            } else {
+                errorMessage = `Falha ao excluir localidade: ${errorText}`;
+            }
+            throw new Error(errorMessage);
+        }
+      } catch (err) {
+          setFormError(err.message);
+          console.error('Erro ao excluir localidade:', err);
+      }
+  };
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Gerenciar Localidades</h2>
@@ -87,11 +140,9 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
               <label htmlFor="novoNome" className="form-label">Nome da Localidade:</label>
               <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
             </div>
-            
-            {/* >>> AQUI ESTÁ A LÓGICA DOS BOTÕES <<< */}
-            <div className="form-group">
-                <label className="form-label">Tipo:</label>
-                <div className="type-button-group">
+            <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Tipo:</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
                     {tiposDeLocalidade.map(tipo => (
                         <button 
                             type="button" // Importante para não submeter o formulário
@@ -132,11 +183,9 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
                 <td>{localidade.nome}</td>
                 <td>{localidade.tipo}</td>
                 {userNivelAcesso === 'ADMINISTRADOR' && (
-                    <td>
-                      <div className="btn-action-group">
-                        <button className="btn-edit">Editar</button>
-                        <button className="btn-delete">Excluir</button>
-                      </div>
+                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                      
+                      <button onClick={() => handleDeleteLocalidade(localidade.id, localidade.nome)} style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
                     </td>
                 )}
               </tr>

@@ -3,6 +3,8 @@
 from rest_framework import serializers
 from .models import Medicamento, Usuario, Movimentacao, Localidade
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
+from rest_framework.validators import UniqueTogetherValidator
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,9 +83,25 @@ class MedicamentoSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {'localizacao': {'write_only': True}}
 
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Medicamento.objects.all(),
+                fields=['nome', 'dosagem', 'forma_farmaceutica', 
+                        'unidade_medida', 'validade', 'lote', 
+                        'fabricante', 'localizacao'],
+                message="Um medicamento com essas características já existe"
+            )
+        ]
+
+    def validate_validade(self, value):
+        if value < timezone.now().date():
+            raise serializers.ValidationError("A data de validade não pode ser no passado.")
+        return value
+
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
     responsavel_username = serializers.ReadOnlyField(source='responsavel.username')
+    localidade_nome = serializers.ReadOnlyField(source='localidade.nome')
 
     class Meta:
         model = Movimentacao

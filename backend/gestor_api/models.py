@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import UniqueConstraint, constraints
 from django.utils import timezone
 
 class NivelAcesso(models.TextChoices):
@@ -99,6 +100,15 @@ class Medicamento(models.Model):
     def __str__(self):
         return self.nome
 
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','validade','lote','fabricante','localizacao'],
+                name="lote_medicamento",
+            )
+        ]
+
 class Movimentacao(models.Model):
     TIPO_MOVIMENTACAO_CHOICES = [
         ('ENTRADA', 'Entrada'),
@@ -109,6 +119,7 @@ class Movimentacao(models.Model):
     quantidade = models.IntegerField()
     data = models.DateField(auto_now_add=True)
     responsavel = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
+    localidade = models.ForeignKey(Localidade, on_delete=models.PROTECT, related_name='movimentacoes')
 
     def __str__(self):
         return f"{self.tipo} de {self.quantidade} {self.medicamento.nome}"
