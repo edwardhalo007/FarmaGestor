@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/MedicamentosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './MedicamentosPage.css'; // <<< ADICIONE ESTA LINHA
 
 function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [medicamentos, setMedicamentos] = useState([]);
@@ -267,18 +268,18 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
-  const getStatusColor = (status) => {
-  switch (status) {
-    case 'OK':
-      return 'green';
-    case 'Atenção':
-      return 'orange';
-    case 'Critico':
-      return 'red';
-    case 'Vencido':
-      return '#6c757d'; 
-    default:
-      return 'black'; 
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'OK':
+        return 'status-ok';
+      case 'Atenção':
+        return 'status-attention';
+      case 'Critico':
+        return 'status-critical';
+      case 'Vencido': // Corrigido de 'vencido' para 'Vencido' para bater com o models.py
+        return 'status-expired'; 
+      default:
+        return ''; 
     }
   };
 
@@ -326,59 +327,62 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
 
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoNome" style={{ display: 'block' }}>Nome:</label>
-              <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+            {/* A classe "form-group-grid" agora será lida do MedicamentosPage.css */}
+            <div className="form-group-grid">
+              <div>
+                <label htmlFor="novoNome" className="form-label">Nome:</label>
+                <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaDosagem" className="form-label">Dosagem:</label>
+                <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaFormaFarmaceutica" className="form-label">Forma Farmacêutica:</label>
+                <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required className="form-select">
+                  <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida:</label>
+                <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required className="form-select">
+                  <option value="MG">mg</option>
+                  <option value="G">g</option>
+                  <option value="ML">ml</option>
+                  <option value="L">l</option>
+                  <option value="UNI">uni</option>
+                  <option value="UI">UI</option>
+                  <option value="MCG">mcg</option>
+                  <option value="MEQ">mEq</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="novaValidade" className="form-label">Validade:</label>
+                <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaQuantidade" className="form-label">Quantidade:</label>
+                <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novoLote" className="form-label">Lote:</label>
+                <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novoFabricante" className="form-label">Fabricante:</label>
+                <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaLocalizacao" className="form-label">Localização:</label>
+                <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required className="form-select">
+                  <option value="">Selecione...</option>
+                  {localidades.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaDosagem" style={{ display: 'block' }}>Dosagem:</label>
-              <input type="number" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
-              <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
-              <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="MG">mg</option>
-                <option value="G">g</option>
-                <option value="ML">ml</option>
-                <option value="L">l</option>
-                <option value="UNI">uni</option>
-                <option value="UI">UI</option>
-                <option value="MCG">mcg</option>
-                <option value="MEQ">mEq</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaValidade" style={{ display: 'block' }}>Validade:</label>
-              <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaQuantidade" style={{ display: 'block' }}>Quantidade:</label>
-              <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoLote" style={{ display: 'block' }}>Lote:</label>
-              <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoFabricante" style={{ display: 'block' }}>Fabricante:</label>
-              <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaLocalizacao" style={{ display: 'block' }}>Localização:</label>
-              <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="">Selecione...</option>
-                {localidades.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+            <button type="submit" className="btn-success" style={{ marginTop: '20px' }}>
               Criar Medicamento
             </button>
           </form>
@@ -457,6 +461,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     <td>{medicamento.forma_farmaceutica}</td>
                     <td>{medicamento.unidade_medida}</td>
                     <td>{medicamento.validade}</td>
+                    {/* A classe de status agora será lida do MedicamentosPage.css */}
                     <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
                     <td>{medicamento.quantidade}</td>
                     <td>{medicamento.lote}</td>

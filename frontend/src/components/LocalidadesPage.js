@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/LocalidadesPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
+import './LocalidadesPage.css'; // <<< ADICIONE ESTA LINHA
 
 function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
   const [localidades, setLocalidades] = useState([]);
@@ -140,9 +141,11 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
               <label htmlFor="novoNome" className="form-label">Nome da Localidade:</label>
               <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
             </div>
-            <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Tipo:</label>
-                <div style={{ display: 'flex', gap: '10px' }}>
+            
+            {/* As classes de botão agora vêm do LocalidadesPage.css */}
+            <div className="form-group">
+                <label className="form-label">Tipo:</label>
+                <div className="type-button-group">
                     {tiposDeLocalidade.map(tipo => (
                         <button 
                             type="button" // Importante para não submeter o formulário

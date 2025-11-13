@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/MovimentacoesPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './MovimentacoesPage.css'; // <<< ADICIONE ESTA LINHA
 
 function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [movimentacoes, setMovimentacoes] = useState([]);
@@ -234,12 +235,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               </div>
             </div>
 
-            {/* Medicamento e Quantidade */}
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '15px' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label htmlFor="selectMedicamento" style={{ display: 'block', marginBottom: '5px' }}>Medicamento *</label>
-                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                  <option value="">Selecione um medicamento</option>
+            {/* Medicamento e Quantidade (Classes CSS lidas do novo .css) */}
+            <div className="mov-form-flex">
+              <div className="mov-form-group-item">
+                <label htmlFor="selectMedicamento" className="form-label">Medicamento *</label>
+                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required className="form-select">
+                  <option value="">Selecione um medicamento...</option>
                   {medicamentos.map(med => (
                     <option key={med.id} value={med.id}>{med.nome} (Estoque: {med.quantidade})</option>
                   ))}
@@ -280,7 +281,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
-      {/* Seção de Filtros */}
+      {/* Seção de Filtros (Classes CSS lidas do novo .css) */}
       <div className="box-container">
         <h3>Filtros</h3>
         <div className="filter-section-grid">
@@ -352,28 +353,22 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {movimentacoes.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px', color: movimentacao.tipo === 'ENTRADA' ? 'green' : 'red' }}>{movimentacao.tipo}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.medicamento_nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.data ? new Date(movimentacao.data).toLocaleDateString('pt-BR') : ''}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.localidade_nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
-
-                {/* (AJUSTE 2) Célula de Ações agora só aparece para GESTOR ou ADMIN */}
-                {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    
-                    {/* (AJUSTE 3) Botão Editar foi removido */}
-                    
-                    <button 
-                      onClick={() => handleDeleteMovimentacao(movimentacao.id, movimentacao.tipo, movimentacao.medicamento_nome, movimentacao.quantidade)}
-                      style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                )}
+                <td>{movimentacao.id}</td>
+                {/* Classes CSS lidas do novo .css */}
+                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
+                <td>{movimentacao.medicamento_nome}</td>
+                <td>{movimentacao.quantidade}</td>
+                <td>{movimentacao.data.slice(0, 10)}</td>
+                <td>{movimentacao.responsavel_username}</td>
+                <td>
+                  {/* Os botões de ação 'Editar' e 'Excluir' estão restritos a administradores no backend */}
+                  {userNivelAcesso === 'ADMINISTRADOR' && (
+                    <div className="btn-action-group">
+                      <button className="btn-edit">Editar</button>
+                      <button className="btn-delete">Excluir</button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

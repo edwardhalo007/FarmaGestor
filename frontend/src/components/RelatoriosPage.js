@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/RelatoriosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './RelatoriosPage.css'; // <<< ADICIONE APENAS ESTA LINHA
 
 function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [relatorios, setRelatorios] = useState([]);
@@ -139,7 +140,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Relatórios de Movimentação</h2>
 
-      {/* Seção de Filtros */}
+      {/* Seção de Filtros (Classe .filter-section-grid agora é global) */}
       <div className="box-container">
         <h3>Filtros</h3>
         <div className="filter-section-grid">
@@ -225,6 +226,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             {relatorios.map((movimentacao) => (
               <tr key={movimentacao.id}>
                 <td>{movimentacao.id}</td>
+                {/* Classes .type-entrada/.type-saida agora são globais */}
                 <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
                 <td>{movimentacao.medicamento_nome}</td>
                 <td>{movimentacao.quantidade}</td>

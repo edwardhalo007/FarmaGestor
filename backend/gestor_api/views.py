@@ -177,10 +177,11 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
-    medicamentos_proximos = Medicamento.objects.filter(
-        validade__lte=data_limite   
+    medicamentos_alertas = Medicamento.objects.filter(
+        validade__lte=data_limite
     ).order_by('validade')
-    serializer = MedicamentoSerializer(medicamentos_proximos, many=True)
+
+    serializer = MedicamentoSerializer(medicamentos_alertas, many=True)
     return Response(serializer.data)
 
 # Views para Relatórios

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback} from 'react';
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './UsuariosPage.css'; // <<< ADICIONE ESTA LINHA
 
 function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   const [usuarios, setUsuarios] = useState([]);
@@ -256,6 +257,7 @@ const handleCancelEdit = () => {
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
             {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
             
+            {/* A classe .user-form-grid agora vem do UsuariosPage.css */}
             <div className="user-form-grid">
               <div>
                 <label className="form-label">Usuário:</label>

@@ -1,0 +1,47 @@
+/* FarmaGestor/frontend/src/components/MedicamentosPage.css */
+/* Estilos específicos da página de Medicamentos */
+
+.form-group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px; /* Adicionado espaço inferior */
+}
+
+/* --- Estilos de Status (Vencimento) --- */
+
+.status-ok {
+    color: #2f855a; /* Verde escuro */
+    font-weight: bold;
+    background-color: #f0fff4;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block; /* Garante que o fundo se aplique corretamente */
+}
+
+.status-attention {
+    color: #b87900; /* Laranja/marrom */
+    font-weight: bold;
+    background-color: #fffaf0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-critical {
+    color: #c53030; /* Vermelho escuro */
+    font-weight: bold;
+    background-color: #fff5f5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-expired {
+    color: #718096; /* Cinza */
+    font-weight: bold;
+    background-color: #f7fafc;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
