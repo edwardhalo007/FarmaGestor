@@ -211,6 +211,56 @@
     margin-top: 5px;
 }
 
+/* --- Novo Aviso de Escopo (Acima dos cards) --- */
+.system-scope-notice {
+    background-color: #e0f2fe; /* Azul bem clarinho */
+    color: #0369a1; /* Azul escuro */
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #bae6fd;
+}
+
+.info-icon {
+    font-size: 1.2em;
+}
+
+/* --- Barra de Filtro (Abaixo dos cards) --- */
+.dashboard-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px; /* Padding confortável */
+    margin-bottom: 20px;
+    /* Herda o estilo .box-container (fundo branco, sombra) */
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    min-width: 250px; /* Largura mínima para ficar bonito */
+    background-color: white;
+}
+
+.no-data-msg {
+    width: 100%;
+    text-align: center;
+    color: #a0aec0;
+    margin-top: 50px;
+    font-style: italic;
+}
+
 /* Classes de cor (como .color-danger) foram mantidas em App.css 
   pois parecem ser classes utilitárias globais. 
   Se forem usadas *apenas* no dashboard, podem ser movidas para cá.

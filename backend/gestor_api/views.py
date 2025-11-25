@@ -1,6 +1,8 @@
 # FarmaGestor/backend/gestor_api/views.py
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime;
+from django.utils import timezone
+from django.db.models import Sum, Count, F
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -43,6 +45,70 @@ class CustomAuthToken(ObtainAuthToken):
             'username': user.username,
             'nivel_acesso': user.nivel_acesso
         })
+
+# --- Logica do dashboard
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_atividade(request):
+    # Define os últimos 5 dias
+    hoje = timezone.now().date()
+    dias_grafico = []
+    
+    # Dicionário para traduzir dia da semana para o gráfico (Seg, Ter, Qua...)
+    dias_semana = {
+        0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom'
+    }
+
+    chart_data = []
+    total_entradas = 0
+    total_saidas = 0
+
+    # Loop para os últimos 5 dias (do mais antigo para hoje)
+    for i in range(4, -1, -1):
+        data_analise = hoje - timedelta(days=i)
+        dia_label = dias_semana[data_analise.weekday()]
+        
+        # Filtra movimentações desse dia
+        movs_dia = Movimentacao.objects.filter(data=data_analise)
+        
+        # Soma entradas do dia
+        entradas = movs_dia.filter(tipo='ENTRADA').aggregate(total=Sum('quantidade'))['total'] or 0
+        # Soma saídas do dia
+        saidas = movs_dia.filter(tipo='SAIDA').aggregate(total=Sum('quantidade'))['total'] or 0
+
+        total_entradas += entradas
+        total_saidas += saidas
+
+        # Adiciona ao array do gráfico (Formato esperado pelo seu Frontend)
+        chart_data.append({
+            'dia': dia_label,
+            'tipo': 'Entrada',
+            'valor': entradas
+        })
+        chart_data.append({
+            'dia': dia_label,
+            'tipo': 'Saída',
+            'valor': saidas
+        })
+
+    return Response({
+        'entradas': total_entradas,
+        'saidas': total_saidas,
+        'daily_activity': chart_data
+    })
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def top_medicamentos(request):
+    #Retorna os 5 medicamentos com maior movimentação (soma de quantidades).
+    # Agrupa por nome do medicamento, soma a quantidade e ordena decrescente
+    top_meds = Movimentacao.objects.values('medicamento__nome') \
+        .annotate(nome=F('medicamento__nome'), total_movimentado=Sum('quantidade')) \
+        .order_by('-total_movimentado')[:5]
+
+    return Response(top_meds)
 
 # ViewSets para CRUD de Medicamentos
 class MedicamentoViewSet(viewsets.ModelViewSet):
