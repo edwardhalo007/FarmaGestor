@@ -38,11 +38,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editLote, setEditLote] = useState('');
   const [editFabricante, setEditFabricante] = useState('');
   const [editLocalizacao, setEditLocalizacao] = useState('');
-  // --- Fim dos Estados de EDIÇÃO ---
 
   // --- Estados para Localidades (para o dropdown) ---
   const [localidades, setLocalidades] = useState([]);
-
 
   // --- useEffect para buscar medicamentos e localidades ---
   useEffect(() => {
@@ -53,13 +51,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         
         let apiUrl = 'http://localhost:8000/api/medicamentos/';
         
-        // >>> LÓGICA DE PESQUISA ADICIONADA: Constrói a URL com o filtro <<<
         if (searchTerm) {
              const params = new URLSearchParams();
              params.append('search', searchTerm);
              apiUrl += `?${params.toString()}`;
         }
-        // >>> FIM DA LÓGICA DE PESQUISA ADICIONADA <<<
         
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -106,9 +102,17 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-    // >>> CORREÇÃO DO AVISO: searchTerm foi adicionado às dependências <<<
   }, [userToken, formSuccess, triggerSearch, searchTerm]); 
 
+  // 1. ADD THIS EFFECT: Auto-hide the success message after 3 seconds
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess('');
+      }, 3000); // 3000ms = 3 seconds
+      return () => clearTimeout(timer); // Cleanup if user navigates away
+    }
+  }, [formSuccess]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo medicamento ---
   const handleCreateMedicamento = async (e) => {
@@ -220,7 +224,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   const handleUpdateMedicamento = async (e) => {
-    e.preventDefault();
+    // Prevent the button from submitting a form if one exists
+    if (e) e.preventDefault(); 
+    
     setFormError('');
     setFormSuccess('');
 
@@ -230,6 +236,25 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       return;
     }
 
+    // --- SANITIZATION STEP ---
+    // Ensure we send NULL if the location is empty, not an empty string ""
+    // Django treats "" as a string, but expects an Integer for ForeignKeys.
+    const payload = {
+      id: editingMedId,
+      nome: editNome,
+      dosagem: editDosagem ? Number(editDosagem) : 0, // Ensure number
+      forma_farmaceutica: editFormaFarmaceutica,
+      unidade_medida: editUnidadeMedida,
+      validade: editValidade,
+      quantidade: editQuantidade ? Number(editQuantidade) : 0, // Ensure number
+      lote: editLote,
+      fabricante: editFabricante,
+      // If editLocalizacao is empty string "", send null. 
+      // If your backend requires it, this will now show "This field cannot be null" 
+      // instead of a 500/400 crash.
+      localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
+    };
+
     try {
       const response = await fetch(`http://localhost:8000/api/medicamentos/${editingMedId}/`, {
         method: 'PUT',
@@ -237,33 +262,38 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: editingMedId,
-          nome: editNome,
-          dosagem: parseInt(editDosagem),
-          forma_farmaceutica: editFormaFarmaceutica,
-          unidade_medida: editUnidadeMedida,
-          validade: editValidade,
-          quantidade: parseInt(editQuantidade),
-          lote: editLote,
-          fabricante: editFabricante,
-          localizacao: editLocalizacao, // Envia o ID da localização
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao atualizar medicamento. Verifique os dados.');
+        
+        // --- IMPROVED ERROR PARSING ---
+        // If 'detail' doesn't exist, looking for field-specific errors (e.g. { "dosagem": ["A valid integer is required."] })
+        let errorMessage = errorData.detail;
+        
+        if (!errorMessage) {
+            // Join all field errors into a readable string
+            const fieldErrors = Object.entries(errorData)
+                .map(([field, msgs]) => `${field.toUpperCase()}: ${msgs.join(' ')}`)
+                .join(' | ');
+            errorMessage = fieldErrors || 'Erro desconhecido na validação.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const updatedMedicamento = await response.json();
       setFormSuccess('Medicamento atualizado com sucesso!');
+      
       setMedicamentos(medicamentos.map(med =>
         med.id === updatedMedicamento.id ? updatedMedicamento : med
       ));
       setEditingMedId(null);
+      
     } catch (err) {
-      setFormError(err.message);
+      // Now this will show "DOSAGEM: A valid integer is required" instead of the generic message
+      setFormError(err.message); 
       console.error('Erro ao atualizar medicamento:', err);
     }
   };
@@ -285,39 +315,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
+      {/* 2. RENDER THE POPUP: Place this right at the top of the Layout children */}
+      {formSuccess && (
+        <div className="success-toast">
+          <span className="toast-icon">✓</span>
+          <span>{formSuccess}</span>
+        </div>
+      )}
       <h2>Lista de Medicamentos</h2>
-
-      {/* --- SEÇÃO DE FILTRO DE PESQUISA (ADICIONADA) --- */}
-      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
-          <h3>Filtro de Medicamentos</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
-              <input 
-                  type="text" 
-                  placeholder="Pesquisar por Nome ou Dosagem..." 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => { // Permite buscar ao pressionar Enter
-                      if (e.key === 'Enter') {
-                          setTriggerSearch(prev => prev + 1);
-                      }
-                  }}
-                  style={{ flexGrow: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-              <button 
-                  onClick={() => setTriggerSearch(prev => prev + 1)} // Força o useEffect a rodar
-                  style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                  Pesquisar
-              </button>
-              <button 
-                  onClick={() => {setSearchTerm(''); setTriggerSearch(prev => prev + 1);}} // Limpa e força o useEffect
-                  style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                  Limpar
-              </button>
-          </div>
-      </div>
-      {/* --- FIM DA SEÇÃO DE FILTRO --- */}
 
       {/* Formulário de Criação */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
@@ -325,9 +330,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <h3>Adicionar Novo Medicamento</h3>
           <form onSubmit={handleCreateMedicamento}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
-            {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
-
-            {/* A classe "form-group-grid" agora será lida do MedicamentosPage.css */}
             <div className="form-group-grid">
               <div>
                 <label htmlFor="novoNome" className="form-label">Nome:</label>
@@ -389,6 +391,38 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
+      {/* --- SEÇÃO DE FILTRO DE PESQUISA (ADICIONADA) --- */}
+      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
+          <h3>Filtro de Medicamentos</h3>
+          <div style={{ display: 'flex', gap: '10px' }}>
+              <input 
+                  type="text" 
+                  placeholder="Pesquisar por Nome ou Dosagem..." 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => { // Permite buscar ao pressionar Enter
+                      if (e.key === 'Enter') {
+                          setTriggerSearch(prev => prev + 1);
+                      }
+                  }}
+                  style={{ flexGrow: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+              <button 
+                  onClick={() => setTriggerSearch(prev => prev + 1)} 
+                  style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                  Pesquisar
+              </button>
+              <button 
+                  onClick={() => {setSearchTerm(''); setTriggerSearch(prev => prev + 1);}} // Limpa e força o useEffect
+                  style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                  Limpar
+              </button>
+          </div>
+      </div>
+      {/* --- FIM DA SEÇÃO DE FILTRO --- */}
+
       {loading && <p>Carregando medicamentos...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
@@ -419,72 +453,182 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {medicamentos.map((medicamento) => (
               <tr key={medicamento.id}>
-                {/* Linha para o formulário de edição */}
                 {editingMedId === medicamento.id ? (
-                  <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
-                      <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
-                      <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ flex: '1 1 120px', padding: '8px' }}>
-                        <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                  /* --- EDIT MODE (12 Cells to match headers) --- */
+                  <>
+                    {/* 1. ID (Read-only) */}
+                    <td className="edit-cell">
+                      <span className="read-only-id">{medicamento.id}</span>
+                    </td>
+                    
+                    {/* 2. Nome */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editNome}
+                        onChange={(e) => setEditNome(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 3. Dosagem */}
+                    <td className="edit-cell">
+                      <input
+                        type="number"
+                        value={editDosagem}
+                        onChange={(e) => setEditDosagem(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 4. Forma */}
+                    <td className="edit-cell">
+                      <select
+                        value={editFormaFarmaceutica}
+                        onChange={(e) => setEditFormaFarmaceutica(e.target.value)}
+                        className="edit-select"
+                      >
+                        <option value="COMPRIMIDO">Comp.</option>
+                        <option value="CAPSULA">Cáps.</option>
+                        <option value="INJETAVEL">Inj.</option>
+                        <option value="SOLUCAO">Sol.</option>
+                        <option value="SUSPENSAO">Susp.</option>
+                        <option value="XAROPE">Xpe.</option>
+                        <option value="POMADA">Pom.</option>
+                        <option value="CREME">Creme</option>
+                        <option value="GEL">Gel</option>
+                        <option value="SUPOSITORIO">Sup.</option>
                       </select>
-                      <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ flex: '1 1 80px', padding: '8px' }}>
+                    </td>
+
+                    {/* 5. Unidade */}
+                    <td className="edit-cell">
+                      <select
+                        value={editUnidadeMedida}
+                        onChange={(e) => setEditUnidadeMedida(e.target.value)}
+                        className="edit-select"
+                      >
                         <option value="MG">mg</option>
                         <option value="G">g</option>
                         <option value="ML">ml</option>
-                        <option value="L">l</option>
                         <option value="UNI">uni</option>
-                        <option value="UI">UI</option>
-                        <option value="MCG">mcg</option>
-                        <option value="MEQ">mEq</option>
                       </select>
-                      <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ minWidth: '150px' }} />
-                      <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Qtd" required style={{ width: '60px' }} />
-                      <input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} placeholder="Lote" required style={{ minWidth: '120px' }} />
-                      <input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} placeholder="Fabricante" required style={{ minWidth: '150px' }} />
-                      <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} required style={{ minWidth: '150px' }}>
-                        <option value="">Selecione...</option>
+                    </td>
+
+                    {/* 6. Validade */}
+                    <td className="edit-cell">
+                      <input
+                        type="date"
+                        value={editValidade}
+                        onChange={(e) => setEditValidade(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 7. Vencimento (Not editable directly) */}
+                    <td className="edit-cell" style={{textAlign: 'center', color: '#999'}}>
+                      ---
+                    </td>
+
+                    {/* 8. Quantidade */}
+                    <td className="edit-cell">
+                      <input
+                        type="number"
+                        value={editQuantidade}
+                        onChange={(e) => setEditQuantidade(e.target.value)}
+                        className="edit-input"
+                        style={{width: '60px'}} 
+                      />
+                    </td>
+
+                    {/* 9. Lote */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editLote}
+                        onChange={(e) => setEditLote(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 10. Fabricante */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editFabricante}
+                        onChange={(e) => setEditFabricante(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 11. Localização */}
+                    <td className="edit-cell">
+                      <select
+                        value={editLocalizacao}
+                        onChange={(e) => setEditLocalizacao(e.target.value)}
+                        className="edit-select"
+                      >
+                        <option value="">Loc...</option>
                         {localidades.map(loc => (
-                          <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                          <option key={loc.id} value={loc.id}>{loc.nome}</option>
                         ))}
                       </select>
-                      <button type="submit" className="btn-save">Salvar</button>
-                      <button type="button" onClick={handleCancelEdit} className="btn-cancel">Cancelar</button>
-                    </form>
-                  </td>
+                    </td>
+
+                    {/* 12. Actions */}
+                    <td className="edit-cell">
+                      <div className="action-buttons">
+                        <button 
+                          onClick={(e) => handleUpdateMedicamento(e)} 
+                          className="btn-icon btn-save" 
+                          title="Salvar"
+                        >
+                          ✓
+                        </button>
+                        <button 
+                          onClick={handleCancelEdit} 
+                          className="btn-icon btn-cancel" 
+                          title="Cancelar"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </td>
+                  </>
                 ) : (
+                  /* --- VIEW MODE (Restores the missing cells) --- */
                   <>
-                    {/* Linha normal da tabela se não estiver em modo de edição */}
                     <td>{medicamento.id}</td>
                     <td>{medicamento.nome}</td>
                     <td>{medicamento.dosagem}</td>
                     <td>{medicamento.forma_farmaceutica}</td>
                     <td>{medicamento.unidade_medida}</td>
                     <td>{medicamento.validade}</td>
-                    {/* A classe de status agora será lida do MedicamentosPage.css */}
-                    <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
+                    <td className={getStatusClass(medicamento.vencimento_validade)}>
+                      {medicamento.vencimento_validade}
+                    </td>
                     <td>{medicamento.quantidade}</td>
                     <td>{medicamento.lote}</td>
                     <td>{medicamento.fabricante}</td>
                     <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
-                    {/* Botões de Ação (Editar/Excluir) */}
+                    
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                        <td>
-                            <div className="btn-action-group">
-                                <button
-                                    onClick={() => handleEditClick(medicamento)}
-                                    className="btn-edit"
-                                >
-                                    Editar
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteMedicamento(medicamento.id)}
-                                    className="btn-delete"
-                                >
-                                    Excluir
-                                </button>
-                            </div>
-                        </td>
+                      <td>
+                        <div className="btn-action-group">
+                          <button
+                            onClick={() => handleEditClick(medicamento)}
+                            className="btn-edit"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMedicamento(medicamento.id)}
+                            className="btn-delete"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
                     )}
                   </>
                 )}

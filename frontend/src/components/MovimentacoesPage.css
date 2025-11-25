@@ -22,3 +22,67 @@
 .radio-group label {
     margin-right: 15px;
 }
+
+/* --- Toast Notification (Popupzinha) --- */
+.success-toast {
+    position: fixed;
+    top: 80px; /* Below the header */
+    right: 20px;
+    background-color: #10b981; /* Green */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999; /* On top of everything */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    
+    /* Animation */
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-icon {
+    font-size: 1.2em;
+    background: rgba(255,255,255,0.2);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#selectMedicamento,
+#localidade,
+#quantidade {
+    cursor: pointer;
+}
+
+#quantidade {
+    border-radius: 6px; 
+    
+    border: 2px solid #6366f1; 
+    color: #000000;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+}
+
+#quantidade:focus {
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    outline: none;
+}

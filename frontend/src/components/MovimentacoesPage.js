@@ -25,6 +25,13 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroLocalidade, setFiltroLocalidade] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('');
 
+  // --- Estados dos edição ---
+  const [editingId, setEditingId] = useState(null);
+  const [editTipo, setEditTipo] = useState('');
+  const [editMedicamento, setEditMedicamento] = useState('');
+  const [editQuantidade, setEditQuantidade] = useState('');
+  const [editLocalidade, setEditLocalidade] = useState('');
+
   // --- Estado de Gatilho para Recarregar Dados ---
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
@@ -34,7 +41,10 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
-        setFormSuccess(''); // Limpa mensagens de sucesso ao recarregar
+        
+        // --- REMOVIDO: setFormSuccess(''); ---
+        // Não limpamos o sucesso aqui, senão a mensagem some 
+        // assim que a tabela recarrega. Deixamos o timer de 3s cuidar disso.
 
         // Busca a lista de medicamentos para o dropdown do formulário
         const medsResponse = await fetch('http://localhost:8000/api/medicamentos/', {
@@ -104,6 +114,16 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     }
     // Adiciona o refetchTrigger às dependências
   }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, filtroLocalidade, filtroTipo, refetchTrigger]);
+
+  // 1. ADD THIS EFFECT: Auto-hide the success message after 3 seconds
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess('');
+      }, 3000); // 3000ms = 3 seconds
+      return () => clearTimeout(timer); // Cleanup if user navigates away
+    }
+  }, [formSuccess]);
 
   // --- Função para lidar com a submissão do formulário de criação ---
   const handleCreateMovimentacao = async (e) => {
@@ -206,12 +226,59 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       console.error('Erro ao excluir movimentação:', err);
     }
   };
-  
-  // A função handleEditClick foi removida pois o botão não existe mais
 
+  const handleEditClick = (mov) => {
+    setEditingId(mov.id);
+    setEditTipo(mov.tipo);
+    // Presumindo que seu backend retorne o ID em 'medicamento' e 'localidade'
+    // Se retornar apenas o nome, precisaremos ajustar o serializer do Django.
+    setEditMedicamento(mov.medicamento); 
+    setEditQuantidade(mov.quantidade);
+    setEditLocalidade(mov.localidade);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleUpdateMovimentacao = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/movimentacoes/${editingId}/`, {
+        method: 'PUT', // ou PATCH
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tipo: editTipo,
+          medicamento: editMedicamento,
+          quantidade: parseInt(editQuantidade),
+          localidade: editLocalidade
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Erro ao atualizar movimentação');
+      }
+
+      setFormSuccess('Movimentação atualizada com sucesso!');
+      setEditingId(null);
+      setRefetchTrigger(prev => prev + 1); // Recarrega a tabela
+    } catch (err) {
+      setFormError(err.message);
+    }
+  };
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
+      {/* 2. RENDER THE POPUP: Place this right at the top of the Layout children */}
+      {formSuccess && (
+        <div className="success-toast">
+          <span className="toast-icon">✓</span>
+          <span>{formSuccess}</span>
+        </div>
+      )}
       <h2>Página de Movimentações</h2>
       
       {/* Formulário de Adição */}
@@ -220,21 +287,30 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           <h3>Adicionar Nova Movimentação</h3>
           <form onSubmit={handleCreateMovimentacao}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
-            {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
+              <div className="form-group">
+                <label className="form-label">Tipo de Movimentação *</label>
+                
+                {/* SUBSTITUIMOS O RADIO GROUP POR ISTO: */}
+                <div className="mov-type-selector">
+                  <button
+                    type="button" // Importante: type="button" para não submeter o form
+                    className={`mov-type-btn mov-btn-entrada ${tipoMovimentacao === 'ENTRADA' ? 'active' : ''}`}
+                    onClick={() => setTipoMovimentacao('ENTRADA')}
+                  >
+                    <span className="btn-icon-large"></span>
+                    <span>Entrada</span>
+                  </button>
 
-            {/* Tipo de Movimentação */}
-            <div className="form-group">
-              <label className="form-label">Tipo de Movimentação *</label>
-              <div className="radio-group">
-                <label>
-                  <input type="radio" value="ENTRADA" checked={tipoMovimentacao === 'ENTRADA'} onChange={() => setTipoMovimentacao('ENTRADA')} /> Entrada
-                </label>
-                <label>
-                  <input type="radio" value="SAIDA" checked={tipoMovimentacao === 'SAIDA'} onChange={() => setTipoMovimentacao('SAIDA')} /> Saída
-                </label>
+                  <button
+                    type="button"
+                    className={`mov-type-btn mov-btn-saida ${tipoMovimentacao === 'SAIDA' ? 'active' : ''}`}
+                    onClick={() => setTipoMovimentacao('SAIDA')}
+                  >
+                    <span className="btn-icon-large"></span>
+                    <span>Saída</span>
+                  </button>
+                </div>
               </div>
-            </div>
-
             {/* Medicamento e Quantidade (Classes CSS lidas do novo .css) */}
             <div className="mov-form-flex">
               <div className="mov-form-group-item">
@@ -247,8 +323,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
               </div>
               <div style={{ marginBottom: '15px' }}>
-                <label htmlFor="localidade" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                    Localidade:
+                <label htmlFor="localidade" style={{ display: 'block', marginBottom: '5px' }}>
+                    Localidade *
                 </label>
                 <select
                     id="localidade"
@@ -332,43 +408,155 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         <p>Nenhuma movimentação encontrada para os filtros aplicados.</p>
       )}
 
-      {!loading && movimentacoes.length > 0 && (
+        {!loading && movimentacoes.length > 0 && (
         <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Tipo</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Medicamento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Local</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Medicamento</th>
+              <th>Quantidade</th>
+              <th>Data</th>
+              <th>Local</th>
+              <th>Responsável</th>
               
-              {/* (AJUSTE 1) Coluna Ações agora só aparece para GESTOR ou ADMIN */}
+              {/* Cabeçalho de Ações (Visível para Gestor e Admin) */}
               {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+                <th>Ações</th>
               )}
             </tr>
           </thead>
           <tbody>
             {movimentacoes.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                <td>{movimentacao.id}</td>
-                {/* Classes CSS lidas do novo .css */}
-                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
-                <td>{movimentacao.medicamento_nome}</td>
-                <td>{movimentacao.quantidade}</td>
-                <td>{movimentacao.data.slice(0, 10)}</td>
-                <td>{movimentacao.responsavel_username}</td>
-                <td>
-                  {/* Os botões de ação 'Editar' e 'Excluir' estão restritos a administradores no backend */}
-                  {userNivelAcesso === 'ADMINISTRADOR' && (
-                    <div className="btn-action-group">
-                      <button className="btn-edit">Editar</button>
-                      <button className="btn-delete">Excluir</button>
-                    </div>
-                  )}
-                </td>
+                
+                {/* MODO EDIÇÃO: Se o ID da linha for igual ao ID editando */}
+                {editingId === movimentacao.id ? (
+                  <>
+                      <td>{movimentacao.id}</td>
+                      
+                      {/* Edit Tipo */}
+                      <td>
+                          <select 
+                              value={editTipo} 
+                              onChange={(e) => setEditTipo(e.target.value)}
+                              className="form-select"
+                              style={{ padding: '5px', fontSize: '0.9em' }}
+                          >
+                              <option value="ENTRADA">Entrada</option>
+                              <option value="SAIDA">Saída</option>
+                          </select>
+                      </td>
+
+                      {/* Edit Medicamento */}
+                      <td>
+                          <select 
+                              value={editMedicamento} 
+                              onChange={(e) => setEditMedicamento(e.target.value)}
+                              className="form-select"
+                              style={{ padding: '5px', fontSize: '0.9em', width: '150px' }}
+                          >
+                              {medicamentos.map(m => (
+                                  <option key={m.id} value={m.id}>{m.nome}</option>
+                              ))}
+                          </select>
+                      </td>
+
+                      {/* Edit Quantidade */}
+                      <td>
+                          <input 
+                              type="number" 
+                              value={editQuantidade} 
+                              onChange={(e) => setEditQuantidade(e.target.value)}
+                              className="form-input"
+                              style={{ padding: '5px', width: '80px' }}
+                          />
+                      </td>
+
+                      {/* Data (Geralmente não editamos data de histórico, mantemos texto) */}
+                      <td>{movimentacao.data.slice(0, 10)}</td>
+
+                      {/* Edit Localidade */}
+                      <td>
+                          <select 
+                              value={editLocalidade} 
+                              onChange={(e) => setEditLocalidade(e.target.value)}
+                              className="form-select"
+                              style={{ padding: '5px', fontSize: '0.9em', width: '120px' }}
+                          >
+                              {localidades.map(l => (
+                                  <option key={l.id} value={l.id}>{l.nome}</option>
+                              ))}
+                          </select>
+                      </td>
+
+                      {/* Responsável (Não editável) */}
+                      <td>{movimentacao.responsavel_username}</td>
+
+                      {/* Botões SALVAR / CANCELAR */}
+                      <td>
+                          <div className="btn-action-group">
+                              <button 
+                                  className="btn-edit" 
+                                  onClick={handleUpdateMovimentacao}
+                                  style={{ backgroundColor: '#10b981' }} // Verde para salvar
+                              >
+                                  Salvar
+                              </button>
+                              <button 
+                                  className="btn-delete" 
+                                  onClick={handleCancelEdit}
+                                  style={{ backgroundColor: '#6b7280' }} // Cinza para cancelar
+                              >
+                                  Cancelar
+                              </button>
+                          </div>
+                      </td>
+                  </>
+                ) : (
+                  /* MODO VISUALIZAÇÃO (O que você já tinha) */
+                  <>
+                      <td>{movimentacao.id}</td>
+                      <td>
+                          <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
+                              {movimentacao.tipo}
+                          </span>
+                      </td>
+                      <td>{movimentacao.medicamento_nome}</td>
+                      <td>{movimentacao.quantidade}</td>
+                      <td>{movimentacao.data.slice(0, 10)}</td>
+                      <td>
+                          {localidades.find(l => l.id === movimentacao.localidade)?.nome || '-'}
+                      </td>
+                      <td>{movimentacao.responsavel_username}</td>
+                      
+                      {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                          <td>
+                              <div className="btn-action-group">
+                                  {/* --- AQUI ESTÁ O BOTÃO QUE FALTOU --- */}
+                                  <button 
+                                      className="btn-edit" 
+                                      onClick={() => handleEditClick(movimentacao)}
+                                  >
+                                      Editar
+                                  </button>
+
+                                  <button 
+                                      className="btn-delete"
+                                      onClick={() => handleDeleteMovimentacao(
+                                          movimentacao.id, 
+                                          movimentacao.tipo, 
+                                          movimentacao.medicamento_nome, 
+                                          movimentacao.quantidade
+                                      )}
+                                  >
+                                      Excluir
+                                  </button>
+                              </div>
+                          </td>
+                      )}
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

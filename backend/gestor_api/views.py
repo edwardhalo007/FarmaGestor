@@ -200,12 +200,13 @@ def relatorios_movimentacao(request):
                         status=status.HTTP_403_FORBIDDEN)
 
     medicamento_nome = request.query_params.get('medicamento_nome')
+    mov_local = request.query_params.get('localidade')
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
 
 
-    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel').all()
+    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel','localidade').all()
 
     if medicamento_nome:
         movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
@@ -221,7 +222,8 @@ def relatorios_movimentacao(request):
             movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-
+    if mov_local:
+        movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
     if export_format == "csv":
         response = HttpResponse(
             content_type='text/csv',
@@ -229,7 +231,7 @@ def relatorios_movimentacao(request):
         )
         writer = csv.writer(response)
 
-        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Responsável'])
+        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Local', 'Responsável'])
 
         for mov in movimentacoes:
             writer.writerow([
@@ -237,6 +239,7 @@ def relatorios_movimentacao(request):
                 mov.data.strftime('%d/%m/%Y'),
                 mov.tipo,
                 mov.quantidade,
+                mov.localidade.nome,
                 mov.medicamento.nome,
                 mov.responsavel.username
             ])

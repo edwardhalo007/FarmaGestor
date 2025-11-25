@@ -1,18 +1,13 @@
 // FarmaGestor/frontend/src/components/Layout.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Header from './Header'; // Importe o novo componente Header
+import Header from './Header';    
 
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
     <div className="layout-container">
-      {/* HEADER: Fixed, full-width header */}
       <Header /> 
-
-      {/* Menu Lateral (Sidebar - Fixed) */}
       <nav className="sidebar">
-        {/* REMOVED: Redundant h3 logo element */}
-        {/* <h3 className="system-logo">FarmaGestor</h3> */} 
         
         <ul className="nav-list">
           <li className="nav-item"><Link to="/dashboard" className="nav-link">Dashboard</Link></li>

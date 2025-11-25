@@ -1,4 +1,3 @@
-// FarmaGestor/frontend/src/components/RelatoriosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
 import './RelatoriosPage.css'; // <<< ADICIONE APENAS ESTA LINHA
@@ -12,9 +11,25 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroMedicamentoNome, setFiltroMedicamentoNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
+  const [localidades, setLocalidades] = useState([]);
+  const [filtroLocalidade, setFiltroLocalidade] = useState(''); 
 
-  // --- Função para buscar os relatórios (agora dentro do useEffect para resolver o warning) ---
   useEffect(() => {
+    const fetchLocalidades = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/localidades/', {
+                method: 'GET',
+                headers: { 'Authorization': `Token ${userToken}` },
+            });
+            if (!response.ok) throw new Error('Falha ao carregar lista de localidades.');
+            const data = await response.json();
+            setLocalidades(data);
+        } catch (err) {
+            console.error("Erro ao buscar localidades:", err);
+            setError('Erro ao carregar lista de localidades.');
+        }
+    };
+    
     const fetchRelatorios = async () => {
       try {
         setLoading(true);
@@ -26,6 +41,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
         if (filtroMedicamentoNome) {
           params.append('medicamento_nome', filtroMedicamentoNome);
+        }
+        // NOVO: Adiciona o filtro de localidade
+        if (filtroLocalidade) { 
+            params.append('localidade', filtroLocalidade); // KEY 'localidade'
         }
         if (filtroDataInicio) {
           params.append('data_inicio', filtroDataInicio);
@@ -67,15 +86,14 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     };
 
     if (userToken) { // Só busca relatórios se o token estiver disponível
+      fetchLocalidades();
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim]); // Dependências do useEffect
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]); // NOVO: Adiciona filtroLocalidade como dependência
 
   // Função para aplicar os filtros (agora apenas dispara o useEffect indiretamente)
   const handleAplicarFiltros = () => {
-    // Ao mudar o estado de um filtro, o useEffect acima será disparado automaticamente
-    // Nenhuma lógica extra é necessária aqui além de garantir que os estados mudam
-    // O useEffect com suas dependências já cuida da re-requisição
+    // Apenas garante que os estados mudam, o useEffect fará a re-requisição
   };
 
   const handleExportCsv = async () => {
@@ -85,6 +103,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (filtroMedicamentoNome) {
         params.append('medicamento_nome', filtroMedicamentoNome);
+      }
+      // NOVO: Adiciona o filtro de localidade para exportação
+      if (filtroLocalidade) {
+        params.append('localidade', filtroLocalidade);
       }
       if (filtroDataFim) {
         params.append('data_fim', filtroDataFim)
@@ -155,6 +177,24 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               placeholder="Ex: Paracetamol"
             />
           </div>
+          {/* NOVO CAMPO: Filtro de Localidade */}
+          <div>
+            <label htmlFor="filtroLocalidade" className="form-label">Localidade:</label>
+            <select
+              id="filtroLocalidade"
+              value={filtroLocalidade}
+              onChange={(e) => setFiltroLocalidade(e.target.value)}
+              className="form-input"
+            >
+              <option value="">Todas as Localidades</option>
+              {localidades.map(loc => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* FIM NOVO CAMPO */}
           <div>
             <label htmlFor="dataInicio" className="form-label">Data Início:</label>
             <input
@@ -217,6 +257,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               <th>ID</th>
               <th>Tipo</th>
               <th>Medicamento</th>
+              <th>Local</th>
               <th>Quantidade</th>
               <th>Data</th>
               <th>Responsável</th>
@@ -226,11 +267,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             {relatorios.map((movimentacao) => (
               <tr key={movimentacao.id}>
                 <td>{movimentacao.id}</td>
-                {/* Classes .type-entrada/.type-saida agora são globais */}
                 <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
                 <td>{movimentacao.medicamento_nome}</td>
+                <td>{movimentacao.localidade_nome}</td>
                 <td>{movimentacao.quantidade}</td>
-                {/* Data display is now standardized */}
                 <td>{movimentacao.data.slice(0, 10)}</td>
                 <td>{movimentacao.responsavel_username}</td>
               </tr>
