@@ -1,6 +1,6 @@
 # FarmaGestor/backend/gestor_api/views.py
 
-from datetime import date, timedelta, datetime;
+from datetime import date, timedelta, datetime,time;
 from django.utils import timezone
 from django.db.models import Sum, Count, F
 from rest_framework import viewsets, status, serializers
@@ -46,58 +46,62 @@ class CustomAuthToken(ObtainAuthToken):
             'nivel_acesso': user.nivel_acesso
         })
 
-# --- Logica do dashboard
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_atividade(request):
-    # Define os últimos 5 dias
-    hoje = timezone.now().date()
-    dias_grafico = []
+    # 1. Pega o Filtro
+    localidade_id = request.query_params.get('localidade')
     
-    # Dicionário para traduzir dia da semana para o gráfico (Seg, Ter, Qua...)
-    dias_semana = {
-        0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom'
-    }
+    # 2. Define Datas (Hoje e 4 dias atrás)
+    hoje = timezone.now().date()
+    data_inicio = hoje - timedelta(days=4)
 
-    chart_data = []
+    # 3. Busca TUDO no intervalo (Simples e direto para DateField)
+    movimentacoes = Movimentacao.objects.filter(data__range=[data_inicio, hoje])
+
+    # 4. Aplica filtro de localidade se existir
+    if localidade_id:
+        movimentacoes = movimentacoes.filter(localidade_id=localidade_id)
+
+    # 5. Prepara os "baldes" vazios para o gráfico
+    dias_semana = {0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom'}
+    dados_agrupados = {}
+
+    for i in range(4, -1, -1):
+        data_loop = hoje - timedelta(days=i)
+        key = data_loop.strftime('%Y-%m-%d')
+        dia_label = dias_semana[data_loop.weekday()]
+        dados_agrupados[key] = {'dia': dia_label, 'entradas': 0, 'saidas': 0}
+
     total_entradas = 0
     total_saidas = 0
 
-    # Loop para os últimos 5 dias (do mais antigo para hoje)
-    for i in range(4, -1, -1):
-        data_analise = hoje - timedelta(days=i)
-        dia_label = dias_semana[data_analise.weekday()]
+    # 6. Loop SIMPLIFICADO (Sem conversão de timezone que estava quebrando)
+    for mov in movimentacoes:
+        # Como mov.data é um 'date', apenas transformamos em string
+        # Se por acaso fosse datetime, o strftime funciona igual
+        key = mov.data.strftime('%Y-%m-%d')
         
-        # Filtra movimentações desse dia
-        movs_dia = Movimentacao.objects.filter(data=data_analise)
-        
-        # Soma entradas do dia
-        entradas = movs_dia.filter(tipo='ENTRADA').aggregate(total=Sum('quantidade'))['total'] or 0
-        # Soma saídas do dia
-        saidas = movs_dia.filter(tipo='SAIDA').aggregate(total=Sum('quantidade'))['total'] or 0
+        if key in dados_agrupados:
+            if mov.tipo == 'ENTRADA':
+                dados_agrupados[key]['entradas'] += mov.quantidade
+                total_entradas += mov.quantidade
+            elif mov.tipo == 'SAIDA':
+                dados_agrupados[key]['saidas'] += mov.quantidade
+                total_saidas += mov.quantidade
 
-        total_entradas += entradas
-        total_saidas += saidas
-
-        # Adiciona ao array do gráfico (Formato esperado pelo seu Frontend)
-        chart_data.append({
-            'dia': dia_label,
-            'tipo': 'Entrada',
-            'valor': entradas
-        })
-        chart_data.append({
-            'dia': dia_label,
-            'tipo': 'Saída',
-            'valor': saidas
-        })
+    # 7. Formata resposta
+    chart_data = []
+    for key in sorted(dados_agrupados.keys()):
+        info = dados_agrupados[key]
+        chart_data.append({'dia': info['dia'], 'tipo': 'Entrada', 'valor': info['entradas']})
+        chart_data.append({'dia': info['dia'], 'tipo': 'Saída', 'valor': info['saidas']})
 
     return Response({
         'entradas': total_entradas,
         'saidas': total_saidas,
         'daily_activity': chart_data
     })
-
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

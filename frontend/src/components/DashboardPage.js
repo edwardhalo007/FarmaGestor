@@ -68,7 +68,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
 
         for (const med of medicamentosData) {
           countUnidades += med.quantidade;
-          if (med.quantidade <= 15) countEmFalta++;
+          if (med.quantidade <= 20) countEmFalta++;
           if (med.vencimento_validade === 'Atenção' || med.vencimento_validade === 'Critico') countMedicamentosAtencao++;
         }
         
