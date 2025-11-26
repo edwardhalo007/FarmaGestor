@@ -13,9 +13,11 @@
 .form-group-grid .form-input,
 .form-group-grid .form-select {
     padding: 8px 10px;
-    font-size: 1.1rem;  
+    font-size: 1.1rem;
     border-radius: 6px;
-    width: 430px ;  
+    width: 100%;
+    max-width: 430px;
+    box-sizing: border-box;
 }
 
 /* --- Estilos de Status (Vencimento) --- */
