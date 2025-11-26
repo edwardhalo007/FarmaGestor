@@ -1,6 +1,6 @@
-// FarmaGestor/frontend/src/components/RelatoriosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './RelatoriosPage.css'; // <<< ADICIONE APENAS ESTA LINHA
 
 function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [relatorios, setRelatorios] = useState([]);
@@ -11,9 +11,25 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroMedicamentoNome, setFiltroMedicamentoNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
+  const [localidades, setLocalidades] = useState([]);
+  const [filtroLocalidade, setFiltroLocalidade] = useState(''); 
 
-  // --- Função para buscar os relatórios (agora dentro do useEffect para resolver o warning) ---
   useEffect(() => {
+    const fetchLocalidades = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/localidades/', {
+                method: 'GET',
+                headers: { 'Authorization': `Token ${userToken}` },
+            });
+            if (!response.ok) throw new Error('Falha ao carregar lista de localidades.');
+            const data = await response.json();
+            setLocalidades(data);
+        } catch (err) {
+            console.error("Erro ao buscar localidades:", err);
+            setError('Erro ao carregar lista de localidades.');
+        }
+    };
+    
     const fetchRelatorios = async () => {
       try {
         setLoading(true);
@@ -25,6 +41,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
         if (filtroMedicamentoNome) {
           params.append('medicamento_nome', filtroMedicamentoNome);
+        }
+        // NOVO: Adiciona o filtro de localidade
+        if (filtroLocalidade) { 
+            params.append('localidade', filtroLocalidade); // KEY 'localidade'
         }
         if (filtroDataInicio) {
           params.append('data_inicio', filtroDataInicio);
@@ -66,15 +86,14 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     };
 
     if (userToken) { // Só busca relatórios se o token estiver disponível
+      fetchLocalidades();
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim]); // Dependências do useEffect
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]); // NOVO: Adiciona filtroLocalidade como dependência
 
   // Função para aplicar os filtros (agora apenas dispara o useEffect indiretamente)
   const handleAplicarFiltros = () => {
-    // Ao mudar o estado de um filtro, o useEffect acima será disparado automaticamente
-    // Nenhuma lógica extra é necessária aqui além de garantir que os estados mudam
-    // O useEffect com suas dependências já cuida da re-requisição
+    // Apenas garante que os estados mudam, o useEffect fará a re-requisição
   };
 
   const handleExportCsv = async () => {
@@ -84,6 +103,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (filtroMedicamentoNome) {
         params.append('medicamento_nome', filtroMedicamentoNome);
+      }
+      // NOVO: Adiciona o filtro de localidade para exportação
+      if (filtroLocalidade) {
+        params.append('localidade', filtroLocalidade);
       }
       if (filtroDataFim) {
         params.append('data_fim', filtroDataFim)
@@ -139,10 +162,10 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Relatórios de Movimentação</h2>
 
-      {/* Seção de Filtros */}
-      <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
+      {/* Seção de Filtros (Classe .filter-section-grid agora é global) */}
+      <div className="box-container">
         <h3>Filtros</h3>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px' }}>
+        <div className="filter-section-grid">
           <div>
             <label htmlFor="medicamentoNome" style={{ display: 'block', marginBottom: '5px' }}>Nome do Medicamento:</label>
             <input
@@ -150,41 +173,51 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               id="medicamentoNome"
               value={filtroMedicamentoNome}
               onChange={(e) => setFiltroMedicamentoNome(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className='form-input'
               placeholder="Ex: Paracetamol"
             />
-          </div>
+          </div>  
           <div>
-            <label htmlFor="dataInicio" style={{ display: 'block', marginBottom: '5px' }}>Data Início:</label>
+            <label htmlFor="filtroLocalidade" className="form-label">Localidade:</label>
+            <select
+              id="filtroLocalidade"
+              value={filtroLocalidade}
+              onChange={(e) => setFiltroLocalidade(e.target.value)}
+              className="form-input"
+            >
+              <option value="">Todas as Localidades</option>
+              {localidades.map(loc => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* FIM NOVO CAMPO */}
+          <div>
+            <label htmlFor="dataInicio" className="form-label">Data Início:</label>
             <input
               type="date"
               id="dataInicio"
               value={filtroDataInicio}
               onChange={(e) => setFiltroDataInicio(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className="form-input"
             />
           </div>
           <div>
-            <label htmlFor="dataFim" style={{ display: 'block', marginBottom: '5px' }}>Data Fim:</label>
+            <label htmlFor="dataFim" className="form-label">Data Fim:</label>
             <input
               type="date"
               id="dataFim"
               value={filtroDataFim}
               onChange={(e) => setFiltroDataFim(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className="form-input"
             />
           </div>
           <button
             onClick={handleAplicarFiltros} // Dispara a função que, por sua vez, dispara o useEffect
-            style={{
-              padding: '10px 15px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              alignSelf: 'flex-end', /* Alinha o botão com os campos */
-            }}
+            className="btn-primary"
+            style={{ alignSelf: 'flex-end', height: 'fit-content' }}
           >
             Aplicar Filtros
           </button>
@@ -217,26 +250,28 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && relatorios.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Tipo</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Medicamento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Data</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Responsável</th>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Medicamento</th>
+              <th>Local</th>
+              <th>Quantidade</th>
+              <th>Data</th>
+              <th>Responsável</th>
             </tr>
           </thead>
           <tbody>
             {relatorios.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.id}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.tipo}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.medicamento_nome}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.quantidade}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{new Date(movimentacao.data).toLocaleString()}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{movimentacao.responsavel_username}</td>
+                <td>{movimentacao.id}</td>
+                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
+                <td>{movimentacao.medicamento_nome}</td>
+                <td>{movimentacao.localidade_nome}</td>
+                <td>{movimentacao.quantidade}</td>
+                <td>{movimentacao.data.slice(0, 10)}</td>
+                <td>{movimentacao.responsavel_username}</td>
               </tr>
             ))}
           </tbody>

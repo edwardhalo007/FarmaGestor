@@ -1,0 +1,267 @@
+/* FarmaGestor/frontend/src/components/DashboardPage.css */
+/* Estes são os estilos que foram MOVEMOS do App.css 
+  e que são específicos do Dashboard. 
+*/
+
+/* Dashboard Layout */
+.dashboard-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 0 0 20px 0; 
+    /* Padding removido daqui, pois o .page-content-wrapper (global) já deve ter */
+}
+
+/* Dashboard Card Styling */
+.dashboard-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    text-align: center;
+    min-width: 220px;
+    flex: 1; 
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* NOVAS SEÇÕES (Gráfico e Lista) */
+.dashboard-section-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2/3 para gráfico, 1/3 para lista */
+    gap: 20px;
+    /* Padding removido daqui */
+}
+
+@media (max-width: 900px) {
+    .dashboard-section-grid {
+        /* Empilha as seções em telas menores */
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Estilos do Gráfico de Atividade */
+.dashboard-chart-box {
+    min-height: 400px; /* Altura aumentada para melhor visualização */
+}
+
+/* Estilo para o sumário de métricas (Entradas/Saídas) */
+.activity-metrics-summary {
+    display: flex;
+    justify-content: flex-start;
+    gap: 40px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eef1f5;
+}
+
+.activity-metric .metric-label {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.activity-metric .metric-value {
+    font-size: 2em;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* Estrutura do Container do Gráfico */
+.chart-container {
+    display: flex;
+    height: 250px;
+    position: relative;
+    padding-left: 40px; /* Espaço para labels do eixo Y */
+    padding-bottom: 20px; /* Espaço para labels do eixo X */
+    box-sizing: border-box;
+    border-left: 1px solid #eef1f5; /* Linha do eixo Y */
+    border-bottom: 1px solid #eef1f5; /* Linha do eixo X */
+}
+
+.chart-labels-y {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 0.8em;
+    color: #6c757d;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    transform: translateY(-5px); /* Correção de alinhamento */
+}
+
+/* Área das Barras do Gráfico */
+.mock-chart-bars {
+    display: flex;
+    flex-grow: 1;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 0 10px;
+    gap: 20px;
+}
+
+.bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    width: 40px;
+}
+
+.chart-bar {
+    width: 100%;
+    min-height: 1px; /* Base para 0% */
+    transition: height 0.5s ease-out;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.bar-entrada {
+    background-color: #5cb85c; /* Verde - Sucesso */
+}
+
+.bar-saida {
+    background-color: #d9534f; /* Vermelho - Perigo */
+}
+
+.bar-label-x {
+    margin-top: 5px;
+    font-size: 0.85em;
+    color: #4a5568;
+}
+
+.bar-value {
+    position: absolute;
+    top: -20px;
+    font-size: 0.8em;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Estilo da Lista de Top Medicamentos */
+.dashboard-top-list-box {
+    min-height: 400px; 
+}
+
+.top-meds-list {
+    list-style: none;
+    padding: 0;
+}
+
+.top-med-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #eef1f5;
+    font-size: 1.1em;
+}
+
+.top-med-item:last-child {
+    border-bottom: none;
+}
+
+.med-name {
+    color: #333;
+    font-weight: 500;
+}
+
+.med-count {
+    font-weight: 700;
+    color: #4f46e5; /* Cor de destaque primária */
+}
+
+/* Estilos dos Cards (títulos, métricas) */
+.card-title {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+
+.card-metrics-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.metric-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1;
+}
+
+.metric-label {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* --- Novo Aviso de Escopo (Acima dos cards) --- */
+.system-scope-notice {
+    background-color: #e0f2fe; /* Azul bem clarinho */
+    color: #0369a1; /* Azul escuro */
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #bae6fd;
+}
+
+.info-icon {
+    font-size: 1.2em;
+}
+
+/* --- Barra de Filtro (Abaixo dos cards) --- */
+.dashboard-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px; /* Padding confortável */
+    margin-bottom: 20px;
+    /* Herda o estilo .box-container (fundo branco, sombra) */
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    min-width: 250px; /* Largura mínima para ficar bonito */
+    background-color: white;
+}
+
+.no-data-msg {
+    width: 100%;
+    text-align: center;
+    color: #a0aec0;
+    margin-top: 50px;
+    font-style: italic;
+}
+
+/* Classes de cor (como .color-danger) foram mantidas em App.css 
+  pois parecem ser classes utilitárias globais. 
+  Se forem usadas *apenas* no dashboard, podem ser movidas para cá.
+*/

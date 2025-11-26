@@ -1,0 +1,217 @@
+/* FarmaGestor/frontend/src/components/MedicamentosPage.css */
+/* Estilos específicos da página de Medicamentos */
+
+.form-group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 50px;
+    margin-bottom: 25px;
+    margin-left: 50px;
+    margin-right: 0px;
+}
+
+.form-group-grid .form-input,
+.form-group-grid .form-select {
+    padding: 8px 10px;
+    font-size: 1.1rem;  
+    border-radius: 6px;
+    width: 430px ;  
+}
+
+/* --- Estilos de Status (Vencimento) --- */
+
+.status-ok {
+    color: #2f855a;
+    font-weight: bold;
+    background-color: #f0fff4;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-attention {
+    color: #b87900;
+    font-weight: bold;
+    background-color: #fffaf0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-critical {
+    color: #c53030; /* Vermelho escuro */
+    font-weight: bold;
+    background-color: #fff5f5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-expired {
+    color: #718096; /* Cinza */
+    font-weight: bold;
+    background-color: #f7fafc;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* --- Table Edit Styles --- */
+.edit-cell {
+    padding: 5px !important; /* Tighten padding for edit mode */
+    vertical-align: middle;
+}
+
+.edit-input, .edit-select {
+    width: 100%;             /* Fill the column width */
+    padding: 6px;
+    border: 1px solid #4f46e5; /* Highlight editing fields */
+    border-radius: 4px;
+    box-sizing: border-box;  /* Ensure padding doesn't break width */
+    font-size: 0.9em;
+}
+
+.read-only-id {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-weight: bold;
+    text-align: center;
+    padding: 6px;
+    border-radius: 4px;
+    display: block;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.btn-icon {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.btn-save { background-color: #10b981; color: white; }
+.btn-cancel { background-color: #6b7280; color: white; }
+
+/* FarmaGestor/frontend/src/components/MedicamentosPage.css */
+
+/* ... existing styles ... */
+
+/* --- Toast Notification (Popupzinha) --- */
+.success-toast {
+    position: fixed;
+    top: 80px; /* Below the header */
+    right: 20px;
+    background-color: #10b981; /* Green */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999; /* On top of everything */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    
+    /* Animation */
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-icon {
+    font-size: 1.2em;
+    background: rgba(255,255,255,0.2);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* --- SELETOR DE TIPO (ENTRADA / SAÍDA) --- */
+.mov-type-selector {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start; /* Alinha à esquerda (posição original) */
+    margin-bottom: 15px;
+}
+
+.mov-type-btn {
+    /* flex: 1;  <-- REMOVIDO: Isso impedia eles de ficarem "contidos" */
+    width: 140px; /* Tamanho fixo e discreto */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    padding: 8px 12px; /* Padding reduzido */
+    font-size: 0.95rem; 
+    font-weight: 600;
+    
+    border: 1px solid; /* Borda mais fina (1px em vez de 2px) */
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.mov-type-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* --- ESTILO: ENTRADA (Verde) --- */
+.mov-btn-entrada {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.mov-btn-entrada:hover {
+    background-color: #ecfdf5;
+}
+
+.mov-btn-entrada.active {
+    background-color: #10b981;
+    color: white;
+    /* Sombra removida ou suavizada para não poluir */
+    box-shadow: none; 
+}
+
+/* --- ESTILO: SAÍDA (Vermelho) --- */
+.mov-btn-saida {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.mov-btn-saida:hover {
+    background-color: #fef2f2;
+}
+
+.mov-btn-saida.active {
+    background-color: #ef4444;
+    color: white;
+    box-shadow: none;
+}
+
+/* Ícone pequeno */
+.btn-icon-large {
+    font-size: 1rem;
+}

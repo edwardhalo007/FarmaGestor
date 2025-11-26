@@ -1,23 +1,56 @@
 // FarmaGestor/frontend/src/components/DashboardPage.js
 import React, { useState, useEffect } from 'react';
-import Layout from './Layout'; // Importe o componente Layout
+import Layout from './Layout';
+import './DashboardPage.css';
 
 function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
+  // --- Estados de Métricas Gerais ---
   const [totalMedicamentos, setTotalMedicamentos] = useState(0);
   const [totalUnidades, setTotalUnidades] = useState(0);
-  const [totalAlertas, setTotalAlertas] = useState(0); // Este estado será usado para o card de alertas.
+  const [totalAlertas, setTotalAlertas] = useState(0);
   const [medicamentosEmFalta, setMedicamentosEmFalta] = useState(0);
-  const [medicamentosAtencao, setMedicamentosAtencao] = useState(0); // Novo estado para o card amarelo
+  const [medicamentosAtencao, setMedicamentosAtencao] = useState(0);
+
+  // --- Estados Dinâmicos (Gráfico e Filtro) ---
+  const [movimentacoesAtividade, setMovimentacoesAtividade] = useState({ entradas: 0, saidas: 0 }); 
+  const [topMedicamentos, setTopMedicamentos] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  
+  const [localidades, setLocalidades] = useState([]); 
+  const [filtroLocalidade, setFiltroLocalidade] = useState(''); // '' = Todas as localidades
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const calculateBarHeight = (value, max) => {
+    const minHeightPercentage = 10; 
+    if (max === 0 || value === 0) return 0;
+    const percentage = (value / max) * 100;
+    return Math.max(percentage, minHeightPercentage);
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // --- Requisição Única para todos os dados de Medicamentos ---
+        // --- CORREÇÃO: LIMPEZA DE ESTADO ---
+        // Limpa os dados visuais antigos antes de buscar os novos.
+        // Isso evita que o gráfico da localidade anterior continue aparecendo.
+        setMovimentacoesAtividade({ entradas: 0, saidas: 0 });
+        setChartData([]); 
+        // ------------------------------------
+
+        // 1. Buscar Lista de Localidades
+        const locResponse = await fetch('http://localhost:8000/api/localidades/', {
+            headers: { 'Authorization': `Token ${userToken}` }
+        });
+        if (locResponse.ok) {
+            setLocalidades(await locResponse.json());
+        }
+
+        // 2. Requisição de Medicamentos (Métricas Gerais - Todo o Sistema)
         const medicamentosResponse = await fetch('http://localhost:8000/api/medicamentos/', {
           method: 'GET',
           headers: {
@@ -25,48 +58,57 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             'Content-Type': 'application/json',
           },
         });
-        if (!medicamentosResponse.ok) {
-          throw new Error(`Falha ao carregar medicamentos: ${medicamentosResponse.status}`);
-        }
+        if (!medicamentosResponse.ok) throw new Error('Falha ao carregar medicamentos');
         const medicamentosData = await medicamentosResponse.json();
 
-        // --- Processamento dos dados para os cards ---
-        let countVariedades = medicamentosData.length;
+        // Cálculos dos cards
         let countUnidades = 0;
         let countEmFalta = 0;
-        let countMedicamentosAtencao = 0; // Contagem para o card amarelo
+        let countMedicamentosAtencao = 0;
 
         for (const med of medicamentosData) {
-          // Contagem total de unidades
           countUnidades += med.quantidade;
-
-          // Contagem de medicamentos em falta (quantidade <= 0)
-          if (med.quantidade <= 15) {
-            countEmFalta++;
-          }
-
-          // Contagem para o card amarelo ("Validade: requerem atenção")
-          // O status 'Atenção' é para medicamentos que vencem entre 15 e 30 dias.
-          // O status 'Critico' é para medicamentos que vencem entre 0 e 15 dias.
-          if (med.vencimento_validade === 'Atenção' || med.vencimento_validade === 'Critico') {
-            countMedicamentosAtencao++;
-          }
+          if (med.quantidade <= 20) countEmFalta++;
+          if (med.vencimento_validade === 'Atenção' || med.vencimento_validade === 'Critico') countMedicamentosAtencao++;
         }
         
-        // Contagem para o card vermelho de "Alertas" (todos os estados que não são 'OK')
-        const countTotalAlertas = medicamentosData.filter(
-            med => med.vencimento_validade !== 'OK'
-        ).length;
-
-        setTotalMedicamentos(countVariedades);
+        setTotalMedicamentos(medicamentosData.length);
         setTotalUnidades(countUnidades);
-        setTotalAlertas(countTotalAlertas);
+        setTotalAlertas(medicamentosData.filter(med => med.vencimento_validade !== 'OK').length);
         setMedicamentosEmFalta(countEmFalta);
         setMedicamentosAtencao(countMedicamentosAtencao);
 
+        // 3. Requisição de Atividade (Gráfico) - RESPEITA O FILTRO
+        let urlAtividade = 'http://localhost:8000/api/movimentacoes/atividade/';
+        if (filtroLocalidade) {
+            urlAtividade += `?localidade=${filtroLocalidade}`;
+        }
+
+        const atividadeResponse = await fetch(urlAtividade, {
+            method: 'GET',
+            headers: { 'Authorization': `Token ${userToken}` },
+        });
+        
+        if (atividadeResponse.ok) {
+            const atividadeData = await atividadeResponse.json();
+            setMovimentacoesAtividade({ 
+                entradas: atividadeData.entradas, 
+                saidas: atividadeData.saidas 
+            });
+            setChartData(atividadeData.daily_activity || []); 
+        }
+
+        // 4. Top Medicamentos (Mantido Global por padrão)
+        const topMedsResponse = await fetch('http://localhost:8000/api/medicamentos/top/', {
+            headers: { 'Authorization': `Token ${userToken}` },
+        });
+        if (topMedsResponse.ok) {
+            setTopMedicamentos(await topMedsResponse.json());
+        }
+
       } catch (err) {
         setError(err.message);
-        console.error('Erro ao buscar dados para o Dashboard:', err);
+        console.error('Erro ao buscar dados:', err);
       } finally {
         setLoading(false);
       }
@@ -75,59 +117,131 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchData();
     }
-  }, [userToken]);
+  }, [userToken, filtroLocalidade]); // Recarrega quando filtroLocalidade muda
+
+  const emFaltaColorClass = medicamentosEmFalta > 0 ? 'color-danger' : 'color-success';
+  const atencaoColorClass = medicamentosAtencao > 0 ? 'color-warning' : 'color-success';
+  const maxChartValue = Math.max(...chartData.map(d => d.valor), 0);
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
-      <h2>Página do Dashboard</h2>
-      <p>Bem-vindo! Seu nível de acesso é: **{userNivelAcesso}**</p>
-
-      {loading && <p>Carregando dados do Dashboard...</p>}
+      <h2>Dashboard</h2>
+      
+      {loading && <p>Carregando...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
       {!loading && !error && (
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '30px' }}>
-          {/* Card de Medicamentos */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Medicamentos</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginTop: '10px' }}>
-              <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#007bff' }}>{totalMedicamentos}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>variedades</p>
+        <>
+            {/* --- 1. AVISO ACIMA DOS CARDS --- */}
+            <div className="system-scope-notice">
+                <span className="info-icon">ℹ️</span> 
+                Cards relacionados a todo o sistema (Estoque Geral)
+            </div>
+
+            {/* --- 2. CARDS (GRID) --- */}
+            <div className="dashboard-grid">
+              <div className="dashboard-card">
+                  <h3 className="card-title">Medicamentos</h3>
+                  <div className="card-metrics-container">
+                      <div><p className="metric-value color-primary">{totalMedicamentos}</p><p className="metric-label">variedades</p></div>
+                      <div><p className="metric-value color-primary">{totalUnidades}</p><p className="metric-label">unidades</p></div>
+                  </div>
               </div>
-              <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#007bff' }}>{totalUnidades}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>unidades</p>
+              <div className="dashboard-card">
+                  <h3 className="card-title">Alertas</h3>
+                  <div className="card-metrics-container">
+                      <div><p className="metric-value color-danger">{totalAlertas}</p><p className="metric-label">totais</p></div>
+                  </div>
+              </div>
+              <div className="dashboard-card">
+                  <h3 className="card-title">Em falta</h3>
+                  <p className={`metric-value ${emFaltaColorClass}`}>{medicamentosEmFalta}</p>
+                  <p className="metric-label">Crítico/Zerado</p>
+              </div>
+              <div className="dashboard-card">
+                  <h3 className="card-title">Validade</h3>
+                  <p className={`metric-value ${atencaoColorClass}`}>{medicamentosAtencao}</p>
+                  <p className="metric-label">Atenção</p>
               </div>
             </div>
-          </div>
 
-          {/* Card de Alertas (vermelho) */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Alertas</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginTop: '10px' }}>
-              <div>
-                <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#d9534f' }}>{totalAlertas}</p>
-                <p style={{ fontSize: '0.9em', color: '#6c757d' }}>totais</p>
-              </div>
+            {/* --- 3. BARRA DE FILTRO (ABAIXO DOS CARDS) --- */}
+            <div className="dashboard-filter-bar box-container">
+                <label htmlFor="localidadeFilter" className="filter-label">
+                   Visualizar movimentação (Gráfico):
+                </label>
+                <select 
+                    id="localidadeFilter"
+                    value={filtroLocalidade} 
+                    onChange={(e) => setFiltroLocalidade(e.target.value)}
+                    className="filter-select"
+                >
+                    <option value="">Todo o Sistema</option>
+                    {localidades.map(loc => (
+                        <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                    ))}
+                </select>
             </div>
-          </div>
-          
-          {/* Card de Medicamentos em falta */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Medicamentos em falta</h3>
-            <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: medicamentosEmFalta > 0 ? '#d9534f' : '#5cb85c' }}>{medicamentosEmFalta}</p>
-            <p style={{ fontSize: '0.9em', color: '#6c757d' }}>Estoque crítico ou zerado</p>
-          </div>
 
-          {/* Card de Validade (amarelo) */}
-          <div style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', textAlign: 'center', minWidth: '220px', flex: '1' }}>
-            <h3>Validade</h3>
-            <p style={{ fontSize: '2.5em', fontWeight: 'bold', color: medicamentosAtencao > 0 ? '#ffc107' : '#5cb85c' }}>{medicamentosAtencao}</p>
-            <p style={{ fontSize: '0.9em', color: '#6c757d' }}>requerem atenção</p>
-          </div>
+            {/* --- 4. GRÁFICOS E LISTAS --- */}
+            <div className="dashboard-section-grid">
+                
+                {/* Gráfico de Atividade */}
+                <div className="box-container dashboard-chart-box">
+                    <h3>Atividade Recente {filtroLocalidade ? '(Localidade Selecionada)' : '(Geral)'}</h3>
+                    
+                    <div className="activity-metrics-summary">
+                        <div className="activity-metric">
+                            <p className="metric-label">Entradas</p>
+                            <p className="metric-value color-success">{movimentacoesAtividade.entradas}</p>
+                        </div>
+                         <div className="activity-metric">
+                            <p className="metric-label">Saídas</p>
+                            <p className="metric-value color-danger">{movimentacoesAtividade.saidas}</p>
+                        </div>
+                    </div>
 
-        </div>
+                    <div className="chart-container">
+                        <div className="chart-labels-y">
+                            <span>{maxChartValue}</span>
+                            <span>{Math.round(maxChartValue / 2)}</span>
+                            <span>0</span>
+                        </div>
+                        <div className="mock-chart-bars">
+                            {chartData.length > 0 ? (
+                                chartData.map((data, index) => (
+                                    <div key={index} className="bar-wrapper">
+                                        <div 
+                                            className={`chart-bar ${data.tipo === 'Entrada' ? 'bar-entrada' : 'bar-saida'}`}
+                                            style={{ height: `${calculateBarHeight(data.valor, maxChartValue)}%` }}
+                                            title={`${data.tipo}: ${data.valor}`}
+                                        >
+                                            <span className="bar-value">{data.valor}</span>
+                                        </div>
+                                        <span className="bar-label-x">{data.dia}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="no-data-msg">Sem movimentações recentes.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Top Medicamentos */}
+                <div className="box-container dashboard-top-list-box">
+                    <h3>Top Movimentados (Geral)</h3>
+                    <ul className="top-meds-list">
+                        {topMedicamentos.map((med, index) => (
+                            <li key={index} className="top-med-item">
+                                <span className="med-name">{med.nome}</span>
+                                <span className="med-count">{med.total_movimentado}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </>
       )}
     </Layout>
   );

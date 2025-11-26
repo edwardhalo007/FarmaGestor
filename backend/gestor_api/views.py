@@ -1,6 +1,8 @@
 # FarmaGestor/backend/gestor_api/views.py
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime,time;
+from django.utils import timezone
+from django.db.models import Sum, Count, F
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -43,6 +45,74 @@ class CustomAuthToken(ObtainAuthToken):
             'username': user.username,
             'nivel_acesso': user.nivel_acesso
         })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_atividade(request):
+    # 1. Pega o Filtro
+    localidade_id = request.query_params.get('localidade')
+    
+    # 2. Define Datas (Hoje e 4 dias atrás)
+    hoje = timezone.now().date()
+    data_inicio = hoje - timedelta(days=4)
+
+    # 3. Busca TUDO no intervalo (Simples e direto para DateField)
+    movimentacoes = Movimentacao.objects.filter(data__range=[data_inicio, hoje])
+
+    # 4. Aplica filtro de localidade se existir
+    if localidade_id:
+        movimentacoes = movimentacoes.filter(localidade_id=localidade_id)
+
+    # 5. Prepara os "baldes" vazios para o gráfico
+    dias_semana = {0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom'}
+    dados_agrupados = {}
+
+    for i in range(4, -1, -1):
+        data_loop = hoje - timedelta(days=i)
+        key = data_loop.strftime('%Y-%m-%d')
+        dia_label = dias_semana[data_loop.weekday()]
+        dados_agrupados[key] = {'dia': dia_label, 'entradas': 0, 'saidas': 0}
+
+    total_entradas = 0
+    total_saidas = 0
+
+    # 6. Loop SIMPLIFICADO (Sem conversão de timezone que estava quebrando)
+    for mov in movimentacoes:
+        # Como mov.data é um 'date', apenas transformamos em string
+        # Se por acaso fosse datetime, o strftime funciona igual
+        key = mov.data.strftime('%Y-%m-%d')
+        
+        if key in dados_agrupados:
+            if mov.tipo == 'ENTRADA':
+                dados_agrupados[key]['entradas'] += mov.quantidade
+                total_entradas += mov.quantidade
+            elif mov.tipo == 'SAIDA':
+                dados_agrupados[key]['saidas'] += mov.quantidade
+                total_saidas += mov.quantidade
+
+    # 7. Formata resposta
+    chart_data = []
+    for key in sorted(dados_agrupados.keys()):
+        info = dados_agrupados[key]
+        chart_data.append({'dia': info['dia'], 'tipo': 'Entrada', 'valor': info['entradas']})
+        chart_data.append({'dia': info['dia'], 'tipo': 'Saída', 'valor': info['saidas']})
+
+    return Response({
+        'entradas': total_entradas,
+        'saidas': total_saidas,
+        'daily_activity': chart_data
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def top_medicamentos(request):
+    #Retorna os 5 medicamentos com maior movimentação (soma de quantidades).
+    # Agrupa por nome do medicamento, soma a quantidade e ordena decrescente
+    top_meds = Movimentacao.objects.values('medicamento__nome') \
+        .annotate(nome=F('medicamento__nome'), total_movimentado=Sum('quantidade')) \
+        .order_by('-total_movimentado')[:5]
+
+    return Response(top_meds)
 
 # ViewSets para CRUD de Medicamentos
 class MedicamentoViewSet(viewsets.ModelViewSet):
@@ -177,10 +247,11 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
-    medicamentos_proximos = Medicamento.objects.filter(
-        validade__lte=data_limite   
+    medicamentos_alertas = Medicamento.objects.filter(
+        validade__lte=data_limite
     ).order_by('validade')
-    serializer = MedicamentoSerializer(medicamentos_proximos, many=True)
+
+    serializer = MedicamentoSerializer(medicamentos_alertas, many=True)
     return Response(serializer.data)
 
 # Views para Relatórios
@@ -199,21 +270,24 @@ def relatorios_movimentacao(request):
                         status=status.HTTP_403_FORBIDDEN)
 
     medicamento_nome = request.query_params.get('medicamento_nome')
+    mov_local = request.query_params.get('localidade')
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
 
 
-    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel').all()
+    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel','localidade').all()
 
     if medicamento_nome:
         movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
+        
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
             movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
         except ValueError:
             return Response({"detail": "Formato de data_inicio inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
     if data_fim_str:
         try:
             data_fim = date.fromisoformat(data_fim_str)
@@ -221,14 +295,17 @@ def relatorios_movimentacao(request):
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
+    if mov_local:
+        movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
     if export_format == "csv":
         response = HttpResponse(
             content_type='text/csv',
             headers={'Content-Disposition': 'attachment; filename="relatorio-movimentacoes.csv"'}
         )
-        writer = csv.writer(response)
 
-        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Responsável'])
+        writer = csv.writer(response, delimiter = ";")
+
+        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Local', 'Responsável'])
 
         for mov in movimentacoes:
             writer.writerow([
@@ -237,6 +314,7 @@ def relatorios_movimentacao(request):
                 mov.tipo,
                 mov.quantidade,
                 mov.medicamento.nome,
+                mov.localidade.nome,
                 mov.responsavel.username
             ])
 

@@ -1,0 +1,93 @@
+/* FarmaGestor/frontend/src/components/MovimentacoesPage.css */
+/* Estilos específicos da página de Movimentações */
+
+/* Layout for two-column groups within the form */
+.mov-form-flex {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.mov-form-group-item {
+    /* Allows the input to grow but ensures a minimum useful size */
+    flex: 1 1 200px;
+}
+
+/* .filter-section-grid, .type-entrada, .type-saida 
+  FORAM MOVIDOS PARA App.css (global) 
+*/
+
+/* --- Radio Group Styling --- */
+.radio-group label {
+    margin-right: 15px;
+}
+
+/* --- Toast Notification (Popupzinha) --- */
+.success-toast {
+    position: fixed;
+    top: 80px; /* Below the header */
+    right: 20px;
+    background-color: #10b981; /* Green */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999; /* On top of everything */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    
+    /* Animation */
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-icon {
+    font-size: 1.2em;
+    background: rgba(255,255,255,0.2);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#selectMedicamento,
+#localidade,
+#quantidade {
+    cursor: pointer;
+}
+
+.error-toast {
+    position: fixed;
+    top: 80px; 
+    right: 20px;
+    background-color: #dc3545; /* Cor de perigo (vermelho) */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999; 
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+

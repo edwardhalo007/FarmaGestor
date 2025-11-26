@@ -1,6 +1,7 @@
 // FarmaGestor/frontend/src/components/MedicamentosPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout'; // Importe o componente Layout
+import './MedicamentosPage.css'; // <<< ADICIONE ESTA LINHA
 
 function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [medicamentos, setMedicamentos] = useState([]);
@@ -37,11 +38,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editLote, setEditLote] = useState('');
   const [editFabricante, setEditFabricante] = useState('');
   const [editLocalizacao, setEditLocalizacao] = useState('');
-  // --- Fim dos Estados de EDIÇÃO ---
 
   // --- Estados para Localidades (para o dropdown) ---
   const [localidades, setLocalidades] = useState([]);
-
 
   // --- useEffect para buscar medicamentos e localidades ---
   useEffect(() => {
@@ -52,13 +51,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         
         let apiUrl = 'http://localhost:8000/api/medicamentos/';
         
-        // >>> LÓGICA DE PESQUISA ADICIONADA: Constrói a URL com o filtro <<<
         if (searchTerm) {
              const params = new URLSearchParams();
              params.append('search', searchTerm);
              apiUrl += `?${params.toString()}`;
         }
-        // >>> FIM DA LÓGICA DE PESQUISA ADICIONADA <<<
         
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -105,9 +102,17 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-    // >>> CORREÇÃO DO AVISO: searchTerm foi adicionado às dependências <<<
   }, [userToken, formSuccess, triggerSearch, searchTerm]); 
 
+  // 1. ADD THIS EFFECT: Auto-hide the success message after 3 seconds
+  useEffect(() => {
+    if (formSuccess) {
+      const timer = setTimeout(() => {
+        setFormSuccess('');
+      }, 3000); // 3000ms = 3 seconds
+      return () => clearTimeout(timer); // Cleanup if user navigates away
+    }
+  }, [formSuccess]);
 
   // --- Função para lidar com a CRIAÇÃO de um novo medicamento ---
   const handleCreateMedicamento = async (e) => {
@@ -219,7 +224,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   const handleUpdateMedicamento = async (e) => {
-    e.preventDefault();
+    // Prevent the button from submitting a form if one exists
+    if (e) e.preventDefault(); 
+    
     setFormError('');
     setFormSuccess('');
 
@@ -229,6 +236,25 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       return;
     }
 
+    // --- SANITIZATION STEP ---
+    // Ensure we send NULL if the location is empty, not an empty string ""
+    // Django treats "" as a string, but expects an Integer for ForeignKeys.
+    const payload = {
+      id: editingMedId,
+      nome: editNome,
+      dosagem: editDosagem ? Number(editDosagem) : 0, // Ensure number
+      forma_farmaceutica: editFormaFarmaceutica,
+      unidade_medida: editUnidadeMedida,
+      validade: editValidade,
+      quantidade: editQuantidade ? Number(editQuantidade) : 0, // Ensure number
+      lote: editLote,
+      fabricante: editFabricante,
+      // If editLocalizacao is empty string "", send null. 
+      // If your backend requires it, this will now show "This field cannot be null" 
+      // instead of a 500/400 crash.
+      localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
+    };
+
     try {
       const response = await fetch(`http://localhost:8000/api/medicamentos/${editingMedId}/`, {
         method: 'PUT',
@@ -236,55 +262,155 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: editingMedId,
-          nome: editNome,
-          dosagem: parseInt(editDosagem),
-          forma_farmaceutica: editFormaFarmaceutica,
-          unidade_medida: editUnidadeMedida,
-          validade: editValidade,
-          quantidade: parseInt(editQuantidade),
-          lote: editLote,
-          fabricante: editFabricante,
-          localizacao: editLocalizacao, // Envia o ID da localização
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Falha ao atualizar medicamento. Verifique os dados.');
+        
+        // --- IMPROVED ERROR PARSING ---
+        // If 'detail' doesn't exist, looking for field-specific errors (e.g. { "dosagem": ["A valid integer is required."] })
+        let errorMessage = errorData.detail;
+        
+        if (!errorMessage) {
+            // Join all field errors into a readable string
+            const fieldErrors = Object.entries(errorData)
+                .map(([field, msgs]) => `${field.toUpperCase()}: ${msgs.join(' ')}`)
+                .join(' | ');
+            errorMessage = fieldErrors || 'Erro desconhecido na validação.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const updatedMedicamento = await response.json();
       setFormSuccess('Medicamento atualizado com sucesso!');
+      
       setMedicamentos(medicamentos.map(med =>
         med.id === updatedMedicamento.id ? updatedMedicamento : med
       ));
       setEditingMedId(null);
+      
     } catch (err) {
-      setFormError(err.message);
+      // Now this will show "DOSAGEM: A valid integer is required" instead of the generic message
+      setFormError(err.message); 
       console.error('Erro ao atualizar medicamento:', err);
     }
   };
 
-  const getStatusColor = (status) => {
-  switch (status) {
-    case 'OK':
-      return 'green';
-    case 'Atenção':
-      return 'orange';
-    case 'Critico':
-      return 'red';
-    case 'Vencido':
-      return '#6c757d'; 
-    default:
-      return 'black'; 
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'OK':
+        return 'status-ok';
+      case 'Atenção':
+        return 'status-attention';
+      case 'Critico':
+        return 'status-critical';
+      case 'Vencido': // Corrigido de 'vencido' para 'Vencido' para bater com o models.py
+        return 'status-expired'; 
+      default:
+        return ''; 
     }
   };
 
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
+      {/* 2. RENDER THE POPUP: Place this right at the top of the Layout children */}
+      {formSuccess && (
+        <div className="success-toast">
+          <span className="toast-icon">✓</span>
+          <span>{formSuccess}</span>
+        </div>
+      )}
       <h2>Lista de Medicamentos</h2>
+
+      {/* Formulário de Criação */}
+      {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+        <div className="box-container">
+          <h3>Adicionar Novo Medicamento</h3>
+          <form onSubmit={handleCreateMedicamento}>
+            {formError && <p style={{ color: 'red' }}>{formError}</p>}
+            
+            {/* 1. Single Container for ALL inputs.
+                2. Added inline style to force exactly 3 columns (overriding the auto-fit).
+            */}
+            <div className="form-group-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              
+              {/* --- ROW 1 --- */}
+              <div>
+                <label htmlFor="novoNome" className="form-label">Nome:</label>
+                <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaDosagem" className="form-label">Dosagem:</label>
+                <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaFormaFarmaceutica" className="form-label">Forma Farmacêutica:</label>
+                <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required className="form-select">
+                  <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                </select>
+              </div>
+
+              {/* --- ROW 2 (Previously trapped in a separate div) --- */}
+              <div>
+                <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida:</label>
+                <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required className="form-select">
+                  <option value="MG">mg</option>
+                  <option value="G">g</option>
+                  <option value="ML">ml</option>
+                  <option value="L">l</option>
+                  <option value="UNI">uni</option>
+                  <option value="UI">UI</option>
+                  <option value="MCG">mcg</option>
+                  <option value="MEQ">mEq</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="novaValidade" className="form-label">Validade:</label>
+                <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaQuantidade" className="form-label">Quantidade:</label>
+                <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
+              </div>
+
+              {/* --- ROW 3 --- */}
+              <div>
+                <label htmlFor="novoLote" className="form-label">Lote:</label>
+                <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novoFabricante" className="form-label">Fabricante:</label>
+                <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
+              </div>
+              <div>
+                <label htmlFor="novaLocalizacao" className="form-label">Localização:</label>
+                <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required className="form-select">
+                  <option value="">Selecione...</option>
+                  {localidades.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                  ))}
+                </select>
+              </div>
+
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                <button type="submit" 
+                className="btn-success"
+                style={{ 
+                  padding: '7px 20px',
+                  fontSize: '1.1rem',   
+                  fontWeight: 'bold',    
+                  minWidth: '250px'     
+                }}>
+                  Criar Medicamento
+                </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* --- SEÇÃO DE FILTRO DE PESQUISA (ADICIONADA) --- */}
       <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
@@ -303,7 +429,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                   style={{ flexGrow: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
               />
               <button 
-                  onClick={() => setTriggerSearch(prev => prev + 1)} // Força o useEffect a rodar
+                  onClick={() => setTriggerSearch(prev => prev + 1)} 
                   style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                   Pesquisar
@@ -318,73 +444,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       </div>
       {/* --- FIM DA SEÇÃO DE FILTRO --- */}
 
-      {/* Formulário de Criação */}
-      {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-        <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#fff' }}>
-          <h3>Adicionar Novo Medicamento</h3>
-          <form onSubmit={handleCreateMedicamento}>
-            {formError && <p style={{ color: 'red' }}>{formError}</p>}
-            {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
-
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoNome" style={{ display: 'block' }}>Nome:</label>
-              <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaDosagem" style={{ display: 'block' }}>Dosagem:</label>
-              <input type="number" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaFormaFarmaceutica" style={{ display: 'block' }}>Forma Farmacêutica:</label>
-              <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaUnidadeMedida" style={{ display: 'block' }}>Unidade de Medida:</label>
-              <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="MG">mg</option>
-                <option value="G">g</option>
-                <option value="ML">ml</option>
-                <option value="L">l</option>
-                <option value="UNI">uni</option>
-                <option value="UI">UI</option>
-                <option value="MCG">mcg</option>
-                <option value="MEQ">mEq</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaValidade" style={{ display: 'block' }}>Validade:</label>
-              <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaQuantidade" style={{ display: 'block' }}>Quantidade:</label>
-              <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoLote" style={{ display: 'block' }}>Lote:</label>
-              <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novoFabricante" style={{ display: 'block' }}>Fabricante:</label>
-              <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <label htmlFor="novaLocalizacao" style={{ display: 'block' }}>Localização:</label>
-              <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required style={{ width: '100%', padding: '8px' }}>
-                <option value="">Selecione...</option>
-                {localidades.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-              Criar Medicamento
-            </button>
-          </form>
-        </div>
-      )}
-
       {loading && <p>Carregando medicamentos...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
@@ -393,91 +452,204 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && medicamentos.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Nome</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Dosagem</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Forma</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Unidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Validade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Vencimento</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Lote</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Fabricante</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Localização</th>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Dosagem</th>
+              <th>Forma</th>
+              <th>Unidade</th>
+              <th>Validade</th>
+              <th>Vencimento</th>
+              <th>Quantidade</th>
+              <th>Lote</th>
+              <th>Fabricante</th>
+              <th>Localização</th>
               {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                  <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ações</th>
+                  <th>Ações</th>
               )}
             </tr>
           </thead>
           <tbody>
             {medicamentos.map((medicamento) => (
               <tr key={medicamento.id}>
-                {/* Linha para o formulário de edição */}
                 {editingMedId === medicamento.id ? (
-                  <td colSpan="11" style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    <form onSubmit={handleUpdateMedicamento} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end' }}>
-                      <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} placeholder="Dosagem" required style={{ flex: '1 1 100px', padding: '8px' }} />
-                      <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} required style={{ flex: '1 1 120px', padding: '8px' }}>
-                        <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
+                  /* --- EDIT MODE (12 Cells to match headers) --- */
+                  <>
+                    {/* 1. ID (Read-only) */}
+                    <td className="edit-cell">
+                      <span className="read-only-id">{medicamento.id}</span>
+                    </td>
+                    
+                    {/* 2. Nome */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editNome}
+                        onChange={(e) => setEditNome(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 3. Dosagem */}
+                    <td className="edit-cell">
+                      <input
+                        type="number"
+                        value={editDosagem}
+                        onChange={(e) => setEditDosagem(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 4. Forma */}
+                    <td className="edit-cell">
+                      <select
+                        value={editFormaFarmaceutica}
+                        onChange={(e) => setEditFormaFarmaceutica(e.target.value)}
+                        className="edit-select"
+                      >
+                        <option value="COMPRIMIDO">Comp.</option>
+                        <option value="CAPSULA">Cáps.</option>
+                        <option value="INJETAVEL">Inj.</option>
+                        <option value="SOLUCAO">Sol.</option>
+                        <option value="SUSPENSAO">Susp.</option>
+                        <option value="XAROPE">Xpe.</option>
+                        <option value="POMADA">Pom.</option>
+                        <option value="CREME">Creme</option>
+                        <option value="GEL">Gel</option>
+                        <option value="SUPOSITORIO">Sup.</option>
                       </select>
-                      <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} required style={{ flex: '1 1 80px', padding: '8px' }}>
+                    </td>
+
+                    {/* 5. Unidade */}
+                    <td className="edit-cell">
+                      <select
+                        value={editUnidadeMedida}
+                        onChange={(e) => setEditUnidadeMedida(e.target.value)}
+                        className="edit-select"
+                      >
                         <option value="MG">mg</option>
                         <option value="G">g</option>
                         <option value="ML">ml</option>
-                        <option value="L">l</option>
                         <option value="UNI">uni</option>
-                        <option value="UI">UI</option>
-                        <option value="MCG">mcg</option>
-                        <option value="MEQ">mEq</option>
                       </select>
-                      <input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} placeholder="Validade" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} placeholder="Quantidade" required style={{ flex: '1 1 100px', padding: '8px' }} />
-                      <input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} placeholder="Lote" required style={{ flex: '1 1 120px', padding: '8px' }} />
-                      <input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} placeholder="Fabricante" required style={{ flex: '1 1 150px', padding: '8px' }} />
-                      <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} required style={{ flex: '1 1 150px', padding: '8px' }}>
-                        <option value="">Selecione...</option>
+                    </td>
+
+                    {/* 6. Validade */}
+                    <td className="edit-cell">
+                      <input
+                        type="date"
+                        value={editValidade}
+                        onChange={(e) => setEditValidade(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 7. Vencimento (Not editable directly) */}
+                    <td className="edit-cell" style={{textAlign: 'center', color: '#999'}}>
+                      ---
+                    </td>
+
+                    {/* 8. Quantidade */}
+                    <td className="edit-cell">
+                      <input
+                        type="number"
+                        value={editQuantidade}
+                        onChange={(e) => setEditQuantidade(e.target.value)}
+                        className="edit-input"
+                        style={{width: '60px'}} 
+                      />
+                    </td>
+
+                    {/* 9. Lote */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editLote}
+                        onChange={(e) => setEditLote(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 10. Fabricante */}
+                    <td className="edit-cell">
+                      <input
+                        type="text"
+                        value={editFabricante}
+                        onChange={(e) => setEditFabricante(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+
+                    {/* 11. Localização */}
+                    <td className="edit-cell">
+                      <select
+                        value={editLocalizacao}
+                        onChange={(e) => setEditLocalizacao(e.target.value)}
+                        className="edit-select"
+                      >
+                        <option value="">Loc...</option>
                         {localidades.map(loc => (
-                          <option key={loc.id} value={loc.id}>{loc.nome} ({loc.tipo})</option>
+                          <option key={loc.id} value={loc.id}>{loc.nome}</option>
                         ))}
                       </select>
-                      <button type="submit" style={{ padding: '8px 12px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Salvar</button>
-                      <button type="button" onClick={handleCancelEdit} style={{ padding: '8px 12px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancelar</button>
-                    </form>
-                  </td>
+                    </td>
+
+                    {/* 12. Actions */}
+                    <td className="edit-cell">
+                      <div className="action-buttons">
+                        <button 
+                          onClick={(e) => handleUpdateMedicamento(e)} 
+                          className="btn-icon btn-save" 
+                          title="Salvar"
+                        >
+                          ✓
+                        </button>
+                        <button 
+                          onClick={handleCancelEdit} 
+                          className="btn-icon btn-cancel" 
+                          title="Cancelar"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </td>
+                  </>
                 ) : (
+                  /* --- VIEW MODE (Restores the missing cells) --- */
                   <>
-                    {/* Linha normal da tabela se não estiver em modo de edição */}
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.id}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.nome}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.dosagem}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.forma_farmaceutica}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.unidade_medida}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.validade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px', color: getStatusColor(medicamento.vencimento_validade), fontWeight: 'bold'}}>{medicamento.vencimento_validade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.quantidade}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.lote}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.fabricante}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
-                    {/* Botões de Ação (Editar/Excluir) */}
+                    <td>{medicamento.id}</td>
+                    <td>{medicamento.nome}</td>
+                    <td>{medicamento.dosagem}</td>
+                    <td>{medicamento.forma_farmaceutica}</td>
+                    <td>{medicamento.unidade_medida}</td>
+                    <td>{medicamento.validade}</td>
+                    <td className={getStatusClass(medicamento.vencimento_validade)}>
+                      {medicamento.vencimento_validade}
+                    </td>
+                    <td>{medicamento.quantidade}</td>
+                    <td>{medicamento.lote}</td>
+                    <td>{medicamento.fabricante}</td>
+                    <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
+                    
                     {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                            <button
-                                onClick={() => handleEditClick(medicamento)}
-                                style={{ marginRight: '5px', padding: '5px 10px', backgroundColor: '#ffc107', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                            >
-                                Editar
-                            </button>
-                            <button
-                                onClick={() => handleDeleteMedicamento(medicamento.id)}
-                                style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                            >
-                                Excluir
-                            </button>
-                        </td>
+                      <td>
+                        <div className="btn-action-group">
+                          <button
+                            onClick={() => handleEditClick(medicamento)}
+                            className="btn-edit"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMedicamento(medicamento.id)}
+                            className="btn-delete"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
                     )}
                   </>
                 )}
