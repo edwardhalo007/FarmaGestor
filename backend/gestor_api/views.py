@@ -280,18 +280,21 @@ def relatorios_movimentacao(request):
 
     if medicamento_nome:
         movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
+        
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
             movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
         except ValueError:
             return Response({"detail": "Formato de data_inicio inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
     if data_fim_str:
         try:
             data_fim = date.fromisoformat(data_fim_str)
             movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
     if mov_local:
         movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
     if export_format == "csv":
@@ -299,7 +302,8 @@ def relatorios_movimentacao(request):
             content_type='text/csv',
             headers={'Content-Disposition': 'attachment; filename="relatorio-movimentacoes.csv"'}
         )
-        writer = csv.writer(response)
+
+        writer = csv.writer(response, delimiter = ";")
 
         writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Local', 'Responsável'])
 
@@ -309,8 +313,8 @@ def relatorios_movimentacao(request):
                 mov.data.strftime('%d/%m/%Y'),
                 mov.tipo,
                 mov.quantidade,
-                mov.localidade.nome,
                 mov.medicamento.nome,
+                mov.localidade.nome,
                 mov.responsavel.username
             ])
 

@@ -1,11 +1,11 @@
 // FarmaGestor/frontend/src/components/MovimentacoesPage.js
 import React, { useState, useEffect } from 'react';
-import Layout from './Layout'; // Importe o componente Layout
-import './MovimentacoesPage.css'; // <<< ADICIONE ESTA LINHA
+import Layout from './Layout';
+import './MovimentacoesPage.css';
 
 function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [movimentacoes, setMovimentacoes] = useState([]);
-  const [medicamentos, setMedicamentos] = useState([]); // Para a lista de medicamentos no formulário
+  const [medicamentos, setMedicamentos] = useState([]);
   const [localidades, setLocalidades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,8 +15,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [selectedMedicamento, setSelectedMedicamento] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [selectedLocalidade, setSeletectedLocalidade] = useState('')
-  const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const [errorToast, setErrorToast] = useState('');
 
   // --- Estados dos Filtros ---
   const [filtroData, setFiltroData] = useState('');
@@ -115,27 +115,39 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     // Adiciona o refetchTrigger às dependências
   }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, filtroLocalidade, filtroTipo, refetchTrigger]);
 
-  // 1. ADD THIS EFFECT: Auto-hide the success message after 3 seconds
+  // 1. ADD THIS EFFECT: Auto-hide the success/error message after 3 seconds
   useEffect(() => {
-    if (formSuccess) {
+    // Agora monitora ambos os toasts
+    if (formSuccess || errorToast) { 
       const timer = setTimeout(() => {
         setFormSuccess('');
+        setErrorToast(''); // Limpa ambos
       }, 3000); // 3000ms = 3 seconds
       return () => clearTimeout(timer); // Cleanup if user navigates away
     }
-  }, [formSuccess]);
+  }, [formSuccess, errorToast]); // Dependência atualizada
 
   // --- Função para lidar com a submissão do formulário de criação ---
   const handleCreateMovimentacao = async (e) => {
     e.preventDefault();
-    setFormError('');
     setFormSuccess('');
+    setErrorToast('');
 
-    // Permissões para criar movimentação
     const canCreate = ['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canCreate) {
-      setFormError('Você não tem permissão para registrar movimentações.');
+      setErrorToast('Você não tem permissão para registrar movimentações.');
       return;
+    }
+
+    const quantidadeNum = parseInt(quantidade);
+
+    if (tipoMovimentacao === 'SAIDA' && selectedMedicamento) {
+        const med = medicamentos.find(m => String(m.id) === selectedMedicamento);
+        
+        if (med && med.quantidade < quantidadeNum) {
+            setErrorToast('Estoque insuficiente para esta operação.'); 
+            return;
+        }
     }
 
     try {
@@ -148,32 +160,34 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         body: JSON.stringify({
           tipo: tipoMovimentacao,
           medicamento: selectedMedicamento,
-          quantidade: parseInt(quantidade),
+          quantidade: quantidadeNum,
           localidade: selectedLocalidade
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        // Tenta pegar a mensagem de erro específica (ex: "Estoque insuficiente")
         let errorMessage = 'Falha ao registrar movimentação.';
         if (errorData.detail) {
             errorMessage = errorData.detail;
         } else if (errorData.non_field_errors) {
             errorMessage = errorData.non_field_errors[0];
         }
+        
+        setErrorToast(errorMessage);
         throw new Error(errorMessage);
       }
 
       setFormSuccess('Movimentação registrada com sucesso!');
-      // Limpar o formulário
       setTipoMovimentacao('ENTRADA');
       setSelectedMedicamento('');
       setQuantidade('');
-      // Dispara o useEffect para recarregar os dados
+      setSeletectedLocalidade('');
       setRefetchTrigger(t => t + 1);
     } catch (err) {
-      setFormError(err.message);
+      if (!errorToast) {
+           setErrorToast(err.message);
+      }
       console.error('Erro ao criar movimentação:', err);
     }
   };
@@ -183,7 +197,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     // Validação de front-end (embora o backend já esteja protegendo)
     const canDelete = ['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canDelete) {
-      setFormError('Você não tem permissão para excluir movimentações.');
+      setErrorToast('Você não tem permissão para excluir movimentações.');
       return;
     }
 
@@ -202,8 +216,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       return;
     }
 
-    setFormError('');
     setFormSuccess('');
+    setErrorToast(''); // Limpa o toast de erro
 
     try {
       const response = await fetch(`http://localhost:8000/api/movimentacoes/${id}/`, {
@@ -215,14 +229,18 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Falha ao excluir movimentação: ${response.status} - ${errorText || 'Erro desconhecido'}`);
+        const errorMessage = `Falha ao excluir movimentação: ${response.status} - ${errorText || 'Erro desconhecido'}`;
+        setErrorToast(errorMessage);
+        throw new Error(errorMessage);
       }
 
       setFormSuccess('Movimentação excluída e estoque revertido com sucesso!');
       // Dispara o useEffect para recarregar os dados
       setRefetchTrigger(t => t + 1);
     } catch (err)      {
-      setFormError(err.message);
+      if (!errorToast) {
+        setErrorToast(err.message);
+      }
       console.error('Erro ao excluir movimentação:', err);
     }
   };
@@ -259,14 +277,18 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Erro ao atualizar movimentação');
+        const errorMessage = errorData.detail || 'Erro ao atualizar movimentação';
+        setErrorToast(errorMessage);
+        throw new Error(errorMessage);
       }
 
       setFormSuccess('Movimentação atualizada com sucesso!');
       setEditingId(null);
       setRefetchTrigger(prev => prev + 1); // Recarrega a tabela
     } catch (err) {
-      setFormError(err.message);
+      if (!errorToast) {
+        setErrorToast(err.message);
+      }
     }
   };
 
@@ -279,6 +301,13 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           <span>{formSuccess}</span>
         </div>
       )}
+      {/* NOVO: RENDERIZA O TOAST DE ERRO */}
+      {errorToast && (
+        <div className="error-toast">
+          <span className="toast-icon">✕</span>
+          <span>{errorToast}</span>
+        </div>
+      )}
       <h2>Página de Movimentações</h2>
       
       {/* Formulário de Adição */}
@@ -286,7 +315,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         <div className="box-container">
           <h3>Adicionar Nova Movimentação</h3>
           <form onSubmit={handleCreateMovimentacao}>
-            {formError && <p style={{ color: 'red' }}>{formError}</p>}
               <div className="form-group">
                 <label className="form-label">Tipo de Movimentação *</label>
                 
@@ -311,7 +339,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                   </button>
                 </div>
               </div>
-            {/* Medicamento e Quantidade (Classes CSS lidas do novo .css) */}
             <div className="mov-form-flex">
               <div className="mov-form-group-item">
                 <label htmlFor="selectMedicamento" className="form-label">Medicamento *</label>
@@ -322,31 +349,38 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                   ))}
                 </select>
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label htmlFor="localidade" style={{ display: 'block', marginBottom: '5px' }}>
+              <div className="mov-form-group-item"> 
+                <label htmlFor="localidade" className='form-label'>
                     Localidade *
                 </label>
                 <select
                     id="localidade"
-                    name="localidade" // MUST MATCH the state key: formData.localidade
+                    name="localidade" 
                     value={selectedLocalidade}
                     onChange={(e) => setSeletectedLocalidade(e.target.value)}
                     required
-                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    className='form-select'
                 >
                     <option value="">Selecione a Localidade</option>
-                    {/* Mapeia a lista de localidades que foi buscada na API */}
                     {localidades.map((loc) => (
                         <option key={loc.id} value={loc.id}>
-                            {loc.nome} {/* Assumes the Localidade model has a 'nome' field */}
+                            {loc.nome}
                         </option>
                     ))}
                 </select>
             </div>
-              <div style={{ flex: '1 1 100px' }}>
-                <label htmlFor="quantidade" style={{ display: 'block', marginBottom: '5px' }}>Quantidade *</label>
-                <input type="number" id="quantidade" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required min="1" style={{ width: '100%', padding: '8px' }} />
-              </div>
+            <div className="mov-form-group-item"> 
+                <label htmlFor="quantidade" className="form-label">Quantidade *</label> 
+                <input 
+                  type="number" 
+                  id="quantidade" 
+                  value={quantidade} 
+                  onChange={(e) => setQuantidade(e.target.value)} 
+                  required 
+                  min="1" 
+                  className="form-input" 
+                />
+            </div>
             
             </div>
 
@@ -357,46 +391,52 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
-      {/* Seção de Filtros (Classes CSS lidas do novo .css) */}
+      {/* Seção de Filtros */}
       <div className="box-container">
         <h3>Filtros</h3>
-        <div className="filter-section-grid">
-          <div>
-            <label htmlFor="filtroData" className="form-label">Data:</label>
-            <input type="date" id="filtroData" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} className="form-input" />
-          </div>
-          <div>
-            <label htmlFor="filtroMedicamento" className="form-label">Medicamento:</label>
-            <input type="text" id="filtroMedicamento" value={filtroMedicamento} onChange={(e) => setFiltroMedicamento(e.target.value)} placeholder="Nome do medicamento" className="form-input" />
-          </div>
-          <div>
-            <label htmlFor="filtroResponsavel" style={{ display: 'block', marginBottom: '5px' }}>Responsável:</label>
-            <input type="text" id="filtroResponsavel" value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} placeholder="Nome do responsável" style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px'}}>
-          <div>
-            <label htmlFor="filtroLocalidade" style={{ display: 'block', marginBottom: '5px' }}>Localidade:</label>
-            <select id="filtroLocalidade" value={filtroLocalidade} onChange={(e) => setFiltroLocalidade(e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
-                <option value="">Todas as Localidades</option>
-                {localidades.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.nome}</option>
-                ))}
-            </select>
-          </div>
+        <div className="filter-section-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'end' }}>
           <div> 
-            <label htmlFor="filtroTipo" style={{ display: 'block', marginBottom: '5px' }}>Tipo:</label>
+            <label htmlFor="filtroTipo" className="form-label">Tipo:</label>
             <select
                 id="filtroTipo"
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                className="form-select"
             >
                 <option value="">Todos</option>
                 <option value="ENTRADA">Entrada</option>
                 <option value="SAIDA">Saída</option>
             </select>
           </div>
+          <div style={{ flexGrow: 2 }}>
+            <label htmlFor="filtroMedicamento" className="form-label">Medicamento:</label>
+            <input 
+                type="text" 
+                id="filtroMedicamento" 
+                value={filtroMedicamento} 
+                onChange={(e) => setFiltroMedicamento(e.target.value)} 
+                placeholder="Nome do medicamento" 
+                className="form-input" 
+            />
+          </div>
+          <div>
+            <label htmlFor="filtroLocalidade" className="form-label">Localidade:</label>
+            <select id="filtroLocalidade" value={filtroLocalidade} onChange={(e) => setFiltroLocalidade(e.target.value)} className="form-select">
+                <option value="">Todas as Localidades</option>
+                {localidades.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.nome}</option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="filtroData" className="form-label">Data:</label>
+            <input type="date" id="filtroData" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} className="form-input" />
+          </div>
+          <div>
+            <label htmlFor="filtroResponsavel" className="form-label">Responsável:</label>
+            <input type="text" id="filtroResponsavel" value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} placeholder="Nome do responsável" className="form-input" />
+          </div>
+
         </div>
       </div>
 
@@ -429,8 +469,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {movimentacoes.map((movimentacao) => (
               <tr key={movimentacao.id}>
-                
-                {/* MODO EDIÇÃO: Se o ID da linha for igual ao ID editando */}
                 {editingId === movimentacao.id ? (
                   <>
                       <td>{movimentacao.id}</td>

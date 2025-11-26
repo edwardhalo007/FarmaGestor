@@ -330,7 +330,13 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <h3>Adicionar Novo Medicamento</h3>
           <form onSubmit={handleCreateMedicamento}>
             {formError && <p style={{ color: 'red' }}>{formError}</p>}
-            <div className="form-group-grid">
+            
+            {/* 1. Single Container for ALL inputs.
+                2. Added inline style to force exactly 3 columns (overriding the auto-fit).
+            */}
+            <div className="form-group-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              
+              {/* --- ROW 1 --- */}
               <div>
                 <label htmlFor="novoNome" className="form-label">Nome:</label>
                 <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
@@ -345,6 +351,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                   <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
                 </select>
               </div>
+
+              {/* --- ROW 2 (Previously trapped in a separate div) --- */}
               <div>
                 <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida:</label>
                 <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required className="form-select">
@@ -366,6 +374,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 <label htmlFor="novaQuantidade" className="form-label">Quantidade:</label>
                 <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
               </div>
+
+              {/* --- ROW 3 --- */}
               <div>
                 <label htmlFor="novoLote" className="form-label">Lote:</label>
                 <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
@@ -383,10 +393,21 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                   ))}
                 </select>
               </div>
+
             </div>
-            <button type="submit" className="btn-success" style={{ marginTop: '20px' }}>
-              Criar Medicamento
-            </button>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                <button type="submit" 
+                className="btn-success"
+                style={{ 
+                  padding: '7px 20px',
+                  fontSize: '1.1rem',   
+                  fontWeight: 'bold',    
+                  minWidth: '250px'     
+                }}>
+                  Criar Medicamento
+                </button>
+            </div>
           </form>
         </div>
       )}

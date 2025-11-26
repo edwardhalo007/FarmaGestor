@@ -173,7 +173,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               id="medicamentoNome"
               value={filtroMedicamentoNome}
               onChange={(e) => setFiltroMedicamentoNome(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              className='form-input'
               placeholder="Ex: Paracetamol"
             />
           </div>  
