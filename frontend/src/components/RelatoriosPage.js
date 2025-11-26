@@ -176,8 +176,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
               placeholder="Ex: Paracetamol"
             />
-          </div>
-          {/* NOVO CAMPO: Filtro de Localidade */}
+          </div>  
           <div>
             <label htmlFor="filtroLocalidade" className="form-label">Localidade:</label>
             <select

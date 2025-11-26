@@ -514,7 +514,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                       </td>
                   </>
                 ) : (
-                  /* MODO VISUALIZAÇÃO (O que você já tinha) */
                   <>
                       <td>{movimentacao.id}</td>
                       <td>
