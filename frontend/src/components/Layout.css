@@ -1,6 +1,5 @@
 .layout-container {
-    display: flex;
-    flex-direction: column;
+    display: block;
     min-height: 100vh;
     background-color: #f3f4f6; /* Fundo geral da página mais claro */
   }
@@ -11,7 +10,7 @@
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); /* Gradiente Dark Blue Profundo */
     color: #fff;
     position: fixed;
-    top: 70px; /* Abaixo do Header */
+    top: 70px; 
     bottom: 0;
     left: 0;
     padding-top: 20px;
@@ -72,27 +71,32 @@
   
   /* --- Ajuste do Main Content --- */
   .main-content {
-    margin-left: 250px;
-    margin-top: 30px;
-    padding: 20px;
-    flex: 1;
+    margin-left: 260px;
+    padding-top: 10px; 
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-bottom: 30px;
+    min-height: 100vh;
+    box-sizing: border-box;
   }
   
   /* Responsividade básica */
   @media (max-width: 768px) {
     .sidebar {
-      width: 60px; /* Sidebar colapsada em telas menores */
+      width: 70px;
       padding-top: 10px;
     }
     .nav-text {
-      display: none; /* Esconde texto, mostra só ícones */
+      display: none;
     }
     .main-content {
-      margin-left: 60px;
+      margin-left: 70px;
+      padding-left: 15px;
+      padding-right: 15px;
     }
     .nav-link {
       justify-content: center;
-      padding: 12px;
+      padding: 14px;
     }
     .nav-icon {
       margin-right: 0;
