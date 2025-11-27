@@ -131,6 +131,7 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
                 <tr>
                   <th>ID</th>
                   <th>Nome</th>
+                  <th>Local</th>
                   <th>Dosagem</th>
                   <th>Forma</th>
                   <th>Unidade</th>
@@ -152,6 +153,7 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
                         <span className={`status-dot dot-${statusClass}`}></span>
                         {alerta.nome}
                       </td>
+                      <td>{alerta.localizacao_detalhe?.nome || 'N/A'}</td>
                       <td>{alerta.dosagem}</td>
                       <td>{alerta.forma_farmaceutica}</td>
                       <td>{alerta.unidade_medida}</td>

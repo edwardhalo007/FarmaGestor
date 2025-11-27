@@ -1,4 +1,3 @@
-// FarmaGestor/frontend/src/components/Layout.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from './Header';    
@@ -6,9 +5,10 @@ import Header from './Header';
 function Layout({ children, onLogout, userNivelAcesso }) {
   return (
     <div className="layout-container">
-      <Header /> 
+      {/* 1. Pass the onLogout function down to the Header */}
+      <Header onLogout={onLogout} /> 
+      
       <nav className="sidebar">
-        
         <ul className="nav-list">
           <li className="nav-item"><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
           <li className="nav-item"><Link to="/medicamentos" className="nav-link">Medicamentos</Link></li>
@@ -26,14 +26,11 @@ function Layout({ children, onLogout, userNivelAcesso }) {
             <li className="nav-item"><Link to="/localidades" className="nav-link">Localidades</Link></li>
           )}
         </ul>
-        <button onClick={onLogout} className="logout-button">
-          Sair
-        </button>
+        
+        {/* 2. Removed the old "Sair" button from the bottom of the sidebar */}
       </nav>
 
-      {/* Conteúdo Principal da Página */}
       <main className="main-content">
-        {/* Content wrapper with padding */}
         <div className="page-content-wrapper">
           {children}
         </div>
@@ -42,4 +39,4 @@ function Layout({ children, onLogout, userNivelAcesso }) {
   );
 }
 
-export default Layout;  
+export default Layout;
