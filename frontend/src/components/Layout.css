@@ -1,0 +1,100 @@
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f3f4f6; /* Fundo geral da página mais claro */
+  }
+  
+  /* --- Sidebar Styling --- */
+  .sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); /* Gradiente Dark Blue Profundo */
+    color: #fff;
+    position: fixed;
+    top: 70px; /* Abaixo do Header */
+    bottom: 0;
+    left: 0;
+    padding-top: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    z-index: 100;
+  }
+  
+  .nav-list {
+    list-style: none;
+    padding: 0 10px; /* Padding lateral para os botões não encostarem na borda */
+    margin: 0;
+  }
+  
+  .nav-item {
+    margin-bottom: 25px;
+  }
+  
+  /* --- Link Styling --- */
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: #94a3b8; /* Cinza claro (não ativo) */
+    text-decoration: none;
+    border-radius: 8px; /* Cantos arredondados modernos */
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+    font-size: 1.1rem;
+  }
+  
+  /* Hover Effect */
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+    transform: translateX(5px); /* Efeito sutil de movimento */
+  }
+  
+  /* --- Active State (O "Pulo do Gato") --- */
+  .nav-link.active {
+    background-color: #2563eb; /* Azul Vibrante (Brand Color) */
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); /* Sombra suave azul */
+  }
+  
+  /* --- Icons --- */
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+    margin-right: 10px;
+    opacity: 0.9;
+  }
+  
+  .nav-text {
+    letter-spacing: 0.3px;
+  }
+  
+  /* --- Ajuste do Main Content --- */
+  .main-content {
+    margin-left: 250px;
+    margin-top: 30px;
+    padding: 20px;
+    flex: 1;
+  }
+  
+  /* Responsividade básica */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 60px; /* Sidebar colapsada em telas menores */
+      padding-top: 10px;
+    }
+    .nav-text {
+      display: none; /* Esconde texto, mostra só ícones */
+    }
+    .main-content {
+      margin-left: 60px;
+    }
+    .nav-link {
+      justify-content: center;
+      padding: 12px;
+    }
+    .nav-icon {
+      margin-right: 0;
+    }
+  }
