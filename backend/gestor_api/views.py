@@ -1,18 +1,18 @@
 # FarmaGestor/backend/gestor_api/views.py
 
-from datetime import date, timedelta, datetime,time;
+from datetime import date, timedelta
 from django.utils import timezone
-from django.db.models import Sum, Count, F
+from django.db.models import Sum, F
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
-from django.db import IntegrityError, models, transaction
+from django.db import models, transaction
 from django.http import HttpResponse
 import csv
 
