@@ -198,6 +198,12 @@ h2 {
     box-sizing: border-box; /* Garante que padding não altere o width */
 }
 
+.required-asterisk {
+    color: #d9534f;
+    font-weight: bold;
+    margin-left: 4px; 
+}
+
 /* Primary Button Style */
 .btn-primary {
     padding: 10px 20px;

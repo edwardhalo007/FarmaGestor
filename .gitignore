@@ -16,3 +16,4 @@ pip-log.txt
 pip-delete-this-directory.txt
 /backend/gestor_api/migrations
 venv
+.env

@@ -168,7 +168,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             {/* --- 3. BARRA DE FILTRO (ABAIXO DOS CARDS) --- */}
             <div className="dashboard-filter-bar box-container">
                 <label htmlFor="localidadeFilter" className="filter-label">
-                   Visualizar movimentação (Gráfico):
+                   Visualizar Movimentação Gráfica:
                 </label>
                 <select 
                     id="localidadeFilter"
