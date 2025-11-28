@@ -1,5 +1,5 @@
 // FarmaGestor/frontend/src/components/AlertasPage.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect} from 'react';
 import Layout from './Layout'; // Importe o componente Layout
 import './AlertasPage.css'; // <<< Importa o CSS específico
 
@@ -175,22 +175,5 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
     </Layout>
   );
 }
-
-const FilterButton = ({ label, filterValue, activeFilter, setActiveFilter }) => (
-  <button 
-    onClick={() => setActiveFilter(filterValue)}
-    style={{
-      padding: '8px 12px',
-      fontSize: '14px',
-      cursor: 'pointer',
-      border: '1px solid #007bff',
-      borderRadius: '5px',
-      backgroundColor: activeFilter === filterValue ? '#007bff' : 'white',
-      color: activeFilter === filterValue ? 'white' : '#007bff'
-    }}
-  >
-    {label}
-  </button>
-);
 
 export default AlertasPage;
