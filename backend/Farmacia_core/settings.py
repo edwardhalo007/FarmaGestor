@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv('SECRET_KEY') # Use a sua SECRET_KEY original
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = []#colocar o dominio e o ip do servidor
 
 
 # Application definition
@@ -124,7 +124,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # --- SUAS CONFIGURAÇÕES PERSONALIZADAS (ADICIONE/VERIFIQUE A PARTIR DAQUI) ---
 
 # Configurações CORS (PARA COMUNICAÇÃO FRONTEND-BACKEND)
-CORS_ALLOW_ALL_ORIGINS = True # <<< Adicionado para desenvolvimento (ou CORS_ALLOWED_ORIGINS)
+CORS_ALLOW_ALL_ORIGINS = True # <<< Adicionado para desenvolvimento (ou CORS_ALLOWED_ORIGINS) mas depois tem que mudar sabosta
 
 # Configuração do Django REST Framework
 REST_FRAMEWORK = {
