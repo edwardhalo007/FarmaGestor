@@ -8,20 +8,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+SECRET_KEY = os.getenv('SECRET_KEY') 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY') # Use a sua SECRET_KEY original
-
-#COLOCAR ISSO AQUI QUANDO O SITE TIVER NO AR
-# SECURE_SSL_REDIRECT = True # Obriga o site a usar HTTPS
-# SESSION_COOKIE_SECURE = True # Cookie de sessão só trafega em HTTPS
-# CSRF_COOKIE_SECURE = True # Cookie de proteção CSRF só trafega em HTTPS
-# SECURE_BROWSER_XSS_FILTER = True # Ativa proteção XSS do navegador
-# SECURE_CONTENT_TYPE_NOSNIFF = True # Evita que o navegador "adivinhe" tipos de arquivo
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []#colocar o dominio e o ip do servidor
