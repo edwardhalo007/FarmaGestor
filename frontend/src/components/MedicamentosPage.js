@@ -338,15 +338,15 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
               
               {/* --- ROW 1 --- */}
               <div>
-                <label htmlFor="novoNome" className="form-label">Nome:</label>
+                <label htmlFor="novoNome" className="form-label">Nome: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
               </div>
               <div>
-                <label htmlFor="novaDosagem" className="form-label">Dosagem:</label>
+                <label htmlFor="novaDosagem" className="form-label">Dosagem: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novaDosagem" value={novaDosagem} onChange={(e) => setNovaDosagem(e.target.value)} required className="form-input" />
               </div>
               <div>
-                <label htmlFor="novaFormaFarmaceutica" className="form-label">Forma Farmacêutica:</label>
+                <label htmlFor="novaFormaFarmaceutica" className="form-label">Forma Farmacêutica: <span className="required-asterisk">*</span></label>
                 <select id="novaFormaFarmaceutica" value={novaFormaFarmaceutica} onChange={(e) => setNovaFormaFarmaceutica(e.target.value)} required className="form-select">
                   <option value="COMPRIMIDO">Comprimido</option><option value="CAPSULA">Cápsula</option><option value="INJETAVEL">Injetável</option><option value="SOLUCAO">Solução</option><option value="SUSPENSAO">Suspensão</option><option value="XAROPE">Xarope</option><option value="POMADA">Pomada</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Supositório</option><option value="AEROSOL">Aerossol</option><option value="PO">Pó</option><option value="GRANULADO">Granulado</option><option value="OUTRO">Outro</option>
                 </select>
@@ -354,7 +354,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
               {/* --- ROW 2 (Previously trapped in a separate div) --- */}
               <div>
-                <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida:</label>
+                <label htmlFor="novaUnidadeMedida" className="form-label">Unidade de Medida: <span className="required-asterisk">*</span></label>
                 <select id="novaUnidadeMedida" value={novaUnidadeMedida} onChange={(e) => setNovaUnidadeMedida(e.target.value)} required className="form-select">
                   <option value="MG">mg</option>
                   <option value="G">g</option>
@@ -367,25 +367,25 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
               </div>
               <div>
-                <label htmlFor="novaValidade" className="form-label">Validade:</label>
+                <label htmlFor="novaValidade" className="form-label">Validade: <span className="required-asterisk">*</span></label>
                 <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required className="form-input" />
               </div>
               <div>
-                <label htmlFor="novaQuantidade" className="form-label">Quantidade:</label>
+                <label htmlFor="novaQuantidade" className="form-label">Quantidade: <span className="required-asterisk">*</span></label>
                 <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
               </div>
 
               {/* --- ROW 3 --- */}
               <div>
-                <label htmlFor="novoLote" className="form-label">Lote:</label>
+                <label htmlFor="novoLote" className="form-label">Lote: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
               </div>
               <div>
-                <label htmlFor="novoFabricante" className="form-label">Fabricante:</label>
+                <label htmlFor="novoFabricante" className="form-label">Fabricante: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
               </div>
               <div>
-                <label htmlFor="novaLocalizacao" className="form-label">Localização:</label>
+                <label htmlFor="novaLocalizacao" className="form-label">Localização: <span className="required-asterisk">*</span></label>
                 <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} required className="form-select">
                   <option value="">Selecione...</option>
                   {localidades.map(loc => (

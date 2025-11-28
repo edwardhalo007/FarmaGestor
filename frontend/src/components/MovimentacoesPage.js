@@ -316,7 +316,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           <h3>Adicionar Nova Movimentação</h3>
           <form onSubmit={handleCreateMovimentacao}>
               <div className="form-group">
-                <label className="form-label">Tipo de Movimentação *</label>
+                <label className="form-label">Tipo de Movimentação <span className="required-asterisk">*</span></label>
                 
                 {/* SUBSTITUIMOS O RADIO GROUP POR ISTO: */}
                 <div className="mov-type-selector">
@@ -341,7 +341,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               </div>
             <div className="mov-form-flex">
               <div className="mov-form-group-item">
-                <label htmlFor="selectMedicamento" className="form-label">Medicamento *</label>
+                <label htmlFor="selectMedicamento" className="form-label">Medicamento <span className="required-asterisk">*</span></label>
                 <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required className="form-select">
                   <option value="">Selecione um medicamento...</option>
                   {medicamentos.map(med => (
@@ -351,7 +351,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
               </div>
               <div className="mov-form-group-item"> 
                 <label htmlFor="localidade" className='form-label'>
-                    Localidade *
+                    Localidade <span className="required-asterisk">*</span>
                 </label>
                 <select
                     id="localidade"
@@ -370,7 +370,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
             </div>
             <div className="mov-form-group-item"> 
-                <label htmlFor="quantidade" className="form-label">Quantidade *</label> 
+                <label htmlFor="quantidade" className="form-label">Quantidade <span className="required-asterisk">*</span></label> 
                 <input 
                   type="number" 
                   id="quantidade" 
