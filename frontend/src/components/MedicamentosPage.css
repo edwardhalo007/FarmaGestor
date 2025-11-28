@@ -217,3 +217,10 @@
 .btn-icon-large {
     font-size: 1rem;
 }
+
+#novaFormaFarmaceutica,
+#novaUnidadeMedida,
+#novaValidade,
+#novaLocalizacao {
+    cursor: pointer;
+}
