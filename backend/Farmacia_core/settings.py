@@ -1,8 +1,10 @@
 # FarmaGestor/backend/Farmacia_core/settings.py
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -10,10 +12,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+u6remtru#304jw&otx&kzz#0$pva-#0e+$c@us5qik0i4@1oo' # Use a sua SECRET_KEY original
+SECRET_KEY = os.getenv('SECRET_KEY') # Use a sua SECRET_KEY original
+
+#COLOCAR ISSO AQUI QUANDO O SITE TIVER NO AR
+# SECURE_SSL_REDIRECT = True # Obriga o site a usar HTTPS
+# SESSION_COOKIE_SECURE = True # Cookie de sessão só trafega em HTTPS
+# CSRF_COOKIE_SECURE = True # Cookie de proteção CSRF só trafega em HTTPS
+# SECURE_BROWSER_XSS_FILTER = True # Ativa proteção XSS do navegador
+# SECURE_CONTENT_TYPE_NOSNIFF = True # Evita que o navegador "adivinhe" tipos de arquivo
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -70,11 +79,11 @@ WSGI_APPLICATION = 'Farmacia_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'farmagestor_db',      # <<< Nome do banco de dados que você criou
-        'USER': 'Sadzin',             # <<< Seu usuário do PostgreSQL (o que você acabou de criar)
-        'PASSWORD': 'brigadeiro123',  # <<< A senha que você definiu para o usuário 'Sadzin'
-        'HOST': 'localhost',          # Geralmente 'localhost' se o PostgreSQL está no seu PC
-        'PORT': '5432',               # Porta padrão do PostgreSQL. Mantenha se não mudou.
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': '5432',
     }
 }
 
@@ -83,18 +92,10 @@ DATABASES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', }, 
+    { 'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', }, 
+    { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
 
@@ -133,7 +134,16 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated', # Exemplo: exige autenticação por padrão para todas as views
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle', # Para quem não está logado
+        'rest_framework.throttling.UserRateThrottle'  # Para quem já está logado
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '5/minute',  # Limita tentativas de login/acesso anônimo a 5 por minuto
+        'user': '1000/day'   # Usuário logado tem mais liberdade
+    }
+
 }
 
 # Configuração para usar seu modelo de usuário personalizado
