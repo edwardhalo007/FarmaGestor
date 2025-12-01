@@ -121,6 +121,10 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
 
   const emFaltaColorClass = medicamentosEmFalta > 0 ? 'color-danger' : 'color-success';
   const atencaoColorClass = medicamentosAtencao > 0 ? 'color-warning' : 'color-success';
+  
+  const emFaltaTitleClass = medicamentosEmFalta > 0 ? 'title-danger' : 'title-success';
+  const atencaoTitleClass = medicamentosAtencao > 0 ? 'title-warning' : 'title-success';
+
   const maxChartValue = Math.max(...chartData.map(d => d.valor), 0);
 
   return (
@@ -134,32 +138,76 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         <>
             {/* --- 1. AVISO ACIMA DOS CARDS --- */}
             <div className="system-scope-notice">
-                <span className="info-icon">ℹ️</span> 
+                {/* NOVO ÍCONE: Réplica exata do SVG da imagem enviada */}
+                <svg 
+                    className="info-icon"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    {/* Círculo Externo */}
+                    <circle 
+                        cx="12" 
+                        cy="12" 
+                        r="10" 
+                        stroke="currentColor" 
+                        strokeWidth="2" /* Ajustado para 2 para ficar elegante, ou 2.5 para negrito igual a imagem */
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                    />
+                    
+                    {/* O ponto do "i" */}
+                    <path 
+                        d="M12 7H12.01" 
+                        stroke="currentColor" 
+                        strokeWidth="3" /* O ponto geralmente é um pouco mais grosso visualmente */
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                    />
+                    
+                    {/* O corpo do "i" */}
+                    <path 
+                        d="M12 11V17" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                    />
+                </svg>
+                
                 Cards relacionados a todo o sistema (Estoque Geral)
             </div>
 
-            {/* --- 2. CARDS (GRID) --- */}
             <div className="dashboard-grid">
+              {/* Card 1: Totais (Always Blue/Primary) */}
               <div className="dashboard-card">
-                  <h3 className="card-title">Medicamentos</h3>
+                  <h3 className="card-title title-primary">Medicamentos totais</h3>
                   <div className="card-metrics-container">
                       <div><p className="metric-value color-primary">{totalMedicamentos}</p><p className="metric-label">variedades</p></div>
                       <div><p className="metric-value color-primary">{totalUnidades}</p><p className="metric-label">unidades</p></div>
                   </div>
               </div>
+
+              {/* Card 2: Alertas (Always Red/Danger) */}
               <div className="dashboard-card">
-                  <h3 className="card-title">Alertas</h3>
+                  <h3 className="card-title title-danger">Alertas</h3>
                   <div className="card-metrics-container">
                       <div><p className="metric-value color-danger">{totalAlertas}</p><p className="metric-label">totais</p></div>
                   </div>
               </div>
+
+              {/* Card 3: Em Falta (Dynamic: Red or Green) */}
               <div className="dashboard-card">
-                  <h3 className="card-title">Em falta</h3>
+                  <h3 className={`card-title ${emFaltaTitleClass}`}>Medicamentos Em falta</h3>
                   <p className={`metric-value ${emFaltaColorClass}`}>{medicamentosEmFalta}</p>
                   <p className="metric-label">Crítico/Zerado</p>
               </div>
+
+              {/* Card 4: Validade (Dynamic: Yellow or Green) */}
               <div className="dashboard-card">
-                  <h3 className="card-title">Validade</h3>
+                  <h3 className={`card-title ${atencaoTitleClass}`}>Validades em risco</h3>
                   <p className={`metric-value ${atencaoColorClass}`}>{medicamentosAtencao}</p>
                   <p className="metric-label">Atenção</p>
               </div>
@@ -168,7 +216,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             {/* --- 3. BARRA DE FILTRO (ABAIXO DOS CARDS) --- */}
             <div className="dashboard-filter-bar box-container">
                 <label htmlFor="localidadeFilter" className="filter-label">
-                   Visualizar Movimentação Gráfica:
+                   Visualizar Movimentação por Localidade:
                 </label>
                 <select 
                     id="localidadeFilter"
@@ -230,11 +278,16 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
 
                 {/* Top Medicamentos */}
                 <div className="box-container dashboard-top-list-box">
-                    <h3>Top Movimentados (Geral)</h3>
+                    <h3>Top 5 Movimentados (Geral)</h3>
                     <ul className="top-meds-list">
-                        {topMedicamentos.map((med, index) => (
+                        {topMedicamentos.slice(0, 5).map((med, index) => (
                             <li key={index} className="top-med-item">
-                                <span className="med-name">{med.nome}</span>
+                                <div className="med-info-group"> 
+                                    <span className={`med-rank rank-${index + 1}`}>
+                                        {index + 1}º
+                                    </span>
+                                    <span className="med-name">{med.nome}</span>
+                                </div>
                                 <span className="med-count">{med.total_movimentado}</span>
                             </li>
                         ))}

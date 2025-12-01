@@ -1,4 +1,3 @@
-// FarmaGestor/frontend/src/components/UsuariosPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './Layout';
 import './UsuariosPage.css';
@@ -17,17 +16,18 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   const [formData, setFormData] = useState(INITIAL_USER_STATE);
-  const [formError, setFormError] = useState('');
+  
+  // --- TOAST STATES ---
+  // Substituímos o 'formError' estático pelo 'errorToast' dinâmico
   const [formSuccess, setFormSuccess] = useState('');
+  const [errorToast, setErrorToast] = useState(''); 
 
   const canManageUsers = ['ADMINISTRADOR', 'GESTOR'].includes(userNivelAcesso);
   const niveisDeAcesso = ['VISUALIZACAO', 'OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'];
 
   const fetchUsuarios = useCallback(
     async (bypassCache = false) => {
-      if (!userToken) {
-        return;
-      }
+      if (!userToken) return;
 
       try {
         setLoading(true);
@@ -68,6 +68,17 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     fetchUsuarios();
   }, [fetchUsuarios]);
 
+  // --- EFEITO DO TIMER (AUTO-HIDE) ---
+  useEffect(() => {
+    if (formSuccess || errorToast) {
+      const timer = setTimeout(() => {
+        setFormSuccess('');
+        setErrorToast('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [formSuccess, errorToast]);
+
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({
@@ -78,9 +89,10 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
   const resetForm = (clearMessages = false) => {
     setFormData(INITIAL_USER_STATE);
+    // Se clearMessages for true, limpamos os toasts imediatamente (opcional)
     if (clearMessages) {
-      setFormError('');
       setFormSuccess('');
+      setErrorToast('');
     }
   };
 
@@ -88,12 +100,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     event.preventDefault();
 
     if (!canManageUsers) {
-      setFormError('Você não tem permissão para criar usuários.');
+      setErrorToast('Você não tem permissão para criar usuários.');
       return;
     }
 
-    setFormError('');
+    // Limpa estados anteriores
     setFormSuccess('');
+    setErrorToast('');
 
     try {
       const payload = { ...formData };
@@ -121,11 +134,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         throw new Error(errorMessage);
       }
 
-      setFormSuccess('Usuário criado com sucesso!');
+      setFormSuccess('Usuário criado com sucesso!'); // <--- Toast Verde
       resetForm();
       fetchUsuarios(true);
     } catch (err) {
-      setFormError(err.message || 'Erro desconhecido ao criar usuário.');
+      setErrorToast(err.message || 'Erro desconhecido ao criar usuário.'); // <--- Toast Vermelho
       console.error('Erro ao criar usuário:', err);
     }
   };
@@ -134,17 +147,17 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     event.preventDefault();
 
     if (!canManageUsers) {
-      setFormError('Você não tem permissão para atualizar usuários.');
+      setErrorToast('Você não tem permissão para atualizar usuários.');
       return;
     }
 
     if (!formData.id) {
-      setFormError('Nenhum usuário selecionado para edição.');
+      setErrorToast('Nenhum usuário selecionado para edição.');
       return;
     }
 
-    setFormError('');
     setFormSuccess('');
+    setErrorToast('');
 
     try {
       const payload = { ...formData };
@@ -176,11 +189,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         throw new Error(errorMessage);
       }
 
-      setFormSuccess('Usuário atualizado com sucesso!');
+      setFormSuccess('Usuário atualizado com sucesso!'); // <--- Toast Verde
       resetForm();
       fetchUsuarios(true);
     } catch (err) {
-      setFormError(err.message || 'Erro desconhecido ao atualizar usuário.');
+      setErrorToast(err.message || 'Erro desconhecido ao atualizar usuário.'); // <--- Toast Vermelho
       console.error('Erro ao atualizar usuário:', err);
     }
   };
@@ -193,17 +206,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       password: '',
       nivel_acesso: usuario.nivel_acesso || 'VISUALIZACAO',
     });
-    setFormError('');
     setFormSuccess('');
-  };
-
-  const handleCancelEdit = () => {
-    resetForm(true);
+    setErrorToast('');
   };
 
   const handleDeleteUsuario = async (id, username) => {
     if (!canManageUsers) {
-      setFormError('Você não tem permissão para excluir usuários.');
+      setErrorToast('Você não tem permissão para excluir usuários.');
       return;
     }
 
@@ -211,9 +220,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       `Tem certeza que deseja excluir o usuário "${username}"?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`http://localhost:8000/api/usuarios/${id}/`, {
@@ -230,13 +237,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         );
       }
 
-      setFormSuccess('Usuário excluído com sucesso!');
+      setFormSuccess('Usuário excluído com sucesso!'); // <--- Toast Verde
       if (formData.id === id) {
         resetForm();
       }
       fetchUsuarios(true);
     } catch (err) {
-      setFormError(err.message || 'Erro desconhecido ao excluir usuário.');
+      setErrorToast(err.message || 'Erro desconhecido ao excluir usuário.'); // <--- Toast Vermelho
       console.error('Erro ao excluir usuário:', err);
     }
   };
@@ -249,16 +256,34 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
+  const handleCancelEdit = () => {
+    resetForm(true);
+  };
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
+      
+      {/* --- TOASTS (Notificações Flutuantes) --- */}
+      {formSuccess && (
+        <div className="success-toast">
+          <span className="toast-icon">✓</span>
+          <span>{formSuccess}</span>
+        </div>
+      )}
+      {errorToast && (
+        <div className="error-toast">
+          <span className="toast-icon">✕</span>
+          <span>{errorToast}</span>
+        </div>
+      )}
+
       <h2>Gerenciamento de Usuários</h2>
 
       {canManageUsers && (
         <div className="box-container">
           <h3>{formData.id ? 'Editar Usuário' : 'Criar Novo Usuário'}</h3>
           <form onSubmit={handleSubmit}>
-            {formError && <p style={{ color: 'red' }}>{formError}</p>}
-            {formSuccess && <p style={{ color: 'green' }}>{formSuccess}</p>}
+            {/* Mensagens estáticas removidas em favor dos Toasts */}
 
             <div className="user-form-grid">
               <div>

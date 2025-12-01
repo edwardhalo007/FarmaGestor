@@ -1,4 +1,3 @@
-// FarmaGestor/frontend/src/components/MovimentacoesPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import './MovimentacoesPage.css';

@@ -1,14 +1,11 @@
-/* FarmaGestor/frontend/src/components/UsuariosPage.css */
-/* Estilos específicos da página de Usuários */
-
 /* --- User Management Form Layout (UsuariosPage) --- */
 .user-form-grid {
     display: grid;
-    /* Grid de duas colunas, responsivo */
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
     gap: 20px;
     margin-bottom: 15px;
 }
+
 /* --- Container Principal do Formulário --- */
 .box-container {
     background: #fff;
@@ -71,7 +68,7 @@
 /* --- Área de Botões (Actions) --- */
 .form-actions {
     display: flex;
-    justify-content: flex-end; /* Alinha botões à direita */
+    justify-content: center;
     gap: 15px;
     margin-top: 20px;
     padding-top: 20px;
@@ -126,4 +123,64 @@
     display: flex;
     gap: 8px;
     justify-content: center;
-}   
+}
+
+/* --- Toast Notification (Success) --- */
+.success-toast {
+    position: fixed;
+    top: 80px; /* Abaixo do header */
+    right: 20px;
+    background-color: #10b981; /* Verde Sucesso */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* --- Toast Notification (Error) --- */
+.error-toast {
+    position: fixed;
+    top: 80px; 
+    right: 20px;
+    background-color: #dc3545; /* Vermelho Erro */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999; 
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    min-width: 300px;
+    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-icon {
+    font-size: 1.2em;
+    background: rgba(255,255,255,0.2);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
