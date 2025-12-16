@@ -1,8 +1,8 @@
 /* Dashboard Layout */
 .dashboard-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 20px;
-    flex-wrap: wrap;
     margin: 0 0 20px 0;
 }
 
@@ -243,8 +243,6 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     background-color: #fff;
     text-align: center;
-    min-width: 220px;
-    flex: 1; 
     transition: transform 0.2s;
 }
 
