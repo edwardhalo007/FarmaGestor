@@ -12,6 +12,7 @@ import MovimentacoesPage from './components/MovimentacoesPage';
 import RelatoriosPage from './components/RelatoriosPage';
 import UsuariosPage from './components/UsuariosPage';
 import LocalidadesPage from './components/LocalidadesPage';
+import SobrePage from './components/SobrePage';
 
 // --- Componente PrivateRoute para proteger rotas ---
 function PrivateRoute({ children, isAuthenticated }) {
@@ -125,6 +126,14 @@ function App() {
           element={
             <PrivateRoute isAuthenticated={isAuthenticated}>
               <LocalidadesPage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sobre"
+          element={
+            <PrivateRoute isAuthenticated={isAuthenticated}>
+              <SobrePage onLogout={handleLogout} userNivelAcesso={userNivelAcesso} userToken={userToken} />
             </PrivateRoute>
           }
         />
