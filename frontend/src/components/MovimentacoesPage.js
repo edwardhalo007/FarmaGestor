@@ -46,7 +46,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         // assim que a tabela recarrega. Deixamos o timer de 3s cuidar disso.
 
         // Busca a lista de medicamentos para o dropdown do formulário
-        const medsResponse = await fetch('http://localhost:8000/api/medicamentos/', {
+        const medsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
         });
@@ -54,7 +54,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const medsData = await medsResponse.json();
         setMedicamentos(medsData);
 
-        const locsResponse = await fetch('http://localhost:8000/api/localidades/', {
+        const locsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
         });
@@ -79,7 +79,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           params.append('tipo', filtroTipo);
       }
 
-        let apiUrl = 'http://localhost:8000/api/movimentacoes/';
+        let apiUrl = `${process.env.REACT_APP_API_URL}/api/movimentacoes/`;
         if (params.toString()) {
              apiUrl += `?${params.toString()}`;
         }
@@ -150,7 +150,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/movimentacoes/', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -219,7 +219,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     setErrorToast(''); // Limpa o toast de erro
 
     try {
-      const response = await fetch(`http://localhost:8000/api/movimentacoes/${id}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/movimentacoes/${id}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -260,7 +260,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
   const handleUpdateMovimentacao = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/movimentacoes/${editingId}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/movimentacoes/${editingId}/`, {
         method: 'PUT', // ou PATCH
         headers: {
           'Authorization': `Token ${userToken}`,

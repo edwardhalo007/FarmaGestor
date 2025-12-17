@@ -1,21 +1,25 @@
-# FarmaGestor/backend/Farmacia_core/settings.py
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Carrega as variáveis do arquivo .env
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# --- SEGURANÇA ---
+# A chave deve estar no .env. Nunca deixe hardcoded aqui em produção.
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-SECRET_KEY = os.getenv('SECRET_KEY') 
-
+# Debug deve ser False em produção
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []#colocar o dominio e o ip do servidor
+# Lê a string do .env e transforma em lista. 
+# Ex: "localhost,127.0.0.1" vira ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
-# Application definition
+# --- APLICAÇÃO ---
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -24,15 +28,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',  # <<< Adicionado: Para CORS
-    'rest_framework', # <<< Adicionado: Para Django REST Framework
-    'rest_framework.authtoken', # <<< Adicionado: Para Token Authentication do DRF
-    'gestor_api',   # <<< Adicionado: Sua aplicação personalizada
+    
+    # Bibliotecas de Terceiros
+    'corsheaders',                  # Para gerenciar CORS
+    'rest_framework',               # Django REST Framework
+    'rest_framework.authtoken',     # Autenticação por Token
+    
+    # Suas Apps
+    'gestor_api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # <<< Adicionado: Para CORS (DEVE VIR AQUI!)
+    
+    'corsheaders.middleware.CorsMiddleware', # <<< IMPORTANTE: O CORS deve vir logo no início
+    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -61,7 +71,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Farmacia_core.wsgi.application'
 
 
-# Database
+# --- BANCO DE DADOS ---
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
@@ -71,12 +81,12 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
-        'PORT': '5432',
+        'PORT': os.getenv('DB_PORT', '5432'), # Porta padrão 5432 se não especificado
     }
 }
 
 
-# Password validation
+# --- VALIDAÇÃO DE SENHA ---
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -87,7 +97,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# --- INTERNACIONALIZAÇÃO ---
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'pt-BR'
@@ -99,40 +109,48 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# --- ARQUIVOS ESTÁTICOS ---
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+# Pasta onde o comando 'collectstatic' reunirá os arquivos para produção
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+
+# --- MODELO DE CHAVE PRIMÁRIA ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- SUAS CONFIGURAÇÕES PERSONALIZADAS (ADICIONE/VERIFIQUE A PARTIR DAQUI) ---
 
-# Configurações CORS (PARA COMUNICAÇÃO FRONTEND-BACKEND)
-CORS_ALLOW_ALL_ORIGINS = True # <<< Adicionado para desenvolvimento (ou CORS_ALLOWED_ORIGINS) mas depois tem que mudar sabosta
+# --- CONFIGURAÇÕES PERSONALIZADAS ---
 
-# Configuração do Django REST Framework
+# 1. Usuário Personalizado
+AUTH_USER_MODEL = 'gestor_api.Usuario'
+
+# 2. Configurações CORS (Segurança de quem pode acessar a API)
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Lista de origens permitidas (Frontend)
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+
+# Configuração necessária para Django 4+ para evitar erros de CSRF em domínios confiáveis
+CSRF_TRUSTED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+
+# 3. Configuração do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', # Exemplo: exige autenticação por padrão para todas as views
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle', # Para quem não está logado
-        'rest_framework.throttling.UserRateThrottle'  # Para quem já está logado
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '5/minute',  # Limita tentativas de login/acesso anônimo a 5 por minuto
-        'user': '1000/day'   # Usuário logado tem mais liberdade
+        'anon': '5/minute',
+        'user': '1000/day'
     }
-
 }
-
-# Configuração para usar seu modelo de usuário personalizado
-AUTH_USER_MODEL = 'gestor_api.Usuario' # <<< Aponta para seu modelo de usuário personalizado

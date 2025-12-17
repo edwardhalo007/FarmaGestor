@@ -17,7 +17,7 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
     const fetchAlertas = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/alertas/validade/', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alertas/validade/`, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${userToken}`,

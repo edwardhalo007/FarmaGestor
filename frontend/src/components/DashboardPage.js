@@ -43,7 +43,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         // ------------------------------------
 
         // 1. Buscar Lista de Localidades
-        const locResponse = await fetch('http://localhost:8000/api/localidades/', {
+        const locResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
             headers: { 'Authorization': `Token ${userToken}` }
         });
         if (locResponse.ok) {
@@ -51,7 +51,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         // 2. Requisição de Medicamentos (Métricas Gerais - Todo o Sistema)
-        const medicamentosResponse = await fetch('http://localhost:8000/api/medicamentos/', {
+        const medicamentosResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${userToken}`,
@@ -79,7 +79,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         setMedicamentosAtencao(countMedicamentosAtencao);
 
         // 3. Requisição de Atividade (Gráfico) - RESPEITA O FILTRO
-        let urlAtividade = 'http://localhost:8000/api/movimentacoes/atividade/';
+        let urlAtividade = `${process.env.REACT_APP_API_URL}/api/movimentacoes/atividade/`;
         if (filtroLocalidade) {
             urlAtividade += `?localidade=${filtroLocalidade}`;
         }
@@ -99,7 +99,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         // 4. Top Medicamentos (Mantido Global por padrão)
-        const topMedsResponse = await fetch('http://localhost:8000/api/medicamentos/top/', {
+        const topMedsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/top/`, {
             headers: { 'Authorization': `Token ${userToken}` },
         });
         if (topMedsResponse.ok) {

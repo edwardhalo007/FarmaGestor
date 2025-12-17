@@ -45,7 +45,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
           fetchOptions.cache = 'no-store';
         }
 
-        const response = await fetch('http://localhost:8000/api/usuarios/', fetchOptions);
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/`, fetchOptions);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -112,7 +112,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       const payload = { ...formData };
       delete payload.id;
 
-      const response = await fetch('http://localhost:8000/api/usuarios/', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/`, {
         method: 'POST',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -167,7 +167,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         delete payload.password;
       }
 
-      const response = await fetch(`http://localhost:8000/api/usuarios/${formData.id}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/${formData.id}/`, {
         method: 'PATCH',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -223,7 +223,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/usuarios/${id}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/${id}/`, {
         method: 'DELETE',
         headers: {
           Authorization: `Token ${userToken}`,
