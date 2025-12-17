@@ -44,7 +44,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
-        let apiUrl = `${process.env.REACT_APP_API_URL}:8000/api/medicamentos/`;
+        let apiUrl = `${process.env.REACT_APP_API_URL}/api/medicamentos/`;
         if (searchTerm) {
              const params = new URLSearchParams();
              params.append('search', searchTerm);
@@ -117,7 +117,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/medicamentos/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
