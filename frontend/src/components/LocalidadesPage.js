@@ -27,7 +27,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('http://localhost:8000/api/localidades/', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
         });
@@ -54,7 +54,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/localidades/', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -95,7 +95,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
 
     try {
         // 3. API Call
-        const response = await fetch(`http://localhost:8000/api/localidades/${id}/`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/localidades/${id}/`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Token ${userToken}`,

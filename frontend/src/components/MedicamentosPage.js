@@ -43,7 +43,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
-        let apiUrl = 'http://localhost:8000/api/medicamentos/';
+        let apiUrl = `${process.env.REACT_APP_API_URL}/api/medicamentos/`;
         if (searchTerm) {
              const params = new URLSearchParams();
              params.append('search', searchTerm);
@@ -71,7 +71,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
     const fetchLocalidades = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/localidades/', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
         });
@@ -116,7 +116,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/medicamentos/', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -168,7 +168,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/medicamentos/${id}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/${id}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Token ${userToken}` },
       });
@@ -229,7 +229,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     };
 
     try {
-      const response = await fetch(`http://localhost:8000/api/medicamentos/${editingMedId}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/${editingMedId}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${userToken}`,

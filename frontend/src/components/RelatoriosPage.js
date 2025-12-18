@@ -17,7 +17,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   useEffect(() => {
     const fetchLocalidades = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/localidades/', {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
                 method: 'GET',
                 headers: { 'Authorization': `Token ${userToken}` },
             });
@@ -36,7 +36,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         setError(null); // Limpa erros anteriores
 
         // Constrói a URL com base nos filtros
-        let apiUrl = 'http://localhost:8000/api/relatorios/';
+        let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
         const params = new URLSearchParams();
 
         if (filtroMedicamentoNome) {
@@ -98,7 +98,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
   const handleExportCsv = async () => {
     try {
-      let apiUrl = 'http://localhost:8000/api/relatorios/';
+      let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
       const params = new URLSearchParams();
 
       if (filtroMedicamentoNome) {

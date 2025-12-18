@@ -63,7 +63,7 @@ function Header({ onLogout }) {
         <button 
           onClick={onLogout} 
           style={logoutBtnStyle}
-          onMouseOver={(e) => e.currentTarget.style.color = '#111827'}
+          onMouseOver={(e) => e.currentTarget.style.color = '#dc3545'}
           onMouseOut={(e) => e.currentTarget.style.color = '#374151'}
         >
           <span>Sair</span>
