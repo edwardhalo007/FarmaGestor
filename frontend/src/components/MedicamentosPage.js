@@ -39,7 +39,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
   // --- useEffects (Fetch Data) ---
   useEffect(() => {
-    // ... (MANTIDO IGUAL AO SEU CÓDIGO ORIGINAL DE FETCH)
     const fetchMedicamentos = async () => {
       try {
         setLoading(true);
