@@ -1,11 +1,9 @@
-// src/components/SobrePage.js
 import React from 'react';
 import Layout from './Layout';
 import './SobrePage.css';
 
 function SobrePage({ onLogout, userNivelAcesso }) {
   
-  // Dados dos Desenvolvedores
   const devs = [
     {
       nome: 'João Pedro Severo',
@@ -25,7 +23,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
     }
   ];
 
-  // Dados dos Níveis de Acesso
   const niveisAcesso = [
     {
       nivel: 'VISUALIZADOR',
@@ -53,13 +50,11 @@ function SobrePage({ onLogout, userNivelAcesso }) {
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <div className="sobre-container">
         
-        {/* --- SEÇÃO 1: CABEÇALHO --- */}
         <div className="sobre-header">
             <h2>Sobre a Plataforma</h2>
             <p className="sobre-subtitle">Conheça quem faz e como funciona o FarmaGestor</p>
         </div>
 
-        {/* --- SEÇÃO 2: DESENVOLVEDORES (QUEM SOMOS) --- */}
         <section className="dev-section">
             <h3 className="section-title">Equipe de Desenvolvimento</h3>
             <div className="dev-grid">
@@ -98,16 +93,13 @@ function SobrePage({ onLogout, userNivelAcesso }) {
             </div>
         </section>
 
-        {/* --- SEÇÃO 3: FUNCIONALIDADES DO SISTEMA (6 CARDS) --- */}
         <section className="func-section">
             <h3 className="section-title">Módulos do Sistema</h3>
             <p className="section-description">O FarmaGestor é composto por módulos integrados para controle total da saúde municipal:</p>
             <div className="func-grid">
                 
-                {/* 1. Dashboard */}
                 <div className="func-card">
                     <div className="func-icon-box blue">
-                        {/* Ícone de Gráfico */}
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
                     </div>
                     <div>
@@ -116,10 +108,8 @@ function SobrePage({ onLogout, userNivelAcesso }) {
                     </div>
                 </div>
 
-                {/* 2. Medicamentos */}
                 <div className="func-card">
                     <div className="func-icon-box teal">
-                        {/* Ícone de Comprimido/Lista */}
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 12h-2v2h-2v-2H9v-2h2v-2h2v2h2v2zM7 9v2h10V9H7z"/></svg>
                     </div>
                     <div>
@@ -128,10 +118,8 @@ function SobrePage({ onLogout, userNivelAcesso }) {
                     </div>
                 </div>
 
-                {/* 3. Alertas Inteligentes (NOVO) */}
                 <div className="func-card">
                     <div className="func-icon-box red">
-                        {/* Ícone de Alerta/Sino */}
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                     </div>
                     <div>
@@ -140,7 +128,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
                     </div>
                 </div>
 
-                {/* 4. Movimentações */}
                 <div className="func-card">
                     <div className="func-icon-box green">
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
@@ -151,7 +138,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
                     </div>
                 </div>
 
-                {/* 5. Gestão de Equipe */}
                 <div className="func-card">
                     <div className="func-icon-box orange">
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -162,7 +148,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
                     </div>
                 </div>
                 
-                {/* 6. Configuração de Rede */}
                 <div className="func-card">
                     <div className="func-icon-box purple">
                         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -175,7 +160,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
             </div>
         </section>
 
-        {/* --- SEÇÃO 4: NÍVEIS DE ACESSO --- */}
         <section className="access-levels-section">
             <h3 className="section-title">Entenda os Níveis de Acesso</h3>
             <div className="access-grid">
@@ -188,7 +172,6 @@ function SobrePage({ onLogout, userNivelAcesso }) {
             </div>
         </section>
 
-        {/* --- SEÇÃO 5: SUPORTE --- */}
         <section className="support-section">
             <div className="support-box">
                 <div className="support-text">

@@ -16,7 +16,6 @@ from django.http import HttpResponse
 import csv
 
 
-# --- Classe de Permissão Personalizada para Níveis de Acesso ---
 class NivelAcessoPermission(BasePermission):
     message = "Você não tem permissão para realizar esta ação com seu nível de acesso."
 
@@ -30,7 +29,6 @@ class NivelAcessoPermission(BasePermission):
             return request.user.nivel_acesso in self.allowed_levels
         return False
 
-# View para Login (endpoint /api/login/)
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
@@ -251,7 +249,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
         medicamento.save()
         serializer.save()
 
-# Views para Alertas de Validade
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def alertas_validade(request):
@@ -264,7 +261,6 @@ def alertas_validade(request):
     serializer = MedicamentoSerializer(medicamentos_alertas, many=True)
     return Response(serializer.data)
 
-# Views para Relatórios
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def relatorios_movimentacao(request):
@@ -350,7 +346,6 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            # Agora permite a edição e exclusão para GESTOR e ADMINISTRADOR
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(allowed_levels=[NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR])

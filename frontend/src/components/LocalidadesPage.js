@@ -1,7 +1,6 @@
-// FarmaGestor/frontend/src/components/LocalidadesPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
-import './LocalidadesPage.css'; // <<< ADICIONE ESTA LINHA
+import './LocalidadesPage.css';
 
 function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
   const [localidades, setLocalidades] = useState([]);
@@ -9,12 +8,10 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
   const [error, setError] = useState(null);
 
   const [novoNome, setNovoNome] = useState('');
-  // O tipo agora começa como 'ATT_BASICA' por padrão
   const [novoTipo, setNovoTipo] = useState('ATT_BASICA'); 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   
-  // Define os tipos de localidade que vamos usar nos botões
   const tiposDeLocalidade = [
       { id: 'ATT_BASICA', nome: 'Atenção Básica' },
       { id: 'ANTIBIOTICO', nome: 'Antibiótico' },
@@ -67,20 +64,18 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
       
       setFormSuccess('Localidade criada com sucesso!');
       setNovoNome('');
-      setNovoTipo('ATT_BASICA'); // Reseta para o padrão
+      setNovoTipo('ATT_BASICA');
     } catch (err) {
       setFormError(err.message);
     }
   };
 
   const handleDeleteLocalidade = async (id, nome) => {
-    // 1. Basic Permission Check
     if (userNivelAcesso !== 'ADMINISTRADOR') {
         setFormError('Você não tem permissão para excluir localidades.');
         return;
     }
 
-    // 2. User Confirmation
     const confirmDelete = window.confirm(
         `Tem certeza que deseja excluir a localidade "${nome}" (ID: ${id})? 
         
@@ -94,7 +89,6 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     setFormSuccess('');
 
     try {
-        // 3. API Call
         const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/localidades/${id}/`, {
             method: 'DELETE',
             headers: {
@@ -102,18 +96,15 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
             },
         });
 
-        if (response.status === 204) { // Success: HTTP 204 No Content
+        if (response.status === 204) {
             setFormSuccess('Localidade excluída com sucesso!');
-            // Triggers useEffect to reload list
         } else {
-            // Read error response, useful if Django returns a ProtectedError (400/500)
             const errorText = await response.text();
             
             let errorMessage = `Falha ao excluir localidade: ${response.status}.`;
             if (response.status === 403) {
                 errorMessage = "Erro de Permissão: Você não tem acesso a esta ação.";
             } else if (errorText.includes('ProtectedError')) {
-                // Specific message for the database block
                 errorMessage = "ERRO: Não é possível excluir esta localidade. Ela ainda possui Movimentações de Medicamentos registradas.";
             } else {
                 errorMessage = `Falha ao excluir localidade: ${errorText}`;
@@ -142,13 +133,12 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
               <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
             </div>
             
-            {/* As classes de botão agora vêm do LocalidadesPage.css */}
             <div className="form-group">
                 <label className="form-label">Tipo:</label>
                 <div className="type-button-group">
                     {tiposDeLocalidade.map(tipo => (
                         <button 
-                            type="button" // Importante para não submeter o formulário
+                            type="button"
                             key={tipo.id}
                             onClick={() => setNovoTipo(tipo.id)}
                             className={`type-button ${novoTipo === tipo.id ? 'type-button-active' : ''}`}

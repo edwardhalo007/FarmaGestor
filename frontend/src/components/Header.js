@@ -11,11 +11,10 @@ const headerStyle = {
   backgroundColor: 'white',
   boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
   
-  // --- NOVAS PROPRIEDADES (FIXANDO O TOPO) ---
-  position: 'fixed', // Fixa o cabeçalho
+  position: 'fixed',
   top: 0,
   left: 0,
-  zIndex: 1000 // Garante que fique acima de tudo (inclusive da sidebar)
+  zIndex: 1000
 };
 
 const logoStyle = {

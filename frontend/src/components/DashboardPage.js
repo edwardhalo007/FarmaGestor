@@ -1,23 +1,20 @@
-// FarmaGestor/frontend/src/components/DashboardPage.js
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import './DashboardPage.css';
 
 function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
-  // --- Estados de Métricas Gerais ---
   const [totalMedicamentos, setTotalMedicamentos] = useState(0);
   const [totalUnidades, setTotalUnidades] = useState(0);
   const [totalAlertas, setTotalAlertas] = useState(0);
   const [medicamentosEmFalta, setMedicamentosEmFalta] = useState(0);
   const [medicamentosAtencao, setMedicamentosAtencao] = useState(0);
 
-  // --- Estados Dinâmicos (Gráfico e Filtro) ---
   const [movimentacoesAtividade, setMovimentacoesAtividade] = useState({ entradas: 0, saidas: 0 }); 
   const [topMedicamentos, setTopMedicamentos] = useState([]);
   const [chartData, setChartData] = useState([]);
   
   const [localidades, setLocalidades] = useState([]); 
-  const [filtroLocalidade, setFiltroLocalidade] = useState(''); // '' = Todas as localidades
+  const [filtroLocalidade, setFiltroLocalidade] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,14 +32,9 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         setLoading(true);
         setError(null);
 
-        // --- CORREÇÃO: LIMPEZA DE ESTADO ---
-        // Limpa os dados visuais antigos antes de buscar os novos.
-        // Isso evita que o gráfico da localidade anterior continue aparecendo.
         setMovimentacoesAtividade({ entradas: 0, saidas: 0 });
-        setChartData([]); 
-        // ------------------------------------
+        setChartData([]);
 
-        // 1. Buscar Lista de Localidades
         const locResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
             headers: { 'Authorization': `Token ${userToken}` }
         });
@@ -50,7 +42,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             setLocalidades(await locResponse.json());
         }
 
-        // 2. Requisição de Medicamentos (Métricas Gerais - Todo o Sistema)
         const medicamentosResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: {
@@ -61,7 +52,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         if (!medicamentosResponse.ok) throw new Error('Falha ao carregar medicamentos');
         const medicamentosData = await medicamentosResponse.json();
 
-        // Cálculos dos cards
         let countUnidades = 0;
         let countEmFalta = 0;
         let countMedicamentosAtencao = 0;
@@ -78,7 +68,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         setMedicamentosEmFalta(countEmFalta);
         setMedicamentosAtencao(countMedicamentosAtencao);
 
-        // 3. Requisição de Atividade (Gráfico) - RESPEITA O FILTRO
         let urlAtividade = `${process.env.REACT_APP_API_URL}/api/movimentacoes/atividade/`;
         if (filtroLocalidade) {
             urlAtividade += `?localidade=${filtroLocalidade}`;
@@ -98,7 +87,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             setChartData(atividadeData.daily_activity || []); 
         }
 
-        // 4. Top Medicamentos (Mantido Global por padrão)
         const topMedsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/top/`, {
             headers: { 'Authorization': `Token ${userToken}` },
         });
@@ -117,7 +105,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchData();
     }
-  }, [userToken, filtroLocalidade]); // Recarrega quando filtroLocalidade muda
+  }, [userToken, filtroLocalidade]);
 
   const emFaltaColorClass = medicamentosEmFalta > 0 ? 'color-danger' : 'color-success';
   const atencaoColorClass = medicamentosAtencao > 0 ? 'color-warning' : 'color-success';
@@ -136,9 +124,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
 
       {!loading && !error && (
         <>
-            {/* --- 1. AVISO ACIMA DOS CARDS --- */}
             <div className="system-scope-notice">
-                {/* NOVO ÍCONE: Réplica exata do SVG da imagem enviada */}
                 <svg 
                     className="info-icon"
                     width="24"
@@ -147,27 +133,24 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
                     fill="none" 
                     xmlns="http://www.w3.org/2000/svg"
                 >
-                    {/* Círculo Externo */}
                     <circle 
                         cx="12" 
                         cy="12" 
                         r="10" 
                         stroke="currentColor" 
-                        strokeWidth="2" /* Ajustado para 2 para ficar elegante, ou 2.5 para negrito igual a imagem */
+                        strokeWidth="2"
                         strokeLinecap="round" 
                         strokeLinejoin="round"
                     />
                     
-                    {/* O ponto do "i" */}
                     <path 
                         d="M12 7H12.01" 
                         stroke="currentColor" 
-                        strokeWidth="3" /* O ponto geralmente é um pouco mais grosso visualmente */
+                        strokeWidth="3"
                         strokeLinecap="round" 
                         strokeLinejoin="round"
                     />
                     
-                    {/* O corpo do "i" */}
                     <path 
                         d="M12 11V17" 
                         stroke="currentColor" 
@@ -181,7 +164,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
             </div>
 
             <div className="dashboard-grid">
-              {/* Card 1: Totais (Always Blue/Primary) */}
               <div className="dashboard-card">
                   <h3 className="card-title title-primary">Medicamentos totais</h3>
                   <div className="card-metrics-container">
@@ -190,7 +172,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
                   </div>
               </div>
 
-              {/* Card 2: Alertas (Always Red/Danger) */}
               <div className="dashboard-card">
                   <h3 className="card-title title-danger">Alertas</h3>
                   <div className="card-metrics-container">
@@ -198,14 +179,12 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
                   </div>
               </div>
 
-              {/* Card 3: Em Falta (Dynamic: Red or Green) */}
               <div className="dashboard-card">
                   <h3 className={`card-title ${emFaltaTitleClass}`}>Medicamentos Em falta</h3>
                   <p className={`metric-value ${emFaltaColorClass}`}>{medicamentosEmFalta}</p>
                   <p className="metric-label">Crítico/Zerado</p>
               </div>
 
-              {/* Card 4: Validade (Dynamic: Yellow or Green) */}
               <div className="dashboard-card">
                   <h3 className={`card-title ${atencaoTitleClass}`}>Validades em risco</h3>
                   <p className={`metric-value ${atencaoColorClass}`}>{medicamentosAtencao}</p>
@@ -213,7 +192,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
               </div>
             </div>
 
-            {/* --- 3. BARRA DE FILTRO (ABAIXO DOS CARDS) --- */}
             <div className="dashboard-filter-bar box-container">
                 <label htmlFor="localidadeFilter" className="filter-label">
                    Visualizar Movimentação por Localidade:
@@ -231,10 +209,8 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
             </div>
 
-            {/* --- 4. GRÁFICOS E LISTAS --- */}
             <div className="dashboard-section-grid">
                 
-                {/* Gráfico de Atividade */}
                 <div className="box-container dashboard-chart-box">
                     <h3>Atividade Recente {filtroLocalidade ? '(Localidade Selecionada)' : '(Geral)'}</h3>
                     
@@ -276,7 +252,6 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
                     </div>
                 </div>
 
-                {/* Top Medicamentos */}
                 <div className="box-container dashboard-top-list-box">
                     <h3>Top 5 Movimentados (Geral)</h3>
                     <ul className="top-meds-list">

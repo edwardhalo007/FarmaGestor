@@ -17,8 +17,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
   const [formData, setFormData] = useState(INITIAL_USER_STATE);
   
-  // --- TOAST STATES ---
-  // Substituímos o 'formError' estático pelo 'errorToast' dinâmico
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState(''); 
 
@@ -68,7 +66,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     fetchUsuarios();
   }, [fetchUsuarios]);
 
-  // --- EFEITO DO TIMER (AUTO-HIDE) ---
   useEffect(() => {
     if (formSuccess || errorToast) {
       const timer = setTimeout(() => {
@@ -89,7 +86,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
 
   const resetForm = (clearMessages = false) => {
     setFormData(INITIAL_USER_STATE);
-    // Se clearMessages for true, limpamos os toasts imediatamente (opcional)
     if (clearMessages) {
       setFormSuccess('');
       setErrorToast('');
@@ -104,7 +100,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       return;
     }
 
-    // Limpa estados anteriores
     setFormSuccess('');
     setErrorToast('');
 
@@ -134,11 +129,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         throw new Error(errorMessage);
       }
 
-      setFormSuccess('Usuário criado com sucesso!'); // <--- Toast Verde
+      setFormSuccess('Usuário criado com sucesso!');
       resetForm();
       fetchUsuarios(true);
     } catch (err) {
-      setErrorToast(err.message || 'Erro desconhecido ao criar usuário.'); // <--- Toast Vermelho
+      setErrorToast(err.message || 'Erro desconhecido ao criar usuário.');
       console.error('Erro ao criar usuário:', err);
     }
   };
@@ -189,11 +184,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         throw new Error(errorMessage);
       }
 
-      setFormSuccess('Usuário atualizado com sucesso!'); // <--- Toast Verde
+      setFormSuccess('Usuário atualizado com sucesso!');
       resetForm();
       fetchUsuarios(true);
     } catch (err) {
-      setErrorToast(err.message || 'Erro desconhecido ao atualizar usuário.'); // <--- Toast Vermelho
+      setErrorToast(err.message || 'Erro desconhecido ao atualizar usuário.');
       console.error('Erro ao atualizar usuário:', err);
     }
   };
@@ -237,13 +232,13 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         );
       }
 
-      setFormSuccess('Usuário excluído com sucesso!'); // <--- Toast Verde
+      setFormSuccess('Usuário excluído com sucesso!');
       if (formData.id === id) {
         resetForm();
       }
       fetchUsuarios(true);
     } catch (err) {
-      setErrorToast(err.message || 'Erro desconhecido ao excluir usuário.'); // <--- Toast Vermelho
+      setErrorToast(err.message || 'Erro desconhecido ao excluir usuário.');
       console.error('Erro ao excluir usuário:', err);
     }
   };
@@ -263,7 +258,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       
-      {/* --- TOASTS (Notificações Flutuantes) --- */}
       {formSuccess && (
         <div className="success-toast">
           <span className="toast-icon">✓</span>
@@ -283,8 +277,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         <div className="box-container">
           <h3>{formData.id ? 'Editar Usuário' : 'Criar Novo Usuário'}</h3>
           <form onSubmit={handleSubmit}>
-            {/* Mensagens estáticas removidas em favor dos Toasts */}
-
             <div className="user-form-grid">
               <div>
                 <label className="form-label" htmlFor="username">

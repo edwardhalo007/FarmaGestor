@@ -276,6 +276,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const getPaginationGroup = () => {
+    let start = Math.floor((currentPage - 1) / 5) * 5;
+    return new Array(5).fill().map((_, idx) => start + idx + 1).filter(page => page <= totalPages);
+  };
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       
@@ -450,35 +455,47 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             <button 
                 onClick={() => paginate(currentPage - 1)} 
                 disabled={currentPage === 1}
-                style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+                style={{ 
+                    padding: '8px 12px', 
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
+                    border: '1px solid #ddd', 
+                    backgroundColor: '#fff', 
+                    borderRadius: '4px' 
+                }}
             >
                 Anterior
             </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-                <button 
-                    key={i + 1} 
-                    onClick={() => paginate(i + 1)} 
-                    style={{ 
-                        padding: '8px 12px', 
-                        cursor: 'pointer', 
-                        border: '1px solid #ddd', 
-                        backgroundColor: currentPage === i + 1 ? '#007bff' : '#fff', 
-                        color: currentPage === i + 1 ? '#fff' : '#333',
+            {getPaginationGroup().map((item, index) => (
+                <button
+                    key={index}
+                    onClick={() => paginate(item)}
+                    style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        border: '1px solid #ddd',
+                        backgroundColor: currentPage === item ? '#007bff' : '#fff',
+                        color: currentPage === item ? '#fff' : '#333',
                         borderRadius: '4px',
-                        fontWeight: currentPage === i + 1 ? 'bold' : 'normal'
+                        fontWeight: currentPage === item ? 'bold' : 'normal'
                     }}
                 >
-                    {i + 1}
+                    {item}
                 </button>
             ))}
             <button 
                 onClick={() => paginate(currentPage + 1)} 
                 disabled={currentPage === totalPages}
-                style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+                style={{ 
+                    padding: '8px 12px', 
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', 
+                    border: '1px solid #ddd', 
+                    backgroundColor: '#fff', 
+                    borderRadius: '4px' 
+                }}
             >
                 Próxima
             </button>
-          </div>
+        </div>
         </div>
       )}
     </Layout>

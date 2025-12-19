@@ -1,6 +1,5 @@
-// FarmaGestor/frontend/src/components/LoginForm.js
 import React, { useState } from 'react';
-import './LoginForm.css'; // Importa o CSS separado
+import './LoginForm.css';
 
 function LoginForm({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -10,11 +9,10 @@ function LoginForm({ onLoginSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Limpa erros anteriores
+    setError('');
     setLoading(true);
 
     try {
-      // Faz a requisição para o seu backend Django
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/login/`, {
         method: 'POST',
         headers: {
@@ -24,12 +22,10 @@ function LoginForm({ onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        // Tenta ler a mensagem de erro da API
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Usuário ou senha incorretos.');
       }
 
-      // Se der certo, pega os dados e chama a função de sucesso do App.js
       const data = await response.json();
       onLoginSuccess(data.token, data.username, data.nivel_acesso);
     } catch (err) {
@@ -43,12 +39,9 @@ function LoginForm({ onLoginSuccess }) {
   return (
     <div className="login-page-container">
       
-      {/* Coluna Esquerda - Imagem Institucional */}
       <div className="left-column">
-        {/* O conteúdo visual é gerado via CSS (::before e ::after) */}
       </div>
 
-      {/* Coluna Direita - Formulário */}
       <div className="right-column">
         <div className="login-card-container">
           
@@ -66,7 +59,6 @@ function LoginForm({ onLoginSuccess }) {
             
             <form onSubmit={handleSubmit}>
               
-              {/* Exibição de Erro */}
               {error && (
                 <div className="error-message-box">
                   {error}

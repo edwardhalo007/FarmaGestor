@@ -1,9 +1,7 @@
-// FarmaGestor/frontend/src/App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import './App.css'; // Estilos CSS globais da aplicação
+import './App.css';
 
-// --- Importação de Componentes de Página ---
 import LoginForm from './components/LoginForm';
 import DashboardPage from './components/DashboardPage';
 import MedicamentosPage from './components/MedicamentosPage';
@@ -14,19 +12,16 @@ import UsuariosPage from './components/UsuariosPage';
 import LocalidadesPage from './components/LocalidadesPage';
 import SobrePage from './components/SobrePage';
 
-// --- Componente PrivateRoute para proteger rotas ---
 function PrivateRoute({ children, isAuthenticated }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-// --- Componente Principal da Aplicação ---
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userToken, setUserToken] = useState(null);
   const [userNivelAcesso, setUserNivelAcesso] = useState(null);
   const navigate = useNavigate();
 
-  // Recupera login do localStorage ao carregar a aplicação
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const nivel = localStorage.getItem('userNivelAcesso');
@@ -37,7 +32,6 @@ function App() {
     }
   }, []);
 
-  // Função chamada pelo LoginForm em caso de sucesso no login
   const handleLoginSuccess = (token, username, nivel_acesso) => {
     setIsAuthenticated(true);
     setUserToken(token);
@@ -50,7 +44,6 @@ function App() {
     navigate('/dashboard');
   };
 
-  // Função para logout do usuário
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserToken(null);
@@ -62,7 +55,6 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Página de Login */}
         <Route
           path="/login"
           element={
@@ -72,7 +64,6 @@ function App() {
           }
         />
 
-        {/* Rotas Protegidas */}
         <Route
           path="/dashboard"
           element={
@@ -138,14 +129,12 @@ function App() {
           }
         />
 
-        {/* Rota padrão */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
   );
 }
 
-// --- Componente Wrapper para o App com Router ---
 function AppWrapper() {
   return (
     <Router>

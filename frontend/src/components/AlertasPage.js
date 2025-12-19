@@ -1,14 +1,12 @@
-// FarmaGestor/frontend/src/components/AlertasPage.js
 import React, { useState, useEffect} from 'react';
-import Layout from './Layout'; // Importe o componente Layout
-import './AlertasPage.css'; // <<< Importa o CSS específico
+import Layout from './Layout';
+import './AlertasPage.css';
 
 function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- Novos estados para os cartões de resumo ---
   const [vencidoCount, setVencidoCount] = useState(0);
   const [criticoCount, setCriticoCount] = useState(0);
   const [atencaoCount, setAtencaoCount] = useState(0);
@@ -33,13 +31,11 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
         const data = await response.json();
         setAlertas(data);
 
-        // --- Lógica para calcular os totais dos cartões ---
         let vencido = 0;
         let critico = 0;
         let atencao = 0;
 
         data.forEach(alerta => {
-          // Usamos a propriedade 'vencimento_validade' que vem da API
           switch (alerta.vencimento_validade) {
             case 'Vencido':
               vencido++;
@@ -58,7 +54,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
         setVencidoCount(vencido);
         setCriticoCount(critico);
         setAtencaoCount(atencao);
-        // O total é a soma dos três status
         
       } catch (err) {
         setError(err.message);
@@ -72,7 +67,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
     }
   }, [userToken]);
 
-  // Helper function para pegar as classes de estilo corretas
   const getStatusClass = (status) => {
     switch (status) {
       case 'Vencido':
@@ -97,7 +91,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
 
       {!loading && (
         <>
-          {/* --- Seção dos Cards de Resumo --- */}
           <div className="alertas-grid">
             <div className="alerta-card card-vencido">
               <p className="alerta-card-value">{vencidoCount}</p>
@@ -117,7 +110,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
             </div>
           </div>
 
-          {/* --- Tabela de Medicamentos --- */}
           <h3>Medicamentos com validade próxima</h3>
           
           {alertas.length === 0 && !error && (
@@ -126,7 +118,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
 
           {alertas.length > 0 && (
             <table className="data-table">
-              {/* Usamos uma classe específica para o header da tabela de alertas */}
               <thead className="alertas-table-header">
                 <tr>
                   <th>ID</th>
@@ -145,11 +136,9 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
                 {alertas.map((alerta) => {
                   const statusClass = getStatusClass(alerta.vencimento_validade);
                   return (
-                    // Adicionamos classe na linha para a cor de fundo sutil
                     <tr key={alerta.id} className={`row-${statusClass}`}>
                       <td>{alerta.id}</td>
                       <td>
-                        {/* Adicionamos o "status-dot" (círculo colorido) */}
                         <span className={`status-dot dot-${statusClass}`}></span>
                         {alerta.nome}
                       </td>
@@ -157,7 +146,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
                       <td>{alerta.dosagem}</td>
                       <td>{alerta.forma_farmaceutica}</td>
                       <td>{alerta.unidade_medida}</td>
-                      {/* Adicionamos classe na data para o fundo colorido */}
                       <td className={`date-cell ${statusClass}`}>
                         {alerta.validade}
                       </td>
