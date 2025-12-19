@@ -7,7 +7,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- Estados do Formulário de CRIAÇÃO ---
   const [novoNome, setNovoNome] = useState('');
   const [novaDosagem, setNovaDosagem] = useState('');
   const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
@@ -18,11 +17,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [novoFabricante, setNovoFabricante] = useState('');
   const [novaLocalizacao, setNovaLocalizacao] = useState('');
   
-  // --- Estados do Toast ---
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
-  // --- Estados de Pesquisa/Edição/Localidades ---
   const [searchTerm, setSearchTerm] = useState('');
   const [triggerSearch, setTriggerSearch] = useState(0); 
   const [editingMedId, setEditingMedId] = useState(null);
@@ -37,7 +34,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editLocalizacao, setEditLocalizacao] = useState('');
   const [localidades, setLocalidades] = useState([]);
 
-  // --- useEffects (Fetch Data) ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     const fetchMedicamentos = async () => {
       try {
@@ -62,6 +61,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         }
         const data = await response.json();
         setMedicamentos(data);
+        setCurrentPage(1);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -89,25 +89,22 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-  }, [userToken, triggerSearch, searchTerm]); // Removi formSuccess daqui para não recarregar a toa
+  }, [userToken, triggerSearch, searchTerm]);
 
-  // 1. TIMER DO TOAST (ATUALIZADO PARA INCLUIR ERRO)
   useEffect(() => {
     if (formSuccess || errorToast) {
       const timer = setTimeout(() => {
         setFormSuccess('');
-        setErrorToast(''); // Limpa o erro também
+        setErrorToast('');
       }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [formSuccess, errorToast]);
 
-  // --- HANDLERS ---
-
   const handleCreateMedicamento = async (e) => {
     e.preventDefault();
     setFormSuccess('');
-    setErrorToast(''); // Limpa erro anterior
+    setErrorToast('');
 
     const canCreate = ['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canCreate) {
@@ -143,7 +140,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         } else if (errorData.detail) {
             errorMessage = errorData.detail;
         } else {
-            // Pega o primeiro erro de campo encontrado
             const firstKey = Object.keys(errorData)[0];
             errorMessage = `${firstKey}: ${errorData[firstKey]}`;
         }
@@ -154,12 +150,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setFormSuccess('Medicamento criado com sucesso!');
       setMedicamentos([...medicamentos, novoMedicamento]);
       
-      // Limpa campos
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
       setNovaUnidadeMedida('MG'); setNovaValidade(''); setNovaQuantidade('');
       setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
     } catch (err) {
-      setErrorToast(err.message); // <--- Exibe no Toast Vermelho
+      setErrorToast(err.message);
     }
   };
 
@@ -179,9 +174,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       }
 
       setMedicamentos(medicamentos.filter(med => med.id !== id));
-      setFormSuccess('Medicamento excluído com sucesso!'); // <--- Toast Verde
+      setFormSuccess('Medicamento excluído com sucesso!');
     } catch (err) {
-      setErrorToast(err.message); // <--- Toast Vermelho
+      setErrorToast(err.message);
     }
   };
 
@@ -252,7 +247,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       }
 
       const updatedMedicamento = await response.json();
-      setFormSuccess('Medicamento atualizado com sucesso!'); // <--- Toast Verde
+      setFormSuccess('Medicamento atualizado com sucesso!');
       
       setMedicamentos(medicamentos.map(med =>
         med.id === updatedMedicamento.id ? updatedMedicamento : med
@@ -260,7 +255,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setEditingMedId(null);
       
     } catch (err) {
-      setErrorToast(err.message); // <--- Toast Vermelho (Isso atende seu requisito principal)
+      setErrorToast(err.message);
     }
   };
 
@@ -274,17 +269,22 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = medicamentos.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(medicamentos.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       
-      {/* --- TOASTS (Popups) --- */}
       {formSuccess && (
         <div className="success-toast">
           <span className="toast-icon">✓</span>
           <span>{formSuccess}</span>
         </div>
       )}
-      {/* NOVO: Renderiza o Toast de Erro */}
       {errorToast && (
         <div className="error-toast">
           <span className="toast-icon">✕</span>
@@ -294,15 +294,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       <h2>Lista de Medicamentos</h2>
 
-      {/* Formulário de Criação */}
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
         <div className="box-container">
           <h3>Adicionar Novo Medicamento</h3>
           <form onSubmit={handleCreateMedicamento}>
-             {/* REMOVIDO: {formError && <p ...>} pois agora usamos o Toast */}
-            
             <div className="form-group-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-              {/* --- Campos do Formulário (Mantidos Iguais) --- */}
               <div>
                 <label htmlFor="novoNome" className="form-label">Nome: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
@@ -361,7 +357,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
-      {/* --- SEÇÃO DE FILTRO (MANTIDA) --- */}
       <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Filtro de Medicamentos</h3>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -382,7 +377,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           </div>
       </div>
 
-      {/* --- TABELA (MANTIDA, SÓ RENDERIZANDO MENSAGENS DE LOADING/ERRO) --- */}
       {loading && <p>Carregando medicamentos...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
       {!loading && medicamentos.length === 0 && !error && <p>Não há medicamentos cadastrados.</p>}
@@ -397,10 +391,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
               </tr>
             </thead>
             <tbody>
-              {medicamentos.map((medicamento) => (
+              {currentItems.map((medicamento) => (
                 <tr key={medicamento.id}>
                   {editingMedId === medicamento.id ? (
-                    /* --- EDIT MODE (Simplificado aqui, mas igual ao seu original) --- */
                     <>
                       <td className="edit-cell"><span className="read-only-id">{medicamento.id}</span></td>
                       <td className="edit-cell"><input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} className="edit-input" /></td>
@@ -434,7 +427,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                       </td>
                     </>
                   ) : (
-                    /* --- VIEW MODE --- */
                     <>
                       <td>{medicamento.id}</td><td>{medicamento.nome}</td><td>{medicamento.dosagem}</td><td>{medicamento.forma_farmaceutica}</td><td>{medicamento.unidade_medida}</td><td>{medicamento.validade}</td>
                       <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
@@ -454,6 +446,39 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
               ))}
             </tbody>
           </table>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
+            <button 
+                onClick={() => paginate(currentPage - 1)} 
+                disabled={currentPage === 1}
+                style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+            >
+                Anterior
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+                <button 
+                    key={i + 1} 
+                    onClick={() => paginate(i + 1)} 
+                    style={{ 
+                        padding: '8px 12px', 
+                        cursor: 'pointer', 
+                        border: '1px solid #ddd', 
+                        backgroundColor: currentPage === i + 1 ? '#007bff' : '#fff', 
+                        color: currentPage === i + 1 ? '#fff' : '#333',
+                        borderRadius: '4px',
+                        fontWeight: currentPage === i + 1 ? 'bold' : 'normal'
+                    }}
+                >
+                    {i + 1}
+                </button>
+            ))}
+            <button 
+                onClick={() => paginate(currentPage + 1)} 
+                disabled={currentPage === totalPages}
+                style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+            >
+                Próxima
+            </button>
+          </div>
         </div>
       )}
     </Layout>

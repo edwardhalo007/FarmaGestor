@@ -1,7 +1,6 @@
-# FarmaGestor/backend/gestor_api/views.py
-
 from datetime import date, timedelta
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.db.models import Sum, F
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -49,21 +48,16 @@ class CustomAuthToken(ObtainAuthToken):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_atividade(request):
-    # 1. Pega o Filtro
     localidade_id = request.query_params.get('localidade')
     
-    # 2. Define Datas (Hoje e 4 dias atrás)
     hoje = timezone.now().date()
     data_inicio = hoje - timedelta(days=4)
 
-    # 3. Busca TUDO no intervalo (Simples e direto para DateField)
     movimentacoes = Movimentacao.objects.filter(data__range=[data_inicio, hoje])
 
-    # 4. Aplica filtro de localidade se existir
     if localidade_id:
         movimentacoes = movimentacoes.filter(localidade_id=localidade_id)
 
-    # 5. Prepara os "baldes" vazios para o gráfico
     dias_semana = {0: 'Seg', 1: 'Ter', 2: 'Qua', 3: 'Qui', 4: 'Sex', 5: 'Sáb', 6: 'Dom'}
     dados_agrupados = {}
 
@@ -76,10 +70,7 @@ def dashboard_atividade(request):
     total_entradas = 0
     total_saidas = 0
 
-    # 6. Loop SIMPLIFICADO (Sem conversão de timezone que estava quebrando)
     for mov in movimentacoes:
-        # Como mov.data é um 'date', apenas transformamos em string
-        # Se por acaso fosse datetime, o strftime funciona igual
         key = mov.data.strftime('%Y-%m-%d')
         
         if key in dados_agrupados:
@@ -90,7 +81,6 @@ def dashboard_atividade(request):
                 dados_agrupados[key]['saidas'] += mov.quantidade
                 total_saidas += mov.quantidade
 
-    # 7. Formata resposta
     chart_data = []
     for key in sorted(dados_agrupados.keys()):
         info = dados_agrupados[key]
@@ -106,15 +96,12 @@ def dashboard_atividade(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def top_medicamentos(request):
-    #Retorna os 5 medicamentos com maior movimentação (soma de quantidades).
-    # Agrupa por nome do medicamento, soma a quantidade e ordena decrescente
     top_meds = Movimentacao.objects.values('medicamento__nome') \
         .annotate(nome=F('medicamento__nome'), total_movimentado=Sum('quantidade')) \
         .order_by('-total_movimentado')[:5]
 
     return Response(top_meds)
 
-# ViewSets para CRUD de Medicamentos
 class MedicamentoViewSet(viewsets.ModelViewSet):
     queryset = Medicamento.objects.all()
     serializer_class = MedicamentoSerializer
@@ -125,7 +112,6 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
         search_term = self.request.query_params.get('search', None)
 
         if search_term:
-            # Filtra onde o nome ou a dosagem contêm o termo de busca (case-insensitive)
             queryset = queryset.filter(
                 models.Q(nome__icontains=search_term) |
                 models.Q(dosagem__icontains=search_term)
@@ -161,10 +147,36 @@ class LocalidadeViewSet(viewsets.ModelViewSet):
             ]
         return [IsAuthenticated()]
 
-# ViewSet para Movimentações
 class MovimentacaoViewSet(viewsets.ModelViewSet):
-    queryset = Movimentacao.objects.all().order_by('-data')
     serializer_class = MovimentacaoSerializer
+
+    def get_queryset(self):
+        queryset = Movimentacao.objects.all().order_by("-data")
+
+        search_medicamento = self.request.query_params.get('medicamento_id') 
+        localidade_id = self.request.query_params.get('localidade_id')
+        tipo = self.request.query_params.get('tipo')
+        data_inicio = self.request.query_params.get('data_inicio')
+        search_responsavel = self.request.query_params.get('responsavel')
+
+        if search_medicamento:
+            queryset = queryset.filter(medicamento__nome__icontains=search_medicamento)
+
+        if localidade_id:
+            queryset = queryset.filter(localidade__id=localidade_id)
+
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
+            
+        if search_responsavel:
+            queryset = queryset.filter(responsavel__username__icontains=search_responsavel)
+        
+        if data_inicio:
+             d_inicio = parse_date(data_inicio)
+             if d_inicio:
+                 queryset = queryset.filter(data__gte=d_inicio)
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(responsavel=self.request.user)
@@ -184,7 +196,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'list', 'retrieve']:
-            # Operacional, Gestor e Admin podem criar, listar e ver
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(
@@ -196,7 +207,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                 )
             ]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            # Apenas Gestor e Admin podem editar ou excluir
             return [
                 IsAuthenticated(),
                 NivelAcessoPermission(
@@ -280,7 +290,7 @@ def relatorios_movimentacao(request):
 
     if medicamento_nome:
         movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
-        
+     
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)

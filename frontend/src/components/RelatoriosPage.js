@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import Layout from './Layout'; // Importe o componente Layout
-import './RelatoriosPage.css'; // <<< ADICIONE APENAS ESTA LINHA
+import Layout from './Layout';
+import './RelatoriosPage.css';
 
 function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [relatorios, setRelatorios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para os filtros
   const [filtroMedicamentoNome, setFiltroMedicamentoNome] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [localidades, setLocalidades] = useState([]);
   const [filtroLocalidade, setFiltroLocalidade] = useState(''); 
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchLocalidades = async () => {
@@ -33,18 +35,16 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     const fetchRelatorios = async () => {
       try {
         setLoading(true);
-        setError(null); // Limpa erros anteriores
+        setError(null);
 
-        // Constrói a URL com base nos filtros
         let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
         const params = new URLSearchParams();
 
         if (filtroMedicamentoNome) {
           params.append('medicamento_nome', filtroMedicamentoNome);
         }
-        // NOVO: Adiciona o filtro de localidade
         if (filtroLocalidade) { 
-            params.append('localidade', filtroLocalidade); // KEY 'localidade'
+            params.append('localidade', filtroLocalidade);
         }
         if (filtroDataInicio) {
           params.append('data_inicio', filtroDataInicio);
@@ -60,24 +60,22 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${userToken}`, // Envia o token de autenticação
+            'Authorization': `Token ${userToken}`,
             'Content-Type': 'application/json',
           },
         });
 
         if (!response.ok) {
-          // Se a resposta não for OK, tenta ler como texto para pegar o erro HTML/detalhe
           const errorText = await response.text();
           console.error("Erro na resposta do backend:", response.status, errorText);
           throw new Error(`Falha ao carregar relatórios: ${response.status} - ${errorText.substring(0, 100)}...`);
         }
 
-        // Tenta ler a resposta como JSON
         const data = await response.json();
         setRelatorios(data);
+        setCurrentPage(1);
 
       } catch (err) {
-        // Captura erros de rede ou erros lançados acima
         setError(err.message);
         console.error('Erro ao buscar relatórios:', err);
       } finally {
@@ -85,15 +83,13 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       }
     };
 
-    if (userToken) { // Só busca relatórios se o token estiver disponível
+    if (userToken) {
       fetchLocalidades();
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]); // NOVO: Adiciona filtroLocalidade como dependência
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]);
 
-  // Função para aplicar os filtros (agora apenas dispara o useEffect indiretamente)
   const handleAplicarFiltros = () => {
-    // Apenas garante que os estados mudam, o useEffect fará a re-requisição
   };
 
   const handleExportCsv = async () => {
@@ -104,7 +100,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       if (filtroMedicamentoNome) {
         params.append('medicamento_nome', filtroMedicamentoNome);
       }
-      // NOVO: Adiciona o filtro de localidade para exportação
       if (filtroLocalidade) {
         params.append('localidade', filtroLocalidade);
       }
@@ -158,11 +153,17 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   }
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = relatorios.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(relatorios.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <Layout onLogout={onLogout} userNivelAcesso={userNivelAcesso}>
       <h2>Relatórios de Movimentação</h2>
 
-      {/* Seção de Filtros (Classe .filter-section-grid agora é global) */}
       <div className="box-container">
         <h3>Filtros</h3>
         <div className="filter-section-grid">
@@ -193,7 +194,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               ))}
             </select>
           </div>
-          {/* FIM NOVO CAMPO */}
           <div>
             <label htmlFor="dataInicio" className="form-label">Data Início:</label>
             <input
@@ -215,7 +215,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             />
           </div>
           <button
-            onClick={handleAplicarFiltros} // Dispara a função que, por sua vez, dispara o useEffect
+            onClick={handleAplicarFiltros}
             className="btn-primary"
             style={{ alignSelf: 'flex-end', height: 'fit-content' }}
           >
@@ -241,7 +241,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         </button>
       </div>
 
-      {/* Exibição dos Relatórios */}
       {loading && <p>Carregando relatórios...</p>}
       {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
@@ -250,32 +249,67 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       )}
 
       {!loading && relatorios.length > 0 && (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Tipo</th>
-              <th>Medicamento</th>
-              <th>Local</th>
-              <th>Quantidade</th>
-              <th>Data</th>
-              <th>Responsável</th>
-            </tr>
-          </thead>
-          <tbody>
-            {relatorios.map((movimentacao) => (
-              <tr key={movimentacao.id}>
-                <td>{movimentacao.id}</td>
-                <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
-                <td>{movimentacao.medicamento_nome}</td>
-                <td>{movimentacao.localidade_nome}</td>
-                <td>{movimentacao.quantidade}</td>
-                <td>{movimentacao.data.slice(0, 10)}</td>
-                <td>{movimentacao.responsavel_username}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ width: '100%', overflowX: 'auto', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)', background: '#fff', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+            <table className="data-table" style={{ marginBottom: 0 }}>
+            <thead>
+                <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Medicamento</th>
+                <th>Local</th>
+                <th>Quantidade</th>
+                <th>Data</th>
+                <th>Responsável</th>
+                </tr>
+            </thead>
+            <tbody>
+                {currentItems.map((movimentacao) => (
+                <tr key={movimentacao.id}>
+                    <td>{movimentacao.id}</td>
+                    <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
+                    <td>{movimentacao.medicamento_nome}</td>
+                    <td>{movimentacao.localidade_nome}</td>
+                    <td>{movimentacao.quantidade}</td>
+                    <td>{movimentacao.data.slice(0, 10)}</td>
+                    <td>{movimentacao.responsavel_username}</td>
+                </tr>
+                ))}
+            </tbody>
+            </table>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '20px', gap: '5px' }}>
+                <button 
+                    onClick={() => paginate(currentPage - 1)} 
+                    disabled={currentPage === 1}
+                    style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+                >
+                    Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                    <button 
+                        key={i + 1} 
+                        onClick={() => paginate(i + 1)} 
+                        style={{ 
+                            padding: '8px 12px', 
+                            cursor: 'pointer', 
+                            border: '1px solid #ddd', 
+                            backgroundColor: currentPage === i + 1 ? '#007bff' : '#fff', 
+                            color: currentPage === i + 1 ? '#fff' : '#333',
+                            borderRadius: '4px',
+                            fontWeight: currentPage === i + 1 ? 'bold' : 'normal'
+                        }}
+                    >
+                        {i + 1}
+                    </button>
+                ))}
+                <button 
+                    onClick={() => paginate(currentPage + 1)} 
+                    disabled={currentPage === totalPages}
+                    style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}
+                >
+                    Próxima
+                </button>
+            </div>
+        </div>
       )}
     </Layout>
   );
