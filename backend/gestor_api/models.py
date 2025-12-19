@@ -114,12 +114,29 @@ class Movimentacao(models.Model):
         ('ENTRADA', 'Entrada'),
         ('SAIDA', 'Saída'),
     ]
+    
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMENTACAO_CHOICES)
-    medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE, related_name='movimentacoes')
+    
+    medicamento = models.ForeignKey('Medicamento',  on_delete=models.SET_NULL, related_name='movimentacoes', null=True, blank=True)
+    medicamento_nome_snapshot = models.CharField(max_length=255, blank=True)
+    
     quantidade = models.IntegerField()
     data = models.DateField(auto_now_add=True)
-    responsavel = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
-    localidade = models.ForeignKey(Localidade, on_delete=models.PROTECT, related_name='movimentacoes')
+
+    responsavel = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
+    responsavel_nome_snapshot = models.CharField(max_length=255, blank=True)
+    
+    localidade = models.ForeignKey('Localidade', on_delete=models.PROTECT, related_name='movimentacoes')
+
+    def save(self, *args, **kwargs):
+        if self.medicamento:
+            self.medicamento_nome_snapshot = self.medicamento.nome
+            
+        if self.responsavel:
+            self.responsavel_nome_snapshot = self.responsavel.username 
+            
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.tipo} de {self.quantidade} {self.medicamento.nome}"
+        nome_med = self.medicamento_nome_snapshot or "Medicamento Desconhecido"
+        return f"{self.tipo} de {self.quantidade} {nome_med}"

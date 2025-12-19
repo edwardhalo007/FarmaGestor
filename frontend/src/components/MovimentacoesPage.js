@@ -16,12 +16,14 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
+  // Filters
   const [filtroData, setFiltroData] = useState('');
   const [filtroMedicamento, setFiltroMedicamento] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState('');
   const [filtroLocalidade, setFiltroLocalidade] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('');
 
+  // Editing state
   const [editingId, setEditingId] = useState(null);
   const [editTipo, setEditTipo] = useState('');
   const [editMedicamento, setEditMedicamento] = useState('');
@@ -30,6 +32,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -39,6 +42,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         setLoading(true);
         setError(null);
         
+        // Fetch Medicamentos
         const medsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
@@ -47,6 +51,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const medsData = await medsResponse.json();
         setMedicamentos(medsData);
 
+        // Fetch Localidades
         const locsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
@@ -55,24 +60,17 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const locsData = await locsResponse.json();
         setLocalidades(locsData);
 
+        // Fetch Movimentacoes with Filters
         const params = new URLSearchParams();
 
-        if (filtroMedicamento) { 
-          params.append('medicamento_id', filtroMedicamento);
-        }
+        if (filtroMedicamento) params.append('medicamento_id', filtroMedicamento); // Note: Backend likely filters by snapshot now too, or ID
         if (filtroData) {
           params.append('data_inicio', filtroData);
           params.append('data_fim', filtroData);
         }
-        if (filtroLocalidade){
-          params.append('localidade_id', filtroLocalidade)
-        }
-        if (filtroTipo) {
-          params.append('tipo', filtroTipo);
-        }
-        if (filtroResponsavel) {
-          params.append('responsavel', filtroResponsavel);
-        }
+        if (filtroLocalidade) params.append('localidade_id', filtroLocalidade);
+        if (filtroTipo) params.append('tipo', filtroTipo);
+        if (filtroResponsavel) params.append('responsavel', filtroResponsavel);
 
         let apiUrl = `${process.env.REACT_APP_API_URL}/api/movimentacoes/`;
         if (params.toString()) {
@@ -132,7 +130,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             return;
         }
     }
-
+    
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/`, {
         method: 'POST',
@@ -149,16 +147,24 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        let errorMessage = 'Falha ao registrar movimentação.';
-        if (errorData.detail) {
-            errorMessage = errorData.detail;
-        } else if (errorData.non_field_errors) {
-            errorMessage = errorData.non_field_errors[0];
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const errorData = await response.json();
+            let errorMessage = 'Falha ao registrar movimentação.';
+            if (errorData.detail) {
+                errorMessage = errorData.detail;
+            } else if (errorData.non_field_errors) {
+                errorMessage = errorData.non_field_errors[0];
+            }
+            setErrorToast(errorMessage);
+            throw new Error(errorMessage);
+        } else {
+            const errorText = await response.text();
+            console.error("Server Error (HTML):", errorText);
+            const errorMessage = `Erro Interno do Servidor (${response.status}). Verifique o console.`;
+            setErrorToast(errorMessage);
+            throw new Error(errorMessage);
         }
-        
-        setErrorToast(errorMessage);
-        throw new Error(errorMessage);
       }
 
       setFormSuccess('Movimentação registrada com sucesso!');
@@ -174,7 +180,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       console.error('Erro ao criar movimentação:', err);
     }
   };
-
   const handleDeleteMovimentacao = async (id, tipo, medNome, qtd) => {
     const canDelete = ['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canDelete) {
@@ -187,15 +192,13 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       
       ID: ${id}
       Tipo: ${tipo}
-      Medicamento: ${medNome}
+      Medicamento: ${medNome || 'Indisponível (Excluído)'}
       Quantidade: ${qtd}
       
       ATENÇÃO: Esta ação irá reverter a alteração no estoque.`
     );
       
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     setFormSuccess('');
     setErrorToast('');
@@ -218,9 +221,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       setFormSuccess('Movimentação excluída e estoque revertido com sucesso!');
       setRefetchTrigger(t => t + 1);
     } catch (err)      {
-      if (!errorToast) {
-        setErrorToast(err.message);
-      }
+      if (!errorToast) setErrorToast(err.message);
       console.error('Erro ao excluir movimentação:', err);
     }
   };
@@ -228,7 +229,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const handleEditClick = (mov) => {
     setEditingId(mov.id);
     setEditTipo(mov.tipo);
-    setEditMedicamento(mov.medicamento); 
+    // If med is null (deleted), this sets it to null, dropdown shows default
+    setEditMedicamento(mov.medicamento || ''); 
     setEditQuantidade(mov.quantidade);
     setEditLocalidade(mov.localidade);
   };
@@ -264,9 +266,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       setEditingId(null);
       setRefetchTrigger(prev => prev + 1);
     } catch (err) {
-      if (!errorToast) {
-        setErrorToast(err.message);
-      }
+      if (!errorToast) setErrorToast(err.message);
     }
   };
 
@@ -476,6 +476,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 className="form-select"
                                 style={{ padding: '5px', fontSize: '0.9em', width: '150px' }}
                             >
+                                <option value="">Selecione...</option>
                                 {medicamentos.map(m => (
                                     <option key={m.id} value={m.id}>{m.nome}</option>
                                 ))}
@@ -507,7 +508,10 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             </select>
                         </td>
 
-                        <td>{movimentacao.responsavel_username}</td>
+                        <td>
+                            {/* Responsável is usually read-only in history, using snapshot */}
+                            {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
+                        </td>
 
                         <td>
                             <div className="btn-action-group">
@@ -536,13 +540,19 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 {movimentacao.tipo}
                             </span>
                         </td>
-                        <td>{movimentacao.medicamento_nome}</td>
+                        <td>
+                            {/* PRIORITY: Snapshot -> Fallback -> Placeholder */}
+                            {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
+                        </td>
                         <td>{movimentacao.quantidade}</td>
                         <td>{movimentacao.data.slice(0, 10)}</td>
                         <td>
                             {localidades.find(l => l.id === movimentacao.localidade)?.nome || '-'}
                         </td>
-                        <td>{movimentacao.responsavel_username}</td>
+                        <td>
+                             {/* PRIORITY: Snapshot -> Fallback */}
+                            {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username || 'Usuário Excluído'}
+                        </td>
                         
                         {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                             <td>
@@ -559,7 +569,8 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                         onClick={() => handleDeleteMovimentacao(
                                             movimentacao.id, 
                                             movimentacao.tipo, 
-                                            movimentacao.medicamento_nome, 
+                                            // Pass the snapshot so the alert isn't empty if the med is deleted
+                                            movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome, 
                                             movimentacao.quantidade
                                         )}
                                     >
