@@ -204,7 +204,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     setErrorToast('');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/movimentacoes/${id}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/${id}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -241,7 +241,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
   const handleUpdateMovimentacao = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/movimentacoes/${editingId}/`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/${editingId}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${userToken}`,

@@ -89,7 +89,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     setFormSuccess('');
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}:8000/api/localidades/${id}/`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/${id}/`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Token ${userToken}`,
