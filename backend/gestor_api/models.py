@@ -38,12 +38,6 @@ class Usuario(AbstractUser):
 
 class Localidade(models.Model):
     nome = models.CharField(max_length=255)
-    class TipoLocalidades(models.TextChoices):
-        ATT_BASICA = 'ATT_BASICA', 'Atenção Básica'
-        ANTIBIOTICO = 'ANTIBIOTICO', 'Antibiótico'
-        CONTROLADO = 'CONTROLADO', 'Armário Controlado'
-        HOSPITALAR = 'HOSPITALAR', 'Hospitalar'
-    tipo = models.CharField(max_length=20, choices=TipoLocalidades.choices)
 
     def __str__(self):
         return self.nome
@@ -72,7 +66,13 @@ class Medicamento(models.Model):
         UI = 'UI', 'UI'
         MCG = 'MCG', 'mcg'
         MEQ = 'MEQ', 'mEq'
-
+    
+    class TipoLocalidades(models.TextChoices):
+        ATT_BASICA = 'ATT_BASICA', 'Atenção Básica'
+        ANTIBIOTICO = 'ANTIBIOTICO', 'Antibiótico'
+        CONTROLADO = 'CONTROLADO', 'Armário Controlado'
+        HOSPITALAR = 'HOSPITALAR', 'Hospitalar'
+    
     nome = models.CharField(max_length=255)
     dosagem = models.IntegerField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
@@ -82,6 +82,7 @@ class Medicamento(models.Model):
     lote = models.CharField(max_length=100)
     fabricante = models.CharField(max_length=255)
     localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)
+    tipo_de_localidade = models.CharField(max_length=20, choices=TipoLocalidades.choices)
 
     @property
     def vencimento_validade(self):

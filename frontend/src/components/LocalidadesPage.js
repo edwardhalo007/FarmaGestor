@@ -8,16 +8,8 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
   const [error, setError] = useState(null);
 
   const [novoNome, setNovoNome] = useState('');
-  const [novoTipo, setNovoTipo] = useState('ATT_BASICA'); 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  
-  const tiposDeLocalidade = [
-      { id: 'ATT_BASICA', nome: 'Atenção Básica' },
-      { id: 'ANTIBIOTICO', nome: 'Antibiótico' },
-      { id: 'CONTROLADO', nome: 'Armário Controlado' },
-      { id: 'HOSPITALAR', nome: 'Hospitalar' }
-  ];
 
   useEffect(() => {
     const fetchLocalidades = async () => {
@@ -57,14 +49,13 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ nome: novoNome, tipo: novoTipo }),
+        body: JSON.stringify({ nome: novoNome}),
       });
 
       if (!response.ok) throw new Error('Falha ao criar localidade.');
       
       setFormSuccess('Localidade criada com sucesso!');
       setNovoNome('');
-      setNovoTipo('ATT_BASICA');
     } catch (err) {
       setFormError(err.message);
     }
@@ -133,22 +124,6 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
               <input type="text" id="novoNome" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} required className="form-input" />
             </div>
             
-            <div className="form-group">
-                <label className="form-label">Tipo:</label>
-                <div className="type-button-group">
-                    {tiposDeLocalidade.map(tipo => (
-                        <button 
-                            type="button"
-                            key={tipo.id}
-                            onClick={() => setNovoTipo(tipo.id)}
-                            className={`type-button ${novoTipo === tipo.id ? 'type-button-active' : ''}`}
-                        >
-                            {tipo.nome}
-                        </button>
-                    ))}
-                </div>
-            </div>
-            
             <button type="submit" className="btn-success">
               Criar Localidade
             </button>
@@ -164,7 +139,6 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
           <thead>
             <tr>
               <th>Nome</th>
-              <th>Tipo</th>
               {userNivelAcesso === 'ADMINISTRADOR' && (
                   <th>Ações</th>
               )}
@@ -174,11 +148,10 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
             {localidades.map((localidade) => (
               <tr key={localidade.id}>
                 <td>{localidade.nome}</td>
-                <td>{localidade.tipo}</td>
                 {userNivelAcesso === 'ADMINISTRADOR' && (
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>
                       
-                      <button onClick={() => handleDeleteLocalidade(localidade.id, localidade.nome)} style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
+                      <button onClick={() => handleDeleteLocalidade(localidade.id)} style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Excluir</button>
                     </td>
                 )}
               </tr>
