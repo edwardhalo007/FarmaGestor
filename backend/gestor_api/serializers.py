@@ -62,7 +62,8 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'lote',
             'fabricante',
             'localizacao',
-            'localizacao_detalhe' 
+            'localizacao_detalhe' ,
+            'tipo_de_localidade'
         ]
         extra_kwargs = {'localizacao': {'write_only': True}}
 
@@ -71,7 +72,7 @@ class MedicamentoSerializer(serializers.ModelSerializer):
                 queryset=Medicamento.objects.all(),
                 fields=['nome', 'dosagem', 'forma_farmaceutica', 
                         'unidade_medida', 'validade', 'lote', 
-                        'fabricante', 'localizacao'],
+                        'fabricante', 'localizacao', 'tipo_de_localidade'],
                 message="Um medicamento com essas características já existe"
             )
         ]
@@ -85,6 +86,7 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
     responsavel_username = serializers.ReadOnlyField(source='responsavel.username')
     localidade_nome = serializers.ReadOnlyField(source='localidade.nome')
+    tipo_de_localidade = serializers.ReadOnlyField(source='medicamento.tipo_de_localidade')
 
     class Meta:
         model = Movimentacao

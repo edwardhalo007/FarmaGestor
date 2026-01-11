@@ -7,7 +7,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- ESTADOS DE CRIAÇÃO ---
   const [novoNome, setNovoNome] = useState('');
   const [novaDosagem, setNovaDosagem] = useState('');
   const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
@@ -17,7 +16,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [novoLote, setNovoLote] = useState('');
   const [novoFabricante, setNovoFabricante] = useState('');
   const [novaLocalizacao, setNovaLocalizacao] = useState('');
-  // NOVO: Estado para o tipo de localidade (padrão Atenção Básica)
   const [novoTipoLocalidade, setNovoTipoLocalidade] = useState('ATT_BASICA'); 
   
   const [formSuccess, setFormSuccess] = useState('');
@@ -26,7 +24,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [triggerSearch, setTriggerSearch] = useState(0); 
   
-  // --- ESTADOS DE EDIÇÃO ---
   const [editingMedId, setEditingMedId] = useState(null);
   const [editNome, setEditNome] = useState('');
   const [editDosagem, setEditDosagem] = useState('');
@@ -37,7 +34,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editLote, setEditLote] = useState('');
   const [editFabricante, setEditFabricante] = useState('');
   const [editLocalizacao, setEditLocalizacao] = useState('');
-  // NOVO: Estado para edição do tipo
   const [editTipoLocalidade, setEditTipoLocalidade] = useState(''); 
 
   const [localidades, setLocalidades] = useState([]);
@@ -45,7 +41,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Opções de Tipo (Enum do Backend)
   const TIPO_OPTIONS = [
     { value: 'ATT_BASICA', label: 'Atenção Básica' },
     { value: 'ANTIBIOTICO', label: 'Antibiótico' },
@@ -145,7 +140,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           lote: novoLote,
           fabricante: novoFabricante,
           localizacao: novaLocalizacao,
-          tipo_de_localidade: novoTipoLocalidade, // Payload atualizado
+          tipo_de_localidade: novoTipoLocalidade,
         }),
       });
 
@@ -167,11 +162,10 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setFormSuccess('Medicamento criado com sucesso!');
       setMedicamentos([...medicamentos, novoMedicamento]);
       
-      // Reset form
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
       setNovaUnidadeMedida('MG'); setNovaValidade(''); setNovaQuantidade('');
       setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
-      setNovoTipoLocalidade('ATT_BASICA'); // Reset para padrão
+      setNovoTipoLocalidade('ATT_BASICA');
     } catch (err) {
       setErrorToast(err.message);
     }
@@ -209,8 +203,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     setEditQuantidade(medicamento.quantidade);
     setEditLote(medicamento.lote);
     setEditFabricante(medicamento.fabricante);
-    setEditLocalizacao(medicamento.localizacao_detalhe?.id || ''); // Assume que o back retorna ID ou null
-    setEditTipoLocalidade(medicamento.tipo_de_localidade || 'ATT_BASICA'); // Carrega o tipo atual
+    setEditLocalizacao(medicamento.localizacao_detalhe?.id || '');
+    setEditTipoLocalidade(medicamento.tipo_de_localidade || 'ATT_BASICA'); 
     setFormSuccess('');
     setErrorToast('');
   };
@@ -241,7 +235,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       lote: editLote,
       fabricante: editFabricante,
       localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
-      tipo_de_localidade: editTipoLocalidade, // Payload atualizado
+      tipo_de_localidade: editTipoLocalidade,
     };
 
     try {
@@ -290,7 +284,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
-  // Helper para formatar o nome do tipo na tabela
   const formatTipo = (tipoKey) => {
     const found = TIPO_OPTIONS.find(t => t.value === tipoKey);
     return found ? found.label : tipoKey;
@@ -370,18 +363,15 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
               </div>
               
-              {/* CÉLULA COMBINADA: Localização + Botões de Tipo */}
               <div>
                 <label htmlFor="novaLocalizacao" className="form-label">Localização e Tipo: <span className="required-asterisk">*</span></label>
                 <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} className="form-select" style={{marginBottom: '10px'}}>
                   <option value="">Selecione...</option>
                   {localidades.map(loc => (
-                    // Note que removemos o ({loc.tipo}) do display pois o tipo agora é do medicamento
                     <option key={loc.id} value={loc.id}>{loc.nome}</option>
                   ))}
                 </select>
                 
-                {/* BOTÕES DE TIPO DE LOCALIDADE */}
                 <div style={{ 
                         display: 'flex', 
                         gap: '4px', 
@@ -427,7 +417,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         </div>
       )}
 
-      {/* ... (Filtro code remains same) ... */}
       <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
           <h3>Filtro de Medicamentos</h3>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -457,7 +446,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <table className="data-table">
             <thead>
               <tr>
-                {/* Adicionada coluna Tipo */}
                 <th>ID</th><th>Nome</th><th>Dosagem</th><th>Forma</th><th>Unidade</th><th>Validade</th><th>Vencimento</th><th>Qtd</th><th>Lote</th><th>Fabr.</th><th>Local</th><th>Tipo</th>
                 {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && <th>Ações</th>}
               </tr>
@@ -491,7 +479,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                           {localidades.map(loc => (<option key={loc.id} value={loc.id}>{loc.nome}</option>))}
                         </select>
                       </td>
-                      {/* Célula de Edição do TIPO */}
                       <td className="edit-cell">
                         <select value={editTipoLocalidade} onChange={(e) => setEditTipoLocalidade(e.target.value)} className="edit-select">
                            {TIPO_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -511,7 +498,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                       <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
                       <td>{medicamento.quantidade}</td><td>{medicamento.lote}</td><td>{medicamento.fabricante}</td>
                       <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
-                      {/* Exibição do Tipo */}
                       <td>{formatTipo(medicamento.tipo_de_localidade)}</td>
                       
                       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (

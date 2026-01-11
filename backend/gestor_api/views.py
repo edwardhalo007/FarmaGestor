@@ -219,12 +219,15 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_destroy(self, instance):
         medicamento = instance.medicamento
-        if instance.tipo == 'ENTRADA':
-            medicamento.quantidade -= instance.quantidade
-        elif instance.tipo == 'SAIDA':
-            medicamento.quantidade += instance.quantidade
-        
-        medicamento.save()
+
+        if medicamento:
+            if instance.tipo == 'ENTRADA':
+                medicamento.quantidade -= instance.quantidade
+            elif instance.tipo == 'SAIDA':
+                medicamento.quantidade += instance.quantidade
+
+            medicamento.save()
+
         instance.delete()
 
     @transaction.atomic
@@ -281,52 +284,62 @@ def relatorios_movimentacao(request):
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
 
-
     movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel','localidade').all()
 
     if medicamento_nome:
-        movimentacoes = movimentacoes.filter(medicamento__nome__icontains=medicamento_nome)
+        movimentacoes = movimentacoes.filter(
+            models.Q(medicamento__nome__icontains=medicamento_nome) |
+            models.Q(medicamento_nome_snapshot__icontains=medicamento_nome)
+        )
      
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
             movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
         except ValueError:
-            return Response({"detail": "Formato de data_inicio inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Formato de data_inicio inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
     if data_fim_str:
         try:
             data_fim = date.fromisoformat(data_fim_str)
             movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
         except ValueError:
-            return Response({"detail": "Formato de data_fim inválido. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Formato de data_fim inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
     if mov_local:
         movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
+
     if export_format == "csv":
         response = HttpResponse(
             content_type='text/csv',
             headers={'Content-Disposition': 'attachment; filename="relatorio-movimentacoes.csv"'}
         )
 
-        writer = csv.writer(response, delimiter = ";")
-
-        writer.writerow(['ID', 'Data', 'Tipo', 'Quantidade', 'Medicamento', 'Local', 'Responsável'])
+        writer = csv.writer(response, delimiter=";")
+        
+        writer.writerow(['ID', 'Data', 'Tipo Mov.', 'Medicamento', 'Tipo Loc.', 'Qtd', 'Local', 'Responsável'])
 
         for mov in movimentacoes:
+            nome_med = mov.medicamento_nome_snapshot
+            if not nome_med:
+                nome_med = mov.medicamento.nome if mov.medicamento else "Medicamento Excluído"
+            
+            tipo_loc = mov.medicamento.get_tipo_de_localidade_display() if mov.medicamento else "-"
+
             writer.writerow([
                 mov.id,
                 mov.data.strftime('%d/%m/%Y'),
                 mov.tipo,
+                nome_med,      
+                tipo_loc,      
                 mov.quantidade,
-                mov.medicamento.nome,
                 mov.localidade.nome,
-                mov.responsavel.username
+                mov.responsavel_nome_snapshot or mov.responsavel.username
             ])
 
         return response
 
-    movimentacoes = movimentacoes.order_by('data')
+    movimentacoes = movimentacoes.order_by('-data') # Ordenação decrescente é melhor para relatórios
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
 

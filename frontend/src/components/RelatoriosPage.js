@@ -16,6 +16,20 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // --- CONFIGURAÇÃO DE TIPOS ---
+  const TIPO_OPTIONS = [
+    { value: 'ATT_BASICA', label: 'Atenção Básica' },
+    { value: 'ANTIBIOTICO', label: 'Antibiótico' },
+    { value: 'CONTROLADO', label: 'Controlado' },
+    { value: 'HOSPITALAR', label: 'Hospitalar' },
+  ];
+
+  const formatTipo = (tipoKey) => {
+    if (!tipoKey) return '-';
+    const found = TIPO_OPTIONS.find(t => t.value === tipoKey);
+    return found ? found.label : tipoKey;
+  };
+
   useEffect(() => {
     const fetchLocalidades = async () => {
         try {
@@ -40,22 +54,12 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
         const params = new URLSearchParams();
 
-        if (filtroMedicamentoNome) {
-          params.append('medicamento_nome', filtroMedicamentoNome);
-        }
-        if (filtroLocalidade) { 
-            params.append('localidade', filtroLocalidade);
-        }
-        if (filtroDataInicio) {
-          params.append('data_inicio', filtroDataInicio);
-        }
-        if (filtroDataFim) {
-          params.append('data_fim', filtroDataFim);
-        }
+        if (filtroMedicamentoNome) params.append('medicamento_nome', filtroMedicamentoNome);
+        if (filtroLocalidade) params.append('localidade', filtroLocalidade);
+        if (filtroDataInicio) params.append('data_inicio', filtroDataInicio);
+        if (filtroDataFim) params.append('data_fim', filtroDataFim);
 
-        if (params.toString()) {
-          apiUrl += `?${params.toString()}`;
-        }
+        if (params.toString()) apiUrl += `?${params.toString()}`;
 
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -67,7 +71,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Erro na resposta do backend:", response.status, errorText);
           throw new Error(`Falha ao carregar relatórios: ${response.status} - ${errorText.substring(0, 100)}...`);
         }
 
@@ -77,7 +80,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
       } catch (err) {
         setError(err.message);
-        console.error('Erro ao buscar relatórios:', err);
       } finally {
         setLoading(false);
       }
@@ -90,6 +92,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]);
 
   const handleAplicarFiltros = () => {
+      // A lógica está no useEffect, mas se quiser forçar refresh manual futuramente, pode usar um trigger
   };
 
   const handleExportCsv = async () => {
@@ -97,61 +100,36 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
       const params = new URLSearchParams();
 
-      if (filtroMedicamentoNome) {
-        params.append('medicamento_nome', filtroMedicamentoNome);
-      }
-      if (filtroLocalidade) {
-        params.append('localidade', filtroLocalidade);
-      }
-      if (filtroDataFim) {
-        params.append('data_fim', filtroDataFim)
-      }
-      if (filtroDataInicio) {
-        params.append('data_inicio', filtroDataInicio)
-      }
+      if (filtroMedicamentoNome) params.append('medicamento_nome', filtroMedicamentoNome);
+      if (filtroLocalidade) params.append('localidade', filtroLocalidade);
+      if (filtroDataFim) params.append('data_fim', filtroDataFim);
+      if (filtroDataInicio) params.append('data_inicio', filtroDataInicio);
 
-      params.append('export', 'csv')
+      params.append('export', 'csv');
 
-      if (params.toString()) {
-        apiUrl += `?${params.toString()}`
-      }
+      if (params.toString()) apiUrl += `?${params.toString()}`;
 
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-            'Authorization': `Token ${userToken}`
-        } 
-      })
+        headers: { 'Authorization': `Token ${userToken}` } 
+      });
 
-      if (!response.ok) {
-        throw new Error(`Falha na exportação: ${response.status} ${response.statusText}`)
-      }
+      if (!response.ok) throw new Error(`Falha na exportação: ${response.status}`);
 
-      const blob = await response.blob()
-
-      const contentDisposition = response.headers.get('Content-Disposition')
-      let filename = 'relatorio.csv'
-
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="(.+)"/i)
-        if (fileNameMatch && fileNameMatch.length === 2) {
-          filename = fileNameMatch[1]
-        }
-      }
-
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(url)
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_movimentacoes_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Erro ao exportar CSV:', err)
-      setError(`Erro ao exportar: ${err.message}`)
+      console.error('Erro ao exportar CSV:', err);
+      alert(`Erro ao exportar: ${err.message}`);
     }
-  }
+  };
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -193,9 +171,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             >
               <option value="">Todas as Localidades</option>
               {localidades.map(loc => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.nome}
-                </option>
+                <option key={loc.id} value={loc.id}>{loc.nome}</option>
               ))}
             </select>
           </div>
@@ -219,30 +195,21 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               className="form-input"
             />
           </div>
-          <button
-            onClick={handleAplicarFiltros}
-            className="btn-primary"
-            style={{ alignSelf: 'flex-end', height: 'fit-content' }}
-          >
-            Aplicar Filtros
-          </button>
+          {/* Botão apenas visual já que o useEffect reage automaticamente */}
+          <div style={{ alignSelf: 'flex-end' }}>
+             <span style={{ fontSize: '0.8rem', color: '#666' }}>Filtro automático</span>
+          </div>
         </div>
       </div>
-      <div>
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
         <button
               onClick={handleExportCsv}
               disabled={loading}
-              style={{
-                  padding: '10px 15px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  alignSelf: 'flex-end',
-              }}
+              className="btn-primary" // Reutilizando classe padrão
+              style={{ backgroundColor: '#28a745', border: 'none' }}
           >
-              Exportar CSV
+              📄 Exportar CSV
         </button>
       </div>
 
@@ -261,8 +228,9 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
                 <th>ID</th>
                 <th>Tipo</th>
                 <th>Medicamento</th>
+                <th>Tipo Loc.</th> {/* Coluna Nova */}
                 <th>Local</th>
-                <th>Quantidade</th>
+                <th>Qtd.</th>
                 <th>Data</th>
                 <th>Responsável</th>
                 </tr>
@@ -271,61 +239,41 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
                 {currentItems.map((movimentacao) => (
                 <tr key={movimentacao.id}>
                     <td>{movimentacao.id}</td>
-                    <td className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>{movimentacao.tipo}</td>
-                    <td>{movimentacao.medicamento_nome}</td>
+                    <td>
+                        <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
+                            {movimentacao.tipo}
+                        </span>
+                    </td>
+                    
+                    {/* Prioriza o Snapshot, depois o Nome Atual, depois Fallback */}
+                    <td>
+                        {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
+                    </td>
+                    
+                    {/* Exibe o Tipo Formatado */}
+                    <td>
+                        {formatTipo(movimentacao.tipo_de_localidade)}
+                    </td>
+
                     <td>{movimentacao.localidade_nome}</td>
-                    <td>{movimentacao.quantidade}</td>
+                    <td style={{ fontWeight: 'bold' }}>{movimentacao.quantidade}</td>
                     <td>{movimentacao.data.slice(0, 10)}</td>
-                    <td>{movimentacao.responsavel_username}</td>
+                    <td>
+                        {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
+                    </td>
                 </tr>
                 ))}
             </tbody>
             </table>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
-              <button 
-                  onClick={() => paginate(currentPage - 1)} 
-                  disabled={currentPage === 1}
-                  style={{ 
-                      padding: '8px 12px', 
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
-                      border: '1px solid #ddd', 
-                      backgroundColor: '#fff', 
-                      borderRadius: '4px' 
-                  }}
-              >
-                  Anterior
-              </button>
+            
+            {/* Paginação mantida igual */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px', paddingBottom: '10px' }}>
+              <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="btn-pagination">Anterior</button>
               {getPaginationGroup().map((item, index) => (
-                  <button
-                      key={index}
-                      onClick={() => paginate(item)}
-                      style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          border: '1px solid #ddd',
-                          backgroundColor: currentPage === item ? '#007bff' : '#fff',
-                          color: currentPage === item ? '#fff' : '#333',
-                          borderRadius: '4px',
-                          fontWeight: currentPage === item ? 'bold' : 'normal'
-                      }}
-                  >
-                      {item}
-                  </button>
+                  <button key={index} onClick={() => paginate(item)} className={`btn-pagination ${currentPage === item ? 'active' : ''}`}>{item}</button>
               ))}
-              <button 
-                  onClick={() => paginate(currentPage + 1)} 
-                  disabled={currentPage === totalPages}
-                  style={{ 
-                      padding: '8px 12px', 
-                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', 
-                      border: '1px solid #ddd', 
-                      backgroundColor: '#fff', 
-                      borderRadius: '4px' 
-                  }}
-              >
-                  Próxima
-              </button>
-          </div>
+              <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className="btn-pagination">Próxima</button>
+            </div>
         </div>
       )}
     </Layout>

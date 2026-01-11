@@ -36,6 +36,29 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // --- NOVO: Opções para formatação do Tipo ---
+  const TIPO_OPTIONS = [
+    { value: 'ATT_BASICA', label: 'Atenção Básica' },
+    { value: 'ANTIBIOTICO', label: 'Antibiótico' },
+    { value: 'CONTROLADO', label: 'Controlado' },
+    { value: 'HOSPITALAR', label: 'Hospitalar' },
+  ];
+
+  // --- NOVO: Helper para formatar o texto ---
+  const formatTipo = (tipoKey) => {
+    if (!tipoKey) return '-';
+    const found = TIPO_OPTIONS.find(t => t.value === tipoKey);
+    return found ? found.label : tipoKey;
+  };
+
+  // --- NOVO: Helper para encontrar o tipo baseado no ID do medicamento ---
+  const getTipoMedicamento = (medId) => {
+    if (!medId) return null;
+    // O medId na movimentação pode vir como número ou string, garantimos a comparação
+    const med = medicamentos.find(m => m.id === Number(medId));
+    return med ? med.tipo_de_localidade : null;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,7 +86,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         // Fetch Movimentacoes with Filters
         const params = new URLSearchParams();
 
-        if (filtroMedicamento) params.append('medicamento_id', filtroMedicamento); // Note: Backend likely filters by snapshot now too, or ID
+        if (filtroMedicamento) params.append('medicamento_id', filtroMedicamento); 
         if (filtroData) {
           params.append('data_inicio', filtroData);
           params.append('data_fim', filtroData);
@@ -440,6 +463,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <th>ID</th>
                 <th>Tipo</th>
                 <th>Medicamento</th>
+                <th>Tipo Loc.</th>
                 <th>Quantidade</th>
                 <th>Data</th>
                 <th>Local</th>
@@ -483,6 +507,11 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             </select>
                         </td>
 
+                         {/* Edição do Tipo: Não editável diretamente aqui, reflete o medicamento selecionado */}
+                        <td style={{ color: '#999', fontStyle: 'italic' }}>
+                            {formatTipo(getTipoMedicamento(editMedicamento))}
+                        </td>
+
                         <td>
                             <input 
                                 type="number" 
@@ -509,7 +538,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                         </td>
 
                         <td>
-                            {/* Responsável is usually read-only in history, using snapshot */}
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
                         </td>
 
@@ -541,9 +569,14 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             </span>
                         </td>
                         <td>
-                            {/* PRIORITY: Snapshot -> Fallback -> Placeholder */}
                             {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
                         </td>
+                        
+                        {/* Nova Coluna: Tipo do Medicamento */}
+                        <td>
+                             {formatTipo(getTipoMedicamento(movimentacao.medicamento))}
+                        </td>
+
                         <td>{movimentacao.quantidade}</td>
                         <td>{movimentacao.data.slice(0, 10)}</td>
                         <td>
