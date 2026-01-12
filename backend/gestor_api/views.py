@@ -295,14 +295,14 @@ def relatorios_movimentacao(request):
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
-            movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
+            movimentacoes = movimentacoes.filter(data__gte=data_inicio) 
         except ValueError:
             return Response({"detail": "Formato de data_inicio inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
     if data_fim_str:
         try:
             data_fim = date.fromisoformat(data_fim_str)
-            movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
+            movimentacoes = movimentacoes.filter(data__lte=data_fim) 
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
