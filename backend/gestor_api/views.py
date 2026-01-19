@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from django.db.models import Sum, F
+from django.db.models import Sum, F, query
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -344,8 +344,20 @@ def relatorios_movimentacao(request):
     return Response(serializer.data)
 
 class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Usuario.objects.all()
+
+        if user.nivel_acesso == NivelAcesso.ADMINISTRADOR:
+            return queryset
+
+        if user.nivel_acesso == NivelAcesso.GESTOR:
+            return queryset.filter(
+                models.Q(nivel_acceso__in=[NivelAcesso.OPERACIONAL, NivelAcesso.VISUALIZADOR]) | 
+                models.Q(pk=user.pk)
+            )
 
     def get_permissions(self):
         if self.action == 'create':
