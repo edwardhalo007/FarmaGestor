@@ -7,6 +7,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
+
+#Novos imports
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
@@ -29,6 +34,25 @@ class NivelAcessoPermission(BasePermission):
             return request.user.nivel_acesso in self.allowed_levels
         return False
 
+@method_decorator(csrf_exempt, name='dispatch')
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username,
+            'nivel_acesso': user.nivel_acesso
+        }) 
+"""
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
@@ -42,6 +66,7 @@ class CustomAuthToken(ObtainAuthToken):
             'username': user.username,
             'nivel_acesso': user.nivel_acesso
         })
+"""
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -219,7 +244,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_destroy(self, instance):
         medicamento = instance.medicamento
-
         if medicamento:
             if instance.tipo == 'ENTRADA':
                 medicamento.quantidade -= instance.quantidade
@@ -227,7 +251,6 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                 medicamento.quantidade += instance.quantidade
 
             medicamento.save()
-
         instance.delete()
 
     @transaction.atomic
@@ -295,14 +318,14 @@ def relatorios_movimentacao(request):
     if data_inicio_str:
         try:
             data_inicio = date.fromisoformat(data_inicio_str)
-            movimentacoes = movimentacoes.filter(data__date__gte=data_inicio)
+            movimentacoes = movimentacoes.filter(data__gte=data_inicio) 
         except ValueError:
             return Response({"detail": "Formato de data_inicio inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
     if data_fim_str:
         try:
             data_fim = date.fromisoformat(data_fim_str)
-            movimentacoes = movimentacoes.filter(data__date__lte=data_fim)
+            movimentacoes = movimentacoes.filter(data__lte=data_fim) 
         except ValueError:
             return Response({"detail": "Formato de data_fim inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
