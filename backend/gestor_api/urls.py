@@ -4,7 +4,7 @@ from .views import CustomAuthToken, alertas_validade, MedicamentoViewSet, Usuari
 
 router = DefaultRouter()
 router.register(r'medicamentos', MedicamentoViewSet)
-router.register(r'usuarios', UsuarioViewSet)    
+router.register(r'usuarios', UsuarioViewSet, basename='usuario') 
 router.register(r'movimentacoes', MovimentacaoViewSet, basename='movimentacao') 
 router.register(r'localidades', LocalidadeViewSet)
 

@@ -365,7 +365,6 @@ def relatorios_movimentacao(request):
     movimentacoes = movimentacoes.order_by('-data') # Ordenação decrescente é melhor para relatórios
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
-
 class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
 
@@ -378,9 +377,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         if user.nivel_acesso == NivelAcesso.GESTOR:
             return queryset.filter(
-                models.Q(nivel_acceso__in=[NivelAcesso.OPERACIONAL, NivelAcesso.VISUALIZADOR]) | 
+                models.Q(nivel_acesso__in=[NivelAcesso.OPERACIONAL, NivelAcesso.VISUALIZACAO]) | 
                 models.Q(pk=user.pk)
             )
+        
+        return queryset.filter(pk=user.pk)
 
     def get_permissions(self):
         if self.action == 'create':
