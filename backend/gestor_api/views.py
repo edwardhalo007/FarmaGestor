@@ -376,9 +376,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             return queryset
 
         if user.nivel_acesso == NivelAcesso.GESTOR:
-            return queryset.filter(
-                models.Q(nivel_acesso__in=[NivelAcesso.OPERACIONAL, NivelAcesso.VISUALIZACAO])
-            )
+            return queryset.exclude(pk=user.pk).exclude(nivel_acesso=NivelAcesso.ADMINISTRADOR)
         
         return queryset.filter(pk=user.pk)
 
