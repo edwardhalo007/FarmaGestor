@@ -89,11 +89,11 @@ class Medicamento(models.Model):
         hoje = timezone.now().date()
         vencimento = (self.validade - hoje).days
 
-        if vencimento > 30:
+        if vencimento > 90:
             return 'OK'
-        elif 15 < vencimento <= 30:
+        elif 30 < vencimento <= 90:
             return 'Atenção'
-        elif 0 < vencimento <= 15:
+        elif 0 < vencimento <= 30:
             return 'Critico'
         elif vencimento <= 0:
             return 'Vencido'
