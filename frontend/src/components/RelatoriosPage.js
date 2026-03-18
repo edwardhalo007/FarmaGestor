@@ -91,10 +91,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]);
 
-  const handleAplicarFiltros = () => {
-      // A lógica está no useEffect, mas se quiser forçar refresh manual futuramente, pode usar um trigger
-  };
-
   const handleExportCsv = async () => {
     try {
       let apiUrl = `${process.env.REACT_APP_API_URL}/api/relatorios/`;
@@ -194,10 +190,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               onChange={(e) => setFiltroDataFim(e.target.value)}
               className="form-input"
             />
-          </div>
-          {/* Botão apenas visual já que o useEffect reage automaticamente */}
-          <div style={{ alignSelf: 'flex-end' }}>
-             <span style={{ fontSize: '0.8rem', color: '#666' }}>Filtro automático</span>
           </div>
         </div>
       </div>

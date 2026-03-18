@@ -11,7 +11,6 @@ from rest_framework.authtoken.views import ObtainAuthToken
 #Novos imports
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
