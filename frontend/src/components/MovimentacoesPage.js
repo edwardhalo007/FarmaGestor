@@ -13,6 +13,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [selectedMedicamento, setSelectedMedicamento] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [selectedLocalidade, setSeletectedLocalidade] = useState('')
+  const [numeroLote, setNumeroLote] = useState('');
+  const [dataValidade, setDataValidade] = useState('');
+  const [fabricante, setFabricante] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
@@ -29,6 +32,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [editMedicamento, setEditMedicamento] = useState('');
   const [editQuantidade, setEditQuantidade] = useState('');
   const [editLocalidade, setEditLocalidade] = useState('');
+  const [editNumeroLote, setEditNumeroLote] = useState('');
+  const [editDataValidade, setEditDataValidade] = useState('');
+  const [editFabricante, setEditFabricante] = useState('');
 
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
@@ -165,7 +171,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           tipo: tipoMovimentacao,
           medicamento: selectedMedicamento,
           quantidade: quantidadeNum,
-          localidade: selectedLocalidade
+          localidade: selectedLocalidade,
+          ...(tipoMovimentacao === 'ENTRADA' && {
+            numero_lote: numeroLote,
+            data_validade: dataValidade,
+            fabricante: fabricante
+          })
         }),
       });
 
@@ -195,6 +206,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       setSelectedMedicamento('');
       setQuantidade('');
       setSeletectedLocalidade('');
+      setNumeroLote('');
+      setDataValidade('');
+      setFabricante('');
       setRefetchTrigger(t => t + 1);
     } catch (err) {
       if (!errorToast) {
@@ -256,6 +270,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     setEditMedicamento(mov.medicamento || ''); 
     setEditQuantidade(mov.quantidade);
     setEditLocalidade(mov.localidade);
+    setEditNumeroLote(mov.numero_lote || '');
+    setEditDataValidade(mov.data_validade || '');
+    setEditFabricante(mov.fabricante || '');
   };
 
   const handleCancelEdit = () => {
@@ -274,7 +291,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
           tipo: editTipo,
           medicamento: editMedicamento,
           quantidade: parseInt(editQuantidade),
-          localidade: editLocalidade
+          localidade: editLocalidade,
+          ...(editTipo === 'ENTRADA' && {
+            numero_lote: editNumeroLote,
+            data_validade: editDataValidade,
+            fabricante: editFabricante
+          })
         }),
       });
 
@@ -393,6 +415,44 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             
             </div>
 
+            {tipoMovimentacao === 'ENTRADA' && (
+              <div className="mov-form-flex">
+                <div className="mov-form-group-item">
+                  <label htmlFor="numeroLote" className="form-label">Número do Lote <span className="required-asterisk">*</span></label>
+                  <input
+                    type="text"
+                    id="numeroLote"
+                    value={numeroLote}
+                    onChange={(e) => setNumeroLote(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                <div className="mov-form-group-item">
+                  <label htmlFor="dataValidade" className="form-label">Data de Validade <span className="required-asterisk">*</span></label>
+                  <input
+                    type="date"
+                    id="dataValidade"
+                    value={dataValidade}
+                    onChange={(e) => setDataValidade(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                <div className="mov-form-group-item">
+                  <label htmlFor="fabricante" className="form-label">Fabricante <span className="required-asterisk">*</span></label>
+                  <input
+                    type="text"
+                    id="fabricante"
+                    value={fabricante}
+                    onChange={(e) => setFabricante(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            )}
+
             <button type="submit" className="btn-primary">
               Registrar Movimentação
             </button>
@@ -467,6 +527,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <th>Data</th>
                 <th>Local</th>
                 <th>Responsável</th>
+                <th>Lote</th>
+                <th>Validade</th>
+                <th>Fabricante</th>
                 
                 {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                     <th>Ações</th>
@@ -538,6 +601,47 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                         <td>
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
                         </td>
+                        <td>
+                          {editTipo === 'ENTRADA' ? (
+                            <input
+                              type="text"
+                              value={editNumeroLote}
+                              onChange={(e) => setEditNumeroLote(e.target.value)}
+                              placeholder="Lote"
+                              className="form-input"
+                              style={{ padding: '5px', width: '80px', fontSize: '0.9em' }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {editTipo === 'ENTRADA' ? (
+                            <input
+                              type="date"
+                              value={editDataValidade}
+                              onChange={(e) => setEditDataValidade(e.target.value)}
+                              className="form-input"
+                              style={{ padding: '5px', width: '120px', fontSize: '0.9em' }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>
+                          {editTipo === 'ENTRADA' ? (
+                            <input
+                              type="text"
+                              value={editFabricante}
+                              onChange={(e) => setEditFabricante(e.target.value)}
+                              placeholder="Fabricante"
+                              className="form-input"
+                              style={{ padding: '5px', width: '100px', fontSize: '0.9em' }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </td>
 
                         <td>
                             <div className="btn-action-group">
@@ -583,6 +687,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                              {/* PRIORITY: Snapshot -> Fallback */}
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username || 'Usuário Excluído'}
                         </td>
+                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.numero_lote || '-') : '-'}</td>
+                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.data_validade || '-') : '-'}</td>
+                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.fabricante || '-') : '-'}</td>
                         
                         {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                             <td>
