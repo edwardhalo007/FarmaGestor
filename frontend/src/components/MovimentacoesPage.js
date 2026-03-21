@@ -460,7 +460,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             <table className="data-table" style={{ marginBottom: 0 }}>
             <thead>
                 <tr>
-                <th>ID</th>
                 <th>Tipo</th>
                 <th>Medicamento</th>
                 <th>Tipo Loc.</th>
@@ -479,7 +478,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <tr key={movimentacao.id}>
                     {editingId === movimentacao.id ? (
                     <>
-                        <td>{movimentacao.id}</td>
                         
                         <td>
                             <select 
@@ -562,7 +560,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                     </>
                     ) : (
                     <>
-                        <td>{movimentacao.id}</td>
                         <td>
                             <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
                                 {movimentacao.tipo}

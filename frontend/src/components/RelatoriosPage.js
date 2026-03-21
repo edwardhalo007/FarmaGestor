@@ -217,7 +217,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             <table className="data-table" style={{ marginBottom: 0 }}>
             <thead>
                 <tr>
-                <th>ID</th>
                 <th>Tipo</th>
                 <th>Medicamento</th>
                 <th>Tipo Loc.</th> {/* Coluna Nova */}
@@ -230,7 +229,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             <tbody>
                 {currentItems.map((movimentacao) => (
                 <tr key={movimentacao.id}>
-                    <td>{movimentacao.id}</td>
                     <td>
                         <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
                             {movimentacao.tipo}

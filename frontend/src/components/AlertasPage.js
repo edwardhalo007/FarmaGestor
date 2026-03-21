@@ -120,7 +120,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
             <table className="data-table">
               <thead className="alertas-table-header">
                 <tr>
-                  <th>ID</th>
                   <th>Nome</th>
                   <th>Local</th>
                   <th>Dosagem</th>
@@ -137,7 +136,6 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
                   const statusClass = getStatusClass(alerta.vencimento_validade);
                   return (
                     <tr key={alerta.id} className={`row-${statusClass}`}>
-                      <td>{alerta.id}</td>
                       <td>
                         <span className={`status-dot dot-${statusClass}`}></span>
                         {alerta.nome}
