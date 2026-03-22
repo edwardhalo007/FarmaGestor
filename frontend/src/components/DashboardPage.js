@@ -55,16 +55,38 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         let countUnidades = 0;
         let countEmFalta = 0;
         let countMedicamentosAtencao = 0;
+        let countAlertasTotais = 0;
 
         for (const med of medicamentosData) {
-          countUnidades += med.quantidade;
-          if (med.quantidade <= 20) countEmFalta++;
-          if (med.vencimento_validade === 'Atenção' || med.vencimento_validade === 'Critico') countMedicamentosAtencao++;
+          const lotes = med.lotes_detalhe || [];
+          
+          const quantidadeTotalMed = lotes.reduce((acc, lote) => acc + (lote.quantidade || 0), 0);
+          countUnidades += quantidadeTotalMed;
+          
+          if (quantidadeTotalMed <= 20) {
+            countEmFalta++;
+          }
+
+          let medHasAlert = false;
+          let medHasCriticalAlert = false;
+
+          for (const lote of lotes) {
+            const status = lote.vencimento_validade;
+            if (status !== 'OK') {
+              medHasAlert = true;
+            }
+            if (status === 'Atenção' || status === 'Critico' || status === 'Vencido') {
+              medHasCriticalAlert = true;
+            }
+          }
+
+          if (medHasAlert) countAlertasTotais++;
+          if (medHasCriticalAlert) countMedicamentosAtencao++;
         }
         
         setTotalMedicamentos(medicamentosData.length);
         setTotalUnidades(countUnidades);
-        setTotalAlertas(medicamentosData.filter(med => med.vencimento_validade !== 'OK').length);
+        setTotalAlertas(countAlertasTotais);
         setMedicamentosEmFalta(countEmFalta);
         setMedicamentosAtencao(countMedicamentosAtencao);
 
