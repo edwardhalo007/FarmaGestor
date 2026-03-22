@@ -395,9 +395,14 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <label htmlFor="selectMedicamento" className="form-label">Medicamento <span className="required-asterisk">*</span></label>
                 <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => { setSelectedMedicamento(e.target.value); setSelectedLoteId(''); }} required className="form-select">
                   <option value="">Selecione um medicamento...</option>
-                  {medicamentos.map(med => (
-                    <option key={med.id} value={med.id}>{med.nome} (Estoque: {med.quantidade})</option>
-                  ))}
+                  {medicamentos.map(med => {
+                    const estoqueTotal = (med.lotes_detalhe || []).reduce((acc, lote) => acc + (lote.quantidade || 0), 0);
+                    return (
+                      <option key={med.id} value={med.id}>
+                        {med.nome} (Estoque: {estoqueTotal})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -432,20 +437,19 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                         </option>
                     ))}
                 </select>
-            </div>
-            <div className="mov-form-group-item"> 
-                <label htmlFor="quantidade" className="form-label">Quantidade <span className="required-asterisk">*</span></label> 
-                <input 
-                  type="number" 
-                  id="quantidade" 
-                  value={quantidade} 
-                  onChange={(e) => setQuantidade(e.target.value)} 
-                  required 
-                  min="1" 
-                  className="form-input" 
-                />
-            </div>
-            
+              </div>
+              <div className="mov-form-group-item"> 
+                  <label htmlFor="quantidade" className="form-label">Quantidade <span className="required-asterisk">*</span></label> 
+                  <input 
+                    type="number" 
+                    id="quantidade" 
+                    value={quantidade} 
+                    onChange={(e) => setQuantidade(e.target.value)} 
+                    required 
+                    min="1" 
+                    className="form-input" 
+                  />
+              </div>
             </div>
 
             {modoOperacao === 'NOVO' && (
@@ -483,23 +487,27 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                     className="form-input"
                   />
                 </div>
-                <div className="form-group" style={{ marginTop: '20px' }}>
-                  <label className="form-label">Justificativa / Observação <span className="required-asterisk">*</span></label>
-                  <textarea
-                    className="form-input"
-                    value={justificativa}
-                    onChange={(e) => setJustificativa(e.target.value)}
-                    required
-                    maxLength="300"
-                    placeholder="Ex: Compra realizada pela prefeitura, Ajuste de estoque, etc."
-                    style={{ minHeight: '80px', resize: 'vertical' }}
-                  />
-                  <small>{justificativa.length}/300 caracteres</small>
-                </div>
               </div>
             )}
 
-            <button type="submit" className="btn-primary">
+            {/* CAMPO EXTRAÍDO: Agora é um "Block-level element" que abrange 100% da largura (Full-width Spanning) */}
+            <div className="form-group" style={{ marginTop: '25px', marginBottom: '25px', width: '100%' }}>
+              <label className="form-label">Justificativa / Observação <span className="required-asterisk">*</span></label>
+              <textarea
+                className="form-input"
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                required
+                maxLength="300"
+                placeholder="Ex: Compra realizada pela prefeitura, Ajuste de estoque, etc."
+                style={{ minHeight: '60px', width: '100%', resize: 'vertical', display: 'block', padding: '10px' }}
+              />
+              <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                {justificativa.length}/300 caracteres
+              </div>
+            </div>
+
+            <button type="submit" className="btn-primary" style={{ padding: '12px', fontSize: '1.1rem' }}>
               Registrar Movimentação
             </button>
           </form>
@@ -576,7 +584,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <th>Lote</th>
                 <th>Validade</th>
                 <th>Fabricante</th>
-                
+                <th style={{ textAlign: 'center' }}>Just.</th>
                 {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                     <th>Ações</th>
                 )}
@@ -587,7 +595,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <tr key={movimentacao.id}>
                     {editingId === movimentacao.id ? (
                     <>
-                        
                         <td>
                             <select 
                                 value={editTipo} 
@@ -599,7 +606,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 <option value="SAIDA">Saída</option>
                             </select>
                         </td>
-
                         <td>
                             <select 
                                 value={editMedicamento} 
@@ -613,11 +619,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 ))}
                             </select>
                         </td>
-
                         <td style={{ color: '#999', fontStyle: 'italic' }}>
                             {formatTipo(getTipoMedicamento(editMedicamento))}
                         </td>
-
                         <td>
                             <input 
                                 type="number" 
@@ -627,9 +631,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 style={{ padding: '5px', width: '80px' }}
                             />
                         </td>
-
                         <td>{movimentacao.data.slice(0, 10)}</td>
-
                         <td>
                             <select 
                                 value={editLocalidade} 
@@ -642,7 +644,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                 ))}
                             </select>
                         </td>
-
                         <td>
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
                         </td>
@@ -687,7 +688,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             '-'
                           )}
                         </td>
-
+                        <td style={{ textAlign: 'center' }}>-</td>
                         <td>
                             <div className="btn-action-group">
                                 <button 
@@ -717,11 +718,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                         <td>
                             {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
                         </td>
-                        
                         <td>
                              {formatTipo(movimentacao.tipo_de_localidade)}
                         </td>
-
                         <td>{movimentacao.quantidade}</td>
                         <td>{movimentacao.data ? movimentacao.data.slice(0, 10) : '-'}</td>
                         <td>
@@ -730,12 +729,25 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                         <td>
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username || 'Usuário Excluído'}
                         </td>
-                        
-                        {/* AQUI ESTAVA O ERRO PRINCIPAL: Lendo as propriedades write_only em vez das propriedades de exibicao */}
                         <td>{movimentacao.numero_lote_exibicao || '-'}</td>
                         <td>{movimentacao.data_validade_exibicao || '-'}</td>
                         <td>{movimentacao.fabricante_exibicao || '-'}</td>
-                        
+                        <td style={{ textAlign: 'center' }}>
+                            {movimentacao.justificativa ? (
+                                <div 
+                                    title={movimentacao.justificativa} 
+                                    style={{ cursor: 'pointer', color: '#007bff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                </div>
+                            ) : (
+                                <span style={{ color: '#ccc' }}>-</span>
+                            )}
+                        </td>
                         {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                             <td>
                                 <div className="btn-action-group">
@@ -745,7 +757,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                     >
                                         Editar
                                     </button>
-
                                     <button 
                                         className="btn-delete"
                                         onClick={() => handleDeleteMovimentacao(

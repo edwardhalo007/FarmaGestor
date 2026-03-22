@@ -209,21 +209,43 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                 lote.quantidade -= instance.quantidade
             elif instance.tipo == 'SAIDA':
                 lote.quantidade += instance.quantidade
-            lote.save()
+            
+            if lote.quantidade <= 0:
+                lote.delete()
+            else:
+                lote.save()
+                
         instance.delete()
 
     @transaction.atomic
     def perform_update(self, serializer):
         movimentacao_antiga = self.get_object()
-        lote_antigo = movimentacao_antiga.lote
+        lote = movimentacao_antiga.lote
         
-        if lote_antigo:
+        if lote:
             if movimentacao_antiga.tipo == 'ENTRADA':
-                lote_antigo.quantidade -= movimentacao_antiga.quantidade
+                lote.quantidade -= movimentacao_antiga.quantidade
             else: 
-                lote_antigo.quantidade += movimentacao_antiga.quantidade
-            lote_antigo.save()
-        serializer.save()
+                lote.quantidade += movimentacao_antiga.quantidade
+                
+        nova_movimentacao = serializer.save()
+        
+        if lote:
+            if nova_movimentacao.tipo == 'ENTRADA':
+                lote.quantidade += nova_movimentacao.quantidade
+            else:
+                lote.quantidade -= nova_movimentacao.quantidade
+            
+            request_data = self.request.data
+            if nova_movimentacao.tipo == 'ENTRADA':
+                if 'numero_lote' in request_data:
+                    lote.lote = request_data['numero_lote']
+                if 'data_validade' in request_data:
+                    lote.validade = request_data['data_validade']
+                if 'fabricante' in request_data:
+                    lote.fabricante = request_data['fabricante']
+            
+            lote.save()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -291,7 +313,7 @@ def relatorios_movimentacao(request):
 
         writer = csv.writer(response, delimiter=";")
         
-        writer.writerow(['ID', 'Data', 'Tipo Mov.', 'Medicamento', 'Tipo Loc.', 'Qtd', 'Local', 'Responsável'])
+        writer.writerow(['ID', 'Data', 'Tipo Mov.', 'Medicamento', 'Tipo Loc.', 'Qtd', 'Local', 'Responsável', 'Justificativa'])
 
         for mov in movimentacoes:
             nome_med = mov.medicamento_nome_snapshot
@@ -299,6 +321,7 @@ def relatorios_movimentacao(request):
                 nome_med = mov.lote.medicamento.nome if mov.lote and mov.lote.medicamento else "Medicamento Excluído"
             
             tipo_loc = mov.lote.medicamento.get_tipo_de_localidade_display() if mov.lote and mov.lote.medicamento else "-"
+            justificativa_texto = mov.justificativa if mov.justificativa else "-"
 
             writer.writerow([
                 mov.id,
@@ -308,7 +331,8 @@ def relatorios_movimentacao(request):
                 tipo_loc,      
                 mov.quantidade,
                 mov.localidade.nome if mov.localidade else "-",
-                mov.responsavel_nome_snapshot or (mov.responsavel.username if mov.responsavel else "Sistema")
+                mov.responsavel_nome_snapshot or (mov.responsavel.username if mov.responsavel else "Sistema"),
+                justificativa_texto
             ])
 
         return response

@@ -214,49 +214,62 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
       {!loading && relatorios.length > 0 && (
         <div style={{ width: '100%', overflowX: 'auto', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)', background: '#fff', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-            <table className="data-table" style={{ marginBottom: 0 }}>
+            <table className="data-table">
             <thead>
                 <tr>
-                <th>Tipo</th>
-                <th>Medicamento</th>
-                <th>Tipo Loc.</th> {/* Coluna Nova */}
-                <th>Local</th>
-                <th>Qtd.</th>
-                <th>Data</th>
-                <th>Responsável</th>
+                    <th>ID</th>
+                    <th>Tipo</th>
+                    <th>Medicamento</th>
+                    <th>Tipo Loc.</th>
+                    <th>Localidade</th>
+                    <th>Quantidade</th>
+                    <th>Data</th>
+                    <th>Responsável</th>
+                    <th style={{ textAlign: 'center' }}>Just.</th>
                 </tr>
             </thead>
             <tbody>
-                {currentItems.map((movimentacao) => (
+                {relatorios.slice(indexOfFirstItem, indexOfLastItem).map((movimentacao) => (
                 <tr key={movimentacao.id}>
+                    <td>{movimentacao.id}</td>
                     <td>
                         <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
                             {movimentacao.tipo}
                         </span>
                     </td>
-                    
-                    {/* Prioriza o Snapshot, depois o Nome Atual, depois Fallback */}
                     <td>
-                        {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
+                        {movimentacao.medicamento_nome_snapshot || (movimentacao.lote && movimentacao.lote.medicamento ? movimentacao.lote.medicamento.nome : 'Medicamento Excluído')}
                     </td>
-                    
-                    {/* Exibe o Tipo Formatado */}
                     <td>
                         {formatTipo(movimentacao.tipo_de_localidade)}
                     </td>
-
-                    <td>{movimentacao.localidade_nome}</td>
+                    <td>{movimentacao.localidade_nome || '-'}</td>
                     <td style={{ fontWeight: 'bold' }}>{movimentacao.quantidade}</td>
-                    <td>{movimentacao.data.slice(0, 10)}</td>
+                    <td>{movimentacao.data ? movimentacao.data.slice(0, 10) : '-'}</td>
                     <td>
-                        {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username}
+                        {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username || 'Sistema'}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                        {movimentacao.justificativa ? (
+                            <div 
+                                title={movimentacao.justificativa} 
+                                style={{ cursor: 'pointer', color: '#007bff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </div>
+                        ) : (
+                            <span style={{ color: '#ccc' }}>-</span>
+                        )}
                     </td>
                 </tr>
                 ))}
             </tbody>
             </table>
             
-            {/* Paginação mantida igual */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px', paddingBottom: '10px' }}>
               <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="btn-pagination">Anterior</button>
               {getPaginationGroup().map((item, index) => (
