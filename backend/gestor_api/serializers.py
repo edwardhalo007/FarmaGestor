@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import Medicamento, Usuario, Movimentacao, Localidade, Lote
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework.validators import UniqueTogetherValidator
+from django.db import transaction
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -103,11 +103,79 @@ class MedicamentoSerializer(serializers.ModelSerializer):
         return value
 
 class MovimentacaoSerializer(serializers.ModelSerializer):
-    medicamento_nome = serializers.ReadOnlyField(source='medicamento.nome')
+    medicamento_nome = serializers.ReadOnlyField(source='lote.medicamento.nome')
+    tipo_de_localidade = serializers.ReadOnlyField(source='lote.medicamento.tipo_de_localidade')
     responsavel_username = serializers.ReadOnlyField(source='responsavel.username')
     localidade_nome = serializers.ReadOnlyField(source='localidade.nome')
-    tipo_de_localidade = serializers.ReadOnlyField(source='medicamento.tipo_de_localidade')
+    
+    numero_lote_exibicao = serializers.ReadOnlyField(source='lote.lote')
+    data_validade_exibicao = serializers.ReadOnlyField(source='lote.validade')
+    fabricante_exibicao = serializers.ReadOnlyField(source='lote.fabricante')
+
+    medicamento = serializers.PrimaryKeyRelatedField(
+        queryset=Medicamento.objects.all(), write_only=True
+    )
+    criacao_lote = serializers.BooleanField(write_only=True, default=False)
+    lote_id = serializers.PrimaryKeyRelatedField(
+        queryset=Lote.objects.all(), write_only=True, required=False, allow_null=True
+    )
+
+    numero_lote = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    data_validade = serializers.DateField(write_only=True, required=False, allow_null=True)
+    fabricante = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Movimentacao
-        fields = '__all__'
+        fields = [
+            'id', 'tipo', 'quantidade', 'justificativa', 'data', 'localidade', 'responsavel',
+            'medicamento_nome', 'tipo_de_localidade', 'responsavel_username', 'localidade_nome',
+            'numero_lote_exibicao', 'data_validade_exibicao', 'fabricante_exibicao',
+            'medicamento', 'criacao_lote', 'lote_id', 'numero_lote', 'data_validade', 'fabricante',
+            'lote', 'medicamento_nome_snapshot', 'responsavel_nome_snapshot'
+        ]
+        read_only_fields = ['lote', 'data', 'responsavel']
+
+    def validate(self, data):
+        if data.get('criacao_lote'):
+            if not data.get('numero_lote') or not data.get('data_validade') or not data.get('fabricante'):
+                raise serializers.ValidationError("Para criar um novo lote, número, validade e fabricante são obrigatórios.")
+        else:
+            if not data.get('lote_id'):
+                raise serializers.ValidationError("Para movimentar um lote existente, o lote_id é obrigatório.")
+        return data
+
+    def create(self, validated_data):
+        medicamento = validated_data.pop('medicamento')
+        criacao_lote = validated_data.pop('criacao_lote')
+        lote_existente = validated_data.pop('lote_id', None)
+        numero_lote_val = validated_data.pop('numero_lote', None)
+        data_validade_val = validated_data.pop('data_validade', None)
+        fabricante_val = validated_data.pop('fabricante', None)
+
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['responsavel'] = request.user
+
+        with transaction.atomic():
+            if criacao_lote:
+                lote_obj, created = Lote.objects.get_or_create(
+                    medicamento=medicamento,
+                    lote=numero_lote_val,
+                    defaults={
+                        'validade': data_validade_val,
+                        'fabricante': fabricante_val,
+                        'quantidade': 0
+                    }
+                )
+            else:
+                lote_obj = lote_existente
+
+            movimentacao = Movimentacao.objects.create(lote=lote_obj, **validated_data)
+            
+            if movimentacao.tipo == 'ENTRADA':
+                lote_obj.quantidade += movimentacao.quantidade
+            elif movimentacao.tipo == 'SAIDA':
+                lote_obj.quantidade -= movimentacao.quantidade
+            lote_obj.save()
+
+            return movimentacao
