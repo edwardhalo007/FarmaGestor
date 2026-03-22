@@ -77,12 +77,26 @@ class Medicamento(models.Model):
     dosagem = models.IntegerField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
     unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.MG,)
-    validade = models.DateField()
-    quantidade = models.IntegerField(default=0)
-    lote = models.CharField(max_length=100)
-    fabricante = models.CharField(max_length=255)
     localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)
     tipo_de_localidade = models.CharField(max_length=20, choices=TipoLocalidades.choices)
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','localizacao'],
+                name="nome",
+            )
+        ]
+
+class Lote(models.Model):
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE, related_name='lotes')
+    lote = models.CharField(max_length=100)
+    quantidade = models.IntegerField(default=0)
+    validade = models.DateField()
+    fabricante = models.CharField(max_length=255)
 
     @property
     def vencimento_validade(self):
@@ -97,16 +111,15 @@ class Medicamento(models.Model):
             return 'Critico'
         elif vencimento <= 0:
             return 'Vencido'
-
+    
     def __str__(self):
-        return self.nome
-
+        return self.lote
 
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','validade','lote','fabricante','localizacao'],
-                name="lote_medicamento",
+                fields=['medicamento', 'lote'],
+                name='unique_medicamento_lote'
             )
         ]
 
