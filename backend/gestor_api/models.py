@@ -130,23 +130,20 @@ class Movimentacao(models.Model):
     ]
     
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMENTACAO_CHOICES)
-    
-    medicamento = models.ForeignKey('Medicamento',  on_delete=models.SET_NULL, related_name='movimentacoes', null=True, blank=True)
-    medicamento_nome_snapshot = models.CharField(max_length=255, blank=True)
-    
+    lote = models.ForeignKey('Lote', on_delete=models.CASCADE, related_name='movimentacoes')
     quantidade = models.IntegerField()
+    justificativa = models.CharField(max_length=300, default="Transição de Sistema")
     data = models.DateField(auto_now_add=True)
-
     responsavel = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
     responsavel_nome_snapshot = models.CharField(max_length=255, blank=True)
-    
+    medicamento_nome_snapshot = models.CharField(max_length=255, blank=True)
     localidade = models.ForeignKey('Localidade', on_delete=models.PROTECT, related_name='movimentacoes')
 
     def save(self, *args, **kwargs):
-        if self.medicamento:
-            self.medicamento_nome_snapshot = self.medicamento.nome
+        if self.lote_id:
+            self.medicamento_nome_snapshot = self.lote.medicamento.nome
             
-        if self.responsavel:
+        if self.responsavel_id:
             self.responsavel_nome_snapshot = self.responsavel.username 
             
         super().save(*args, **kwargs)
