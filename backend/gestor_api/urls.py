@@ -1,6 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CustomAuthToken, alertas_validade, MedicamentoViewSet, UsuarioViewSet, relatorios_movimentacao, MovimentacaoViewSet, LocalidadeViewSet, dashboard_atividade, top_medicamentos
+from .views import (CustomAuthToken, alertas_validade, MedicamentoViewSet, UsuarioViewSet, 
+                    relatorios_movimentacao, MovimentacaoViewSet, LocalidadeViewSet, dashboard_atividade, 
+                    top_medicamentos)
 
 router = DefaultRouter()
 router.register(r'medicamentos', MedicamentoViewSet)
