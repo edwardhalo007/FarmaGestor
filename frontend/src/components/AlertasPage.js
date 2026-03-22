@@ -29,28 +29,39 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         const data = await response.json();
-        setAlertas(data);
-
+        let flatAlertas = [];
         let vencido = 0;
         let critico = 0;
         let atencao = 0;
 
-        data.forEach(alerta => {
-          switch (alerta.vencimento_validade) {
-            case 'Vencido':
-              vencido++;
-              break;
-            case 'Critico':
-              critico++;
-              break;
-            case 'Atenção':
-              atencao++;
-              break;
-            default:
-              break;
-          }
+        data.forEach(med => {
+          const lotes = med.lotes_detalhe || [];
+          lotes.forEach(lote => {
+            if (lote.vencimento_validade !== 'OK') {
+              flatAlertas.push({
+                id: `${med.id}-${lote.id || lote.lote}`,
+                nome: med.nome,
+                localizacao_detalhe: med.localizacao_detalhe,
+                dosagem: med.dosagem,
+                forma_farmaceutica: med.forma_farmaceutica,
+                unidade_medida: med.unidade_medida,
+                validade: lote.validade,
+                quantidade: lote.quantidade,
+                lote: lote.lote,
+                fabricante: lote.fabricante,
+                vencimento_validade: lote.vencimento_validade
+              });
+
+              if (lote.vencimento_validade === 'Vencido') vencido++;
+              else if (lote.vencimento_validade === 'Critico') critico++;
+              else if (lote.vencimento_validade === 'Atenção') atencao++;
+            }
+          });
         });
 
+        flatAlertas.sort((a, b) => new Date(a.validade) - new Date(b.validade));
+
+        setAlertas(flatAlertas);
         setVencidoCount(vencido);
         setCriticoCount(critico);
         setAtencaoCount(atencao);
