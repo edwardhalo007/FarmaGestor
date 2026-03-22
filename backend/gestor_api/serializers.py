@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Medicamento, Usuario, Movimentacao, Localidade
+from .models import Medicamento, Usuario, Movimentacao, Localidade, Lote
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework.validators import UniqueTogetherValidator
@@ -44,9 +44,30 @@ class LocalidadeSerializer(serializers.ModelSerializer):
         model = Localidade
         fields = '__all__'
 
+class LoteSerializer(serializers.ModelSerializer):
+    vencimento_validade = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Lote
+        fields = [
+            'id',
+            'medicamento',
+            'lote',
+            'validade',
+            'vencimento_validade',
+            'fabricante',
+            'quantidade',
+        ]
+        extra_kwargs = {'medicamento': {'write_only': True}}
+
+    def validate_validade(self, value):
+        if value < timezone.now().date():
+            raise serializers.ValidationError("A data de validade não pode ser no passado.")
+        return value
+
 class MedicamentoSerializer(serializers.ModelSerializer):
     localizacao_detalhe = LocalidadeSerializer(source='localizacao', read_only=True)
-    vencimento_validade = serializers.ReadOnlyField()
+    lotes_detalhe = LoteSerializer(source='lotes', many=True, read_only=True)
 
     class Meta:
         model = Medicamento
@@ -56,23 +77,22 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             'dosagem',
             'forma_farmaceutica',
             'unidade_medida',
-            'validade',
-            'vencimento_validade',
-            'quantidade',
-            'lote',
-            'fabricante',
             'localizacao',
-            'localizacao_detalhe' ,
-            'tipo_de_localidade'
+            'localizacao_detalhe',
+            'tipo_de_localidade',
+            'lotes_detalhe',
         ]
-        extra_kwargs = {'localizacao': {'write_only': True}}
+
+        extra_kwargs = {
+            'localizacao': {'write_only': True},
+            'lote': {'write_only': True}
+        }
 
         validators = [
             UniqueTogetherValidator(
                 queryset=Medicamento.objects.all(),
                 fields=['nome', 'dosagem', 'forma_farmaceutica', 
-                        'unidade_medida', 'validade', 'lote', 
-                        'fabricante', 'localizacao', 'tipo_de_localidade'],
+                        'unidade_medida', 'localizacao', 'tipo_de_localidade'],
                 message="Um medicamento com essas características já existe"
             )
         ]
