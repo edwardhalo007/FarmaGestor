@@ -173,7 +173,9 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
     serializer_class = MovimentacaoSerializer
 
     def get_queryset(self):
-        queryset = Movimentacao.objects.all().order_by("-data")
+        queryset = Movimentacao.objects.select_related(
+            'lote__medicamento', 'localidade', 'responsavel'
+        ).all().order_by("-data")
 
         search_medicamento = self.request.query_params.get('medicamento_id') 
         localidade_id = self.request.query_params.get('localidade_id')
@@ -182,17 +184,13 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
         search_responsavel = self.request.query_params.get('responsavel')
 
         if search_medicamento:
-            queryset = queryset.filter(medicamento__nome__icontains=search_medicamento)
-
+            queryset = queryset.filter(lote__medicamento__nome__icontains=search_medicamento)
         if localidade_id:
-            queryset = queryset.filter(localidade__id=localidade_id)
-
+            queryset = queryset.filter(localidade_id=localidade_id)
         if tipo:
             queryset = queryset.filter(tipo=tipo)
-            
         if search_responsavel:
             queryset = queryset.filter(responsavel__username__icontains=search_responsavel)
-        
         if data_inicio:
              d_inicio = parse_date(data_inicio)
              if d_inicio:
@@ -203,75 +201,28 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(responsavel=self.request.user)
 
-        medicamento = serializer.validated_data['medicamento']
-        quantidade_movimentada = serializer.validated_data['quantidade']
-        tipo_movimentacao = serializer.validated_data['tipo']
-
-        if tipo_movimentacao == 'ENTRADA':
-            medicamento.quantidade += quantidade_movimentada
-        elif tipo_movimentacao == 'SAIDA':
-            if medicamento.quantidade < quantidade_movimentada:
-                raise ValidationError("Quantidade em estoque insuficiente.")
-            medicamento.quantidade -= quantidade_movimentada
-        medicamento.save()
-
-
-    def get_permissions(self):
-        if self.action in ['create', 'list', 'retrieve']:
-            return [
-                IsAuthenticated(),
-                NivelAcessoPermission(
-                    allowed_levels=[
-                        NivelAcesso.OPERACIONAL,
-                        NivelAcesso.GESTOR,
-                        NivelAcesso.ADMINISTRADOR
-                    ]
-                )
-            ]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            return [
-                IsAuthenticated(),
-                NivelAcessoPermission(
-                    allowed_levels=[
-                        NivelAcesso.GESTOR,
-                        NivelAcesso.ADMINISTRADOR
-                    ]
-                )
-            ]
-        return [IsAuthenticated()]
-    
     @transaction.atomic
     def perform_destroy(self, instance):
-        medicamento = instance.medicamento
-        if medicamento:
+        lote = instance.lote
+        if lote:
             if instance.tipo == 'ENTRADA':
-                medicamento.quantidade -= instance.quantidade
+                lote.quantidade -= instance.quantidade
             elif instance.tipo == 'SAIDA':
-                medicamento.quantidade += instance.quantidade
-
-            medicamento.save()
+                lote.quantidade += instance.quantidade
+            lote.save()
         instance.delete()
 
     @transaction.atomic
     def perform_update(self, serializer):
         movimentacao_antiga = self.get_object()
-        medicamento = movimentacao_antiga.medicamento
+        lote_antigo = movimentacao_antiga.lote
         
-        if movimentacao_antiga.tipo == 'ENTRADA':
-            medicamento.quantidade -= movimentacao_antiga.quantidade
-        else: 
-            medicamento.quantidade += movimentacao_antiga.quantidade
-        
-        tipo_novo = serializer.validated_data.get('tipo', movimentacao_antiga.tipo)
-        quantidade_nova = serializer.validated_data.get('quantidade', movimentacao_antiga.quantidade)
-
-        if tipo_novo == 'ENTRADA':
-            medicamento.quantidade += quantidade_nova
-        else:
-            if medicamento.quantidade < quantidade_nova:
-                raise serializers.ValidationError({"detail": "Estoque insuficiente para a nova quantidade de saída."})
-            medicamento.quantidade -= quantidade_nova
-        medicamento.save()
+        if lote_antigo:
+            if movimentacao_antiga.tipo == 'ENTRADA':
+                lote_antigo.quantidade -= movimentacao_antiga.quantidade
+            else: 
+                lote_antigo.quantidade += movimentacao_antiga.quantidade
+            lote_antigo.save()
         serializer.save()
 
 @api_view(['GET'])
@@ -279,9 +230,10 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 def alertas_validade(request):
     data_hoje = date.today()
     data_limite = data_hoje + timedelta(days=30)
+    
     medicamentos_alertas = Medicamento.objects.filter(
-        validade__lte=data_limite
-    ).order_by('validade')
+        lotes__validade__lte=data_limite
+    ).distinct()
 
     serializer = MedicamentoSerializer(medicamentos_alertas, many=True)
     return Response(serializer.data)
@@ -306,11 +258,11 @@ def relatorios_movimentacao(request):
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
 
-    movimentacoes = Movimentacao.objects.select_related('medicamento','responsavel','localidade').all()
+    movimentacoes = Movimentacao.objects.select_related('lote__medicamento','responsavel','localidade').all()
 
     if medicamento_nome:
         movimentacoes = movimentacoes.filter(
-            models.Q(medicamento__nome__icontains=medicamento_nome) |
+            models.Q(lote__medicamento__nome__icontains=medicamento_nome) |
             models.Q(medicamento_nome_snapshot__icontains=medicamento_nome)
         )
      
@@ -344,9 +296,9 @@ def relatorios_movimentacao(request):
         for mov in movimentacoes:
             nome_med = mov.medicamento_nome_snapshot
             if not nome_med:
-                nome_med = mov.medicamento.nome if mov.medicamento else "Medicamento Excluído"
+                nome_med = mov.lote.medicamento.nome if mov.lote and mov.lote.medicamento else "Medicamento Excluído"
             
-            tipo_loc = mov.medicamento.get_tipo_de_localidade_display() if mov.medicamento else "-"
+            tipo_loc = mov.lote.medicamento.get_tipo_de_localidade_display() if mov.lote and mov.lote.medicamento else "-"
 
             writer.writerow([
                 mov.id,
@@ -355,15 +307,16 @@ def relatorios_movimentacao(request):
                 nome_med,      
                 tipo_loc,      
                 mov.quantidade,
-                mov.localidade.nome,
-                mov.responsavel_nome_snapshot or mov.responsavel.username
+                mov.localidade.nome if mov.localidade else "-",
+                mov.responsavel_nome_snapshot or (mov.responsavel.username if mov.responsavel else "Sistema")
             ])
 
         return response
 
-    movimentacoes = movimentacoes.order_by('-data') # Ordenação decrescente é melhor para relatórios
+    movimentacoes = movimentacoes.order_by('-data')
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
+
 class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
 
