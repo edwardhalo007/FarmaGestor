@@ -11,11 +11,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [novaDosagem, setNovaDosagem] = useState('');
   const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
   const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('MG');
-  const [novaQuantidade, setNovaQuantidade] = useState('');
-  const [novoFabricante, setNovoFabricante] = useState('');
   const [novaLocalizacao, setNovaLocalizacao] = useState('');
-  const [novoTipoLocalidade, setNovoTipoLocalidade] = useState('ATT_BASICA'); 
-  
+  const [novoTipoLocalidade, setNovoTipoLocalidade] = useState('ATT_BASICA');
+
+  const [expandedMedId, setExpandedMedId] = useState(null);
+
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
@@ -27,8 +27,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editDosagem, setEditDosagem] = useState('');
   const [editFormaFarmaceutica, setEditFormaFarmaceutica] = useState('');
   const [editUnidadeMedida, setEditUnidadeMedida] = useState('');
-  const [editQuantidade, setEditQuantidade] = useState('');
-  const [editFabricante, setEditFabricante] = useState('');
   const [editLocalizacao, setEditLocalizacao] = useState('');
   const [editTipoLocalidade, setEditTipoLocalidade] = useState(''); 
 
@@ -131,8 +129,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           dosagem: parseInt(novaDosagem),
           forma_farmaceutica: novaFormaFarmaceutica,
           unidade_medida: novaUnidadeMedida,
-          quantidade: parseInt(novaQuantidade),
-          fabricante: novoFabricante,
           localizacao: novaLocalizacao,
           tipo_de_localidade: novoTipoLocalidade,
         }),
@@ -157,8 +153,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setMedicamentos([...medicamentos, novoMedicamento]);
       
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
-      setNovaUnidadeMedida('MG'); setNovaQuantidade('');
-      setNovoFabricante(''); setNovaLocalizacao('');
+      setNovaUnidadeMedida('MG');
+      setNovaLocalizacao('');
       setNovoTipoLocalidade('ATT_BASICA');
     } catch (err) {
       setErrorToast(err.message);
@@ -193,8 +189,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     setEditDosagem(medicamento.dosagem || '');
     setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
     setEditUnidadeMedida(medicamento.unidade_medida || 'MG');
-    setEditQuantidade(medicamento.quantidade);
-    setEditFabricante(medicamento.fabricante);
     setEditLocalizacao(medicamento.localizacao_detalhe?.id || '');
     setEditTipoLocalidade(medicamento.tipo_de_localidade || 'ATT_BASICA'); 
     setFormSuccess('');
@@ -222,8 +216,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       dosagem: editDosagem ? Number(editDosagem) : 0,
       forma_farmaceutica: editFormaFarmaceutica,
       unidade_medida: editUnidadeMedida,
-      quantidade: editQuantidade ? Number(editQuantidade) : 0,
-      fabricante: editFabricante,
       localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
       tipo_de_localidade: editTipoLocalidade,
     };
@@ -272,6 +264,20 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       case 'Vencido': return 'status-expired'; 
       default: return ''; 
     }
+  };
+
+  const handleEditLote = (medicamentoId, loteId) => {
+    setFormSuccess('');
+    setErrorToast('');
+    window.alert(`Editar lote ${loteId} do medicamento ${medicamentoId}.`);
+  };
+
+  const handleDeleteLote = (medicamentoId, loteId) => {
+    setFormSuccess('');
+    setErrorToast('');
+    const confirmDelete = window.confirm('Tem certeza que deseja excluir este lote?');
+    if (!confirmDelete) return;
+    window.alert(`Excluir lote ${loteId} do medicamento ${medicamentoId}.`);
   };
 
   const formatTipo = (tipoKey) => {
@@ -336,16 +342,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
               </div>
               <div>
-                <label htmlFor="novaQuantidade" className="form-label">Quantidade: <span className="required-asterisk">*</span></label>
-                <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
-              </div>
-
-              <div>
-                <label htmlFor="novoFabricante" className="form-label">Fabricante: <span className="required-asterisk">*</span></label>
-                <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
-              </div>
-              
-              <div>
                 <label htmlFor="novaLocalizacao" className="form-label">Localização e Tipo: <span className="required-asterisk">*</span></label>
                 <select id="novaLocalizacao" value={novaLocalizacao} onChange={(e) => setNovaLocalizacao(e.target.value)} className="form-select" style={{marginBottom: '10px'}}>
                   <option value="">Selecione...</option>
@@ -354,14 +350,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                   ))}
                 </select>
                 
-                <div style={{ 
-                        display: 'flex', 
-                        gap: '4px', 
-                        width: '100%', 
-                        marginTop: '5px', 
-                        justifyContent: 'left',
-                        flexWrap: 'wrap'
-                      }}>
+                <div style={{ display: 'flex', gap: '4px', width: '100%', marginTop: '5px', justifyContent: 'left', flexWrap: 'wrap' }}>
                   {TIPO_OPTIONS.map((option) => (
                       <button
                           key={option.value}
@@ -425,114 +414,156 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
       {!loading && medicamentos.length > 0 && (
         <div className="table-responsive">
-          <table className="data-table">
+          <table className="data-table" style={{borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Nome</th><th>Dosagem</th><th>Forma</th><th>Unidade</th><th>Qtd</th><th>Fabr.</th><th>Local</th><th>Tipo</th>
-                {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && <th>Ações</th>}
+              <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f8f9fa' }}>
+                <th style={{ width: '50px' }}></th>
+                <th style={{ textAlign: 'left', padding: '12px' }}>NOME</th>
+                <th style={{ textAlign: 'center' }}>DOSAGEM</th>
+                <th style={{ textAlign: 'center' }}>FORMA</th>
+                <th style={{ textAlign: 'center' }}>UNIDADE</th>
+                <th style={{ textAlign: 'center' }}>QTD TOTAL</th>
+                <th style={{ textAlign: 'left' }}>LOCAL</th>
+                <th style={{ textAlign: 'left' }}>TIPO</th>
+                {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && <th style={{ textAlign: 'center' }}>AÇÕES</th>}
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((medicamento) => (
-                <tr key={medicamento.id}>
-                  {editingMedId === medicamento.id ? (
-                    <>
-                      <td className="edit-cell"><input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} className="edit-input" /></td>
-                      <td className="edit-cell"><input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} className="edit-input" /></td>
-                      <td className="edit-cell">
-                          <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} className="edit-select">
-                              <option value="COMPRIMIDO">Comp.</option><option value="CAPSULA">Cáps.</option><option value="INJETAVEL">Inj.</option><option value="SOLUCAO">Sol.</option><option value="SUSPENSAO">Susp.</option><option value="XAROPE">Xpe.</option><option value="POMADA">Pom.</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Sup.</option>
-                          </select>
-                      </td>
-                      <td className="edit-cell">
-                          <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} className="edit-select">
-                              <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="UNI">uni</option>
-                          </select>
-                      </td>
-                      <td className="edit-cell"><input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} className="edit-input" style={{width: '60px'}} /></td>
-                      <td className="edit-cell"><input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} className="edit-input" /></td>
-                      <td className="edit-cell">
-                        <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} className="edit-select">
-                          <option value="">Loc...</option>
-                          {localidades.map(loc => (<option key={loc.id} value={loc.id}>{loc.nome}</option>))}
-                        </select>
-                      </td>
-                      <td className="edit-cell">
-                        <select value={editTipoLocalidade} onChange={(e) => setEditTipoLocalidade(e.target.value)} className="edit-select">
-                           {TIPO_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                        </select>
-                      </td>
+              {currentItems.map((medicamento) => {
+                const totalQuantidade = (medicamento.lotes_detalhe || []).reduce((acc, lote) => acc + (lote.quantidade || 0), 0);
+                const lotesOrdenados = [...(medicamento.lotes_detalhe || [])].sort((a, b) => new Date(a.validade) - new Date(b.validade));
+                const isExpanded = expandedMedId === medicamento.id;
 
-                      <td className="edit-cell">
-                        <div className="action-buttons">
-                          <button onClick={(e) => handleUpdateMedicamento(e)} className="btn-icon btn-save" title="Salvar">✓</button>
-                          <button onClick={handleCancelEdit} className="btn-icon btn-cancel" title="Cancelar">✕</button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{medicamento.nome}</td><td>{medicamento.dosagem}</td><td>{medicamento.forma_farmaceutica}</td><td>{medicamento.unidade_medida}</td>
-                      <td>{medicamento.quantidade}</td><td>{medicamento.fabricante}</td>
-                      <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
-                      <td>{formatTipo(medicamento.tipo_de_localidade)}</td>
-                      
-                      {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
-                        <td>
-                          <div className="btn-action-group">
-                            <button onClick={() => handleEditClick(medicamento)} className="btn-edit">Editar</button>
-                            <button onClick={() => handleDeleteMedicamento(medicamento.id)} className="btn-delete">Excluir</button>
+                return (
+                  <React.Fragment key={medicamento.id}>
+                    <tr style={{ borderBottom: '1px solid #eee', backgroundColor: isExpanded ? '#f1faff' : 'inherit' }}>
+                      {editingMedId === medicamento.id ? (
+                        <>
+                          <td></td>
+                          <td><input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} className="edit-input" style={{ width: '95%' }} /></td>
+                          <td style={{ textAlign: 'center' }}><input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} className="edit-input" style={{ width: '80%' }} /></td>
+                          <td style={{ textAlign: 'center' }}>
+                            <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} className="edit-select" style={{ width: '90%' }}>
+                              <option value="COMPRIMIDO">Comp.</option><option value="CAPSULA">Cáps.</option><option value="INJETAVEL">Inj.</option><option value="SOLUCAO">Sol.</option><option value="SUSPENSAO">Susp.</option><option value="XAROPE">Xpe.</option><option value="POMADA">Pom.</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Sup.</option>
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <select value={editUnidadeMedida} onChange={(e) => setEditUnidadeMedida(e.target.value)} className="edit-select" style={{ width: '90%' }}>
+                              <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="UNI">uni</option>
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{totalQuantidade}</td>
+                          <td>
+                            <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} className="edit-select" style={{ width: '90%' }}>
+                              <option value="">Loc...</option>
+                              {localidades.map(loc => (<option key={loc.id} value={loc.id}>{loc.nome}</option>))}
+                            </select>
+                          </td>
+                          <td>
+                            <select value={editTipoLocalidade} onChange={(e) => setEditTipoLocalidade(e.target.value)} className="edit-select" style={{ width: '90%' }}>
+                              {TIPO_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div className="action-buttons" style={{ justifyContent: 'center' }}>
+                              <button onClick={(e) => handleUpdateMedicamento(e)} className="btn-icon btn-save" title="Salvar">✓</button>
+                              <button onClick={handleCancelEdit} className="btn-icon btn-cancel" title="Cancelar">✕</button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              onClick={() => setExpandedMedId(isExpanded ? null : medicamento.id)}
+                              style={{ cursor: 'pointer', border: 'none', background: 'transparent', color: '#007bff', fontSize: '1.2rem' }}
+                            >
+                              {isExpanded ? '▼' : '▶'}
+                            </button>
+                          </td>
+                          <td style={{ textAlign: 'left', padding: '12px', fontWeight: '500' }}>{medicamento.nome}</td>
+                          <td style={{ textAlign: 'center' }}>{medicamento.dosagem}</td>
+                          <td style={{ textAlign: 'center' }}>{medicamento.forma_farmaceutica}</td>
+                          <td style={{ textAlign: 'center' }}>{medicamento.unidade_medida}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold'}}>{totalQuantidade}</td>
+                          <td style={{ textAlign: 'left' }}>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
+                          <td style={{ textAlign: 'left' }}>{formatTipo(medicamento.tipo_de_localidade)}</td>
+                          {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
+                            <td style={{ textAlign: 'center' }}>
+                              <div className="btn-action-group" style={{ justifyContent: 'center' }}>
+                                <button onClick={() => handleEditClick(medicamento)} className="btn-edit">Editar</button>
+                                <button onClick={() => handleDeleteMedicamento(medicamento.id)} className="btn-delete">Excluir</button>
+                              </div>
+                            </td>
+                          )}
+                        </>
+                      )}
+                    </tr>
+
+                    {isExpanded && (
+                      <tr style={{ backgroundColor: '#ffffff' }}>
+                        <td colSpan="9" style={{ padding: '0px' }}>
+                          <div style={{ padding: '20px', borderLeft: '4px solid #007bff', backgroundColor: '#fdfdfd' }}>
+                            <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#555' }}>LOTES DISPONÍVEIS - {medicamento.nome}</h4>
+                            <table className="nested-table" style={{ width: '100%', borderCollapse: 'collapse', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                              <thead>
+                                <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '1px solid #ddd' }}>
+                                  <th style={{ textAlign: 'left', padding: '10px' }}>LOTE</th>
+                                  <th style={{ textAlign: 'center', padding: '10px' }}>VALIDADE</th>
+                                  <th style={{ textAlign: 'center', padding: '10px' }}>STATUS</th>
+                                  <th style={{ textAlign: 'center', padding: '10px' }}>FABRICANTE</th>
+                                  <th style={{ textAlign: 'center', padding: '10px' }}>QUANTIDADE</th>
+                                  <th style={{ textAlign: 'center', padding: '10px' }}>AÇÕES</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {lotesOrdenados.map((lote) => (
+                                  <tr key={lote.id || lote.lote} style={{ borderBottom: '1px solid #eee' }}>
+                                    <td style={{ padding: '10px', fontWeight: '600' }}>{lote.lote}</td>
+                                    <td style={{ textAlign: 'center', padding: '10px' }}>{lote.validade}</td>
+                                    <td style={{ textAlign: 'center', padding: '10px' }}>
+                                      <span className={getStatusClass(lote.vencimento_validade)} style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                        {lote.vencimento_validade}
+                                      </span>
+                                    </td>
+                                    <td style={{ textAlign: 'center', color: '#666' }}>{lote.fabricante || 'N/D'}</td>
+                                    <td style={{ textAlign: 'center', padding: '10px', fontWeight: 'bold' }}>{lote.quantidade || 0}</td>
+                                    <td style={{ textAlign: 'center', padding: '10px' }}>
+                                      <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                                        <button onClick={() => handleEditLote(medicamento.id, lote.id || lote.lote)} className="btn-edit" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Editar</button>
+                                        <button onClick={() => handleDeleteLote(medicamento.id, lote.id || lote.lote)} className="btn-delete" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Excluir</button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {lotesOrdenados.length === 0 && (
+                                  <tr>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: '#888', fontStyle: 'italic' }}>
+                                      Nenhum lote registrado para este medicamento.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
                           </div>
                         </td>
-                      )}
-                    </>
-                  )}
-                </tr>
-              ))}
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
-            <button 
-                onClick={() => paginate(currentPage - 1)} 
-                disabled={currentPage === 1}
-                style={{ 
-                    padding: '8px 12px', 
-                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
-                    border: '1px solid #ddd', 
-                    backgroundColor: '#fff', 
-                    borderRadius: '4px' 
-                }}
-            >
+            <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}>
                 Anterior
             </button>
             {getPaginationGroup().map((item, index) => (
-                <button
-                    key={index}
-                    onClick={() => paginate(item)}
-                    style={{
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                        border: '1px solid #ddd',
-                        backgroundColor: currentPage === item ? '#007bff' : '#fff',
-                        color: currentPage === item ? '#fff' : '#333',
-                        borderRadius: '4px',
-                        fontWeight: currentPage === item ? 'bold' : 'normal'
-                    }}
-                >
+                <button key={index} onClick={() => paginate(item)} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ddd', backgroundColor: currentPage === item ? '#007bff' : '#fff', color: currentPage === item ? '#fff' : '#333', borderRadius: '4px', fontWeight: currentPage === item ? 'bold' : 'normal' }}>
                     {item}
                 </button>
             ))}
-            <button 
-                onClick={() => paginate(currentPage + 1)} 
-                disabled={currentPage === totalPages}
-                style={{ 
-                    padding: '8px 12px', 
-                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', 
-                    border: '1px solid #ddd', 
-                    backgroundColor: '#fff', 
-                    borderRadius: '4px' 
-                }}
-            >
+            <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', border: '1px solid #ddd', backgroundColor: '#fff', borderRadius: '4px' }}>
                 Próxima
             </button>
         </div>
