@@ -9,24 +9,25 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [modoOperacao, setModoOperacao] = useState('EXISTENTE');
   const [tipoMovimentacao, setTipoMovimentacao] = useState('ENTRADA');
   const [selectedMedicamento, setSelectedMedicamento] = useState('');
+  const [selectedLoteId, setSelectedLoteId] = useState('');
   const [quantidade, setQuantidade] = useState('');
-  const [selectedLocalidade, setSeletectedLocalidade] = useState('')
+  const [selectedLocalidade, setSeletectedLocalidade] = useState('');
   const [numeroLote, setNumeroLote] = useState('');
   const [dataValidade, setDataValidade] = useState('');
   const [fabricante, setFabricante] = useState('');
+  const [justificativa, setJustificativa] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
-  // Filters
   const [filtroData, setFiltroData] = useState('');
   const [filtroMedicamento, setFiltroMedicamento] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState('');
-  const [filtroLocalidade, setFiltroLocalidade] = useState('')
+  const [filtroLocalidade, setFiltroLocalidade] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
 
-  // Editing state
   const [editingId, setEditingId] = useState(null);
   const [editTipo, setEditTipo] = useState('');
   const [editMedicamento, setEditMedicamento] = useState('');
@@ -38,11 +39,9 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- NOVO: Opções para formatação do Tipo ---
   const TIPO_OPTIONS = [
     { value: 'ATT_BASICA', label: 'Atenção Básica' },
     { value: 'ANTIBIOTICO', label: 'Antibiótico' },
@@ -50,20 +49,19 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     { value: 'HOSPITALAR', label: 'Hospitalar' },
   ];
 
-  // --- NOVO: Helper para formatar o texto ---
   const formatTipo = (tipoKey) => {
     if (!tipoKey) return '-';
     const found = TIPO_OPTIONS.find(t => t.value === tipoKey);
     return found ? found.label : tipoKey;
   };
 
-  // --- NOVO: Helper para encontrar o tipo baseado no ID do medicamento ---
   const getTipoMedicamento = (medId) => {
     if (!medId) return null;
-    // O medId na movimentação pode vir como número ou string, garantimos a comparação
     const med = medicamentos.find(m => m.id === Number(medId));
     return med ? med.tipo_de_localidade : null;
   };
+
+  const lotesDisponiveis = medicamentos.find(m => String(m.id) === String(selectedMedicamento))?.lotes_detalhe || [];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,7 +69,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         setLoading(true);
         setError(null);
         
-        // Fetch Medicamentos
         const medsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
@@ -80,7 +77,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const medsData = await medsResponse.json();
         setMedicamentos(medsData);
 
-        // Fetch Localidades
         const locsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
           headers: { 'Authorization': `Token ${userToken}` },
@@ -89,7 +85,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         const locsData = await locsResponse.json();
         setLocalidades(locsData);
 
-        // Fetch Movimentacoes with Filters
         const params = new URLSearchParams();
 
         if (filtroMedicamento) params.append('medicamento_id', filtroMedicamento); 
@@ -151,33 +146,41 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
     const quantidadeNum = parseInt(quantidade);
 
-    if (tipoMovimentacao === 'SAIDA' && selectedMedicamento) {
-        const med = medicamentos.find(m => String(m.id) === selectedMedicamento);
-        
-        if (med && med.quantidade < quantidadeNum) {
-            setErrorToast('Estoque insuficiente para esta operação.'); 
+    if (modoOperacao === 'EXISTENTE' && tipoMovimentacao === 'SAIDA' && selectedLoteId) {
+        const loteTarget = lotesDisponiveis.find(l => String(l.id) === String(selectedLoteId));
+        if (loteTarget && loteTarget.quantidade < quantidadeNum) {
+            setErrorToast('Estoque do lote insuficiente para esta operação.'); 
             return;
         }
     }
     
     try {
+      const payload = {
+        tipo: modoOperacao === 'NOVO' ? 'ENTRADA' : tipoMovimentacao,
+        medicamento: selectedMedicamento,
+        quantidade: quantidadeNum,
+        localidade: selectedLocalidade,
+        justificativa: justificativa,
+        criacao_lote: modoOperacao === 'NOVO'
+      };
+
+      if (modoOperacao === 'NOVO') {
+        payload.numero_lote = numeroLote;
+        payload.data_validade = dataValidade;
+        payload.fabricante = fabricante;
+      } else {
+        payload.lote_id = selectedLoteId;
+      }
+
+      console.log("PAYLOAD QUE SERÁ ENVIADO:", payload);
+
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          tipo: tipoMovimentacao,
-          medicamento: selectedMedicamento,
-          quantidade: quantidadeNum,
-          localidade: selectedLocalidade,
-          ...(tipoMovimentacao === 'ENTRADA' && {
-            numero_lote: numeroLote,
-            data_validade: dataValidade,
-            fabricante: fabricante
-          })
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -201,9 +204,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         }
       }
 
+      
+
       setFormSuccess('Movimentação registrada com sucesso!');
       setTipoMovimentacao('ENTRADA');
       setSelectedMedicamento('');
+      setSelectedLoteId('');
       setQuantidade('');
       setSeletectedLocalidade('');
       setNumeroLote('');
@@ -217,6 +223,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       console.error('Erro ao criar movimentação:', err);
     }
   };
+
   const handleDeleteMovimentacao = async (id, tipo, medNome, qtd) => {
     const canDelete = ['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso);
     if (!canDelete) {
@@ -225,14 +232,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     const confirmDelete = window.confirm(
-      `Tem certeza que deseja excluir esta movimentação?
-      
-      ID: ${id}
-      Tipo: ${tipo}
-      Medicamento: ${medNome || 'Indisponível (Excluído)'}
-      Quantidade: ${qtd}
-      
-      ATENÇÃO: Esta ação irá reverter a alteração no estoque.`
+      `Tem certeza que deseja excluir esta movimentação?\n\nID: ${id}\nTipo: ${tipo}\nMedicamento: ${medNome || 'Indisponível (Excluído)'}\nQuantidade: ${qtd}\n\nATENÇÃO: Esta ação irá reverter a alteração no estoque.`
     );
       
     if (!confirmDelete) return;
@@ -266,7 +266,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   const handleEditClick = (mov) => {
     setEditingId(mov.id);
     setEditTipo(mov.tipo);
-    // If med is null (deleted), this sets it to null, dropdown shows default
     setEditMedicamento(mov.medicamento || ''); 
     setEditQuantidade(mov.quantidade);
     setEditLocalidade(mov.localidade);
@@ -346,40 +345,74 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
         <div className="box-container">
           <h3>Adicionar Nova Movimentação</h3>
-          <form onSubmit={handleCreateMovimentacao}>
-              <div className="form-group">
-                <label className="form-label">Tipo de Movimentação <span className="required-asterisk">*</span></label>
-                
-                <div className="mov-type-selector">
-                  <button
-                    type="button"
-                    className={`mov-type-btn mov-btn-entrada ${tipoMovimentacao === 'ENTRADA' ? 'active' : ''}`}
-                    onClick={() => setTipoMovimentacao('ENTRADA')}
-                  >
-                    <span className="btn-icon-large"></span>
-                    <span>Entrada</span>
-                  </button>
+          
+          <div className="mov-type-selector" style={{ marginBottom: '20px' }}>
+            <button
+              type="button"
+              className={`mov-type-btn mov-btn-entrada ${modoOperacao === 'NOVO' ? 'active' : ''}`}
+              onClick={() => setModoOperacao('NOVO')}
+            >
+              <span>Criar Novo Lote</span>
+            </button>
+            <button
+              type="button"
+              className={`mov-type-btn mov-btn-existente ${modoOperacao === 'EXISTENTE' ? 'active' : ''}`}
+              onClick={() => setModoOperacao('EXISTENTE')}
+            >
+              <span>Alterar Lote Existente</span>
+            </button>
+          </div>
 
-                  <button
-                    type="button"
-                    className={`mov-type-btn mov-btn-saida ${tipoMovimentacao === 'SAIDA' ? 'active' : ''}`}
-                    onClick={() => setTipoMovimentacao('SAIDA')}
-                  >
-                    <span className="btn-icon-large"></span>
-                    <span>Saída</span>
-                  </button>
+          <form onSubmit={handleCreateMovimentacao}>
+              
+              {modoOperacao === 'EXISTENTE' && (
+                <div className="form-group">
+                  <label className="form-label">Tipo de Movimentação <span className="required-asterisk">*</span></label>
+                  <div className="mov-type-selector">
+                    <button
+                      type="button"
+                      className={`mov-type-btn mov-btn-entrada ${tipoMovimentacao === 'ENTRADA' ? 'active' : ''}`}
+                      onClick={() => setTipoMovimentacao('ENTRADA')}
+                    >
+                      <span className="btn-icon-large"></span>
+                      <span>Entrada</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`mov-type-btn mov-btn-saida ${tipoMovimentacao === 'SAIDA' ? 'active' : ''}`}
+                      onClick={() => setTipoMovimentacao('SAIDA')}
+                    >
+                      <span className="btn-icon-large"></span>
+                      <span>Saída</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
             <div className="mov-form-flex">
               <div className="mov-form-group-item">
                 <label htmlFor="selectMedicamento" className="form-label">Medicamento <span className="required-asterisk">*</span></label>
-                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => setSelectedMedicamento(e.target.value)} required className="form-select">
+                <select id="selectMedicamento" value={selectedMedicamento} onChange={(e) => { setSelectedMedicamento(e.target.value); setSelectedLoteId(''); }} required className="form-select">
                   <option value="">Selecione um medicamento...</option>
                   {medicamentos.map(med => (
                     <option key={med.id} value={med.id}>{med.nome} (Estoque: {med.quantidade})</option>
                   ))}
                 </select>
               </div>
+
+              {modoOperacao === 'EXISTENTE' && (
+                <div className="mov-form-group-item">
+                  <label htmlFor="selectLote" className="form-label">Lote <span className="required-asterisk">*</span></label>
+                  <select id="selectLote" value={selectedLoteId} onChange={(e) => setSelectedLoteId(e.target.value)} required className="form-select" disabled={!selectedMedicamento}>
+                    <option value="">Selecione o Lote...</option>
+                    {lotesDisponiveis.map(lote => (
+                      <option key={lote.id} value={lote.id}>{lote.lote} (Qtd: {lote.quantidade})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="mov-form-group-item"> 
                 <label htmlFor="localidade" className='form-label'>
                     Localidade <span className="required-asterisk">*</span>
@@ -415,7 +448,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
             
             </div>
 
-            {tipoMovimentacao === 'ENTRADA' && (
+            {modoOperacao === 'NOVO' && (
               <div className="mov-form-flex">
                 <div className="mov-form-group-item">
                   <label htmlFor="numeroLote" className="form-label">Número do Lote <span className="required-asterisk">*</span></label>
@@ -449,6 +482,19 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                     required
                     className="form-input"
                   />
+                </div>
+                <div className="form-group" style={{ marginTop: '20px' }}>
+                  <label className="form-label">Justificativa / Observação <span className="required-asterisk">*</span></label>
+                  <textarea
+                    className="form-input"
+                    value={justificativa}
+                    onChange={(e) => setJustificativa(e.target.value)}
+                    required
+                    maxLength="300"
+                    placeholder="Ex: Compra realizada pela prefeitura, Ajuste de estoque, etc."
+                    style={{ minHeight: '80px', resize: 'vertical' }}
+                  />
+                  <small>{justificativa.length}/300 caracteres</small>
                 </div>
               </div>
             )}
@@ -522,7 +568,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                 <tr>
                 <th>Tipo</th>
                 <th>Medicamento</th>
-                <th>Tipo Loc.</th>
+                <th>Localidade</th>
                 <th>Quantidade</th>
                 <th>Data</th>
                 <th>Local</th>
@@ -568,7 +614,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             </select>
                         </td>
 
-                         {/* Edição do Tipo: Não editável diretamente aqui, reflete o medicamento selecionado */}
                         <td style={{ color: '#999', fontStyle: 'italic' }}>
                             {formatTipo(getTipoMedicamento(editMedicamento))}
                         </td>
@@ -673,23 +718,23 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                             {movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome || 'Medicamento Excluído'}
                         </td>
                         
-                        {/* Nova Coluna: Tipo do Medicamento */}
                         <td>
-                             {formatTipo(getTipoMedicamento(movimentacao.medicamento))}
+                             {formatTipo(movimentacao.tipo_de_localidade)}
                         </td>
 
                         <td>{movimentacao.quantidade}</td>
-                        <td>{movimentacao.data.slice(0, 10)}</td>
+                        <td>{movimentacao.data ? movimentacao.data.slice(0, 10) : '-'}</td>
                         <td>
-                            {localidades.find(l => l.id === movimentacao.localidade)?.nome || '-'}
+                            {movimentacao.localidade_nome || '-'}
                         </td>
                         <td>
-                             {/* PRIORITY: Snapshot -> Fallback */}
                             {movimentacao.responsavel_nome_snapshot || movimentacao.responsavel_username || 'Usuário Excluído'}
                         </td>
-                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.numero_lote || '-') : '-'}</td>
-                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.data_validade || '-') : '-'}</td>
-                        <td>{movimentacao.tipo === 'ENTRADA' ? (movimentacao.fabricante || '-') : '-'}</td>
+                        
+                        {/* AQUI ESTAVA O ERRO PRINCIPAL: Lendo as propriedades write_only em vez das propriedades de exibicao */}
+                        <td>{movimentacao.numero_lote_exibicao || '-'}</td>
+                        <td>{movimentacao.data_validade_exibicao || '-'}</td>
+                        <td>{movimentacao.fabricante_exibicao || '-'}</td>
                         
                         {['GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && (
                             <td>
@@ -706,7 +751,6 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
                                         onClick={() => handleDeleteMovimentacao(
                                             movimentacao.id, 
                                             movimentacao.tipo, 
-                                            // Pass the snapshot so the alert isn't empty if the med is deleted
                                             movimentacao.medicamento_nome_snapshot || movimentacao.medicamento_nome, 
                                             movimentacao.quantidade
                                         )}
