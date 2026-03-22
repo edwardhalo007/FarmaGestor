@@ -266,20 +266,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
   };
 
-  const handleEditLote = (medicamentoId, loteId) => {
-    setFormSuccess('');
-    setErrorToast('');
-    window.alert(`Editar lote ${loteId} do medicamento ${medicamentoId}.`);
-  };
-
-  const handleDeleteLote = (medicamentoId, loteId) => {
-    setFormSuccess('');
-    setErrorToast('');
-    const confirmDelete = window.confirm('Tem certeza que deseja excluir este lote?');
-    if (!confirmDelete) return;
-    window.alert(`Excluir lote ${loteId} do medicamento ${medicamentoId}.`);
-  };
-
   const formatTipo = (tipoKey) => {
     const found = TIPO_OPTIONS.find(t => t.value === tipoKey);
     return found ? found.label : tipoKey;
@@ -513,7 +499,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                                   <th style={{ textAlign: 'center', padding: '10px' }}>STATUS</th>
                                   <th style={{ textAlign: 'center', padding: '10px' }}>FABRICANTE</th>
                                   <th style={{ textAlign: 'center', padding: '10px' }}>QUANTIDADE</th>
-                                  <th style={{ textAlign: 'center', padding: '10px' }}>AÇÕES</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -528,17 +513,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                                     </td>
                                     <td style={{ textAlign: 'center', color: '#666' }}>{lote.fabricante || 'N/D'}</td>
                                     <td style={{ textAlign: 'center', padding: '10px', fontWeight: 'bold' }}>{lote.quantidade || 0}</td>
-                                    <td style={{ textAlign: 'center', padding: '10px' }}>
-                                      <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
-                                        <button onClick={() => handleEditLote(medicamento.id, lote.id || lote.lote)} className="btn-edit" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Editar</button>
-                                        <button onClick={() => handleDeleteLote(medicamento.id, lote.id || lote.lote)} className="btn-delete" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Excluir</button>
-                                      </div>
-                                    </td>
                                   </tr>
                                 ))}
                                 {lotesOrdenados.length === 0 && (
                                   <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: '#888', fontStyle: 'italic' }}>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '20px', color: '#888', fontStyle: 'italic' }}>
                                       Nenhum lote registrado para este medicamento.
                                     </td>
                                   </tr>
