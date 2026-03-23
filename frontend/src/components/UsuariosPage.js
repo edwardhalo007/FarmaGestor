@@ -369,7 +369,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Usuário</th>
               <th>Email</th>
               <th>Nível de Acesso</th>
@@ -379,7 +378,6 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
           <tbody>
             {usuarios.map((usuario) => (
               <tr key={usuario.id}>
-                <td>{usuario.id}</td>
                 <td>{usuario.username}</td>
                 <td>{usuario.email}</td>
                 <td>{usuario.nivel_acesso}</td>

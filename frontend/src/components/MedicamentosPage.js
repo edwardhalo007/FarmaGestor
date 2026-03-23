@@ -11,9 +11,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [novaDosagem, setNovaDosagem] = useState('');
   const [novaFormaFarmaceutica, setNovaFormaFarmaceutica] = useState('COMPRIMIDO');
   const [novaUnidadeMedida, setNovaUnidadeMedida] = useState('MG');
-  const [novaValidade, setNovaValidade] = useState('');
   const [novaQuantidade, setNovaQuantidade] = useState('');
-  const [novoLote, setNovoLote] = useState('');
   const [novoFabricante, setNovoFabricante] = useState('');
   const [novaLocalizacao, setNovaLocalizacao] = useState('');
   const [novoTipoLocalidade, setNovoTipoLocalidade] = useState('ATT_BASICA'); 
@@ -29,9 +27,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
   const [editDosagem, setEditDosagem] = useState('');
   const [editFormaFarmaceutica, setEditFormaFarmaceutica] = useState('');
   const [editUnidadeMedida, setEditUnidadeMedida] = useState('');
-  const [editValidade, setEditValidade] = useState('');
   const [editQuantidade, setEditQuantidade] = useState('');
-  const [editLote, setEditLote] = useState('');
   const [editFabricante, setEditFabricante] = useState('');
   const [editLocalizacao, setEditLocalizacao] = useState('');
   const [editTipoLocalidade, setEditTipoLocalidade] = useState(''); 
@@ -135,9 +131,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           dosagem: parseInt(novaDosagem),
           forma_farmaceutica: novaFormaFarmaceutica,
           unidade_medida: novaUnidadeMedida,
-          validade: novaValidade,
           quantidade: parseInt(novaQuantidade),
-          lote: novoLote,
           fabricante: novoFabricante,
           localizacao: novaLocalizacao,
           tipo_de_localidade: novoTipoLocalidade,
@@ -163,8 +157,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       setMedicamentos([...medicamentos, novoMedicamento]);
       
       setNovoNome(''); setNovaDosagem(''); setNovaFormaFarmaceutica('COMPRIMIDO');
-      setNovaUnidadeMedida('MG'); setNovaValidade(''); setNovaQuantidade('');
-      setNovoLote(''); setNovoFabricante(''); setNovaLocalizacao('');
+      setNovaUnidadeMedida('MG'); setNovaQuantidade('');
+      setNovoFabricante(''); setNovaLocalizacao('');
       setNovoTipoLocalidade('ATT_BASICA');
     } catch (err) {
       setErrorToast(err.message);
@@ -199,9 +193,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     setEditDosagem(medicamento.dosagem || '');
     setEditFormaFarmaceutica(medicamento.forma_farmaceutica || 'COMPRIMIDO');
     setEditUnidadeMedida(medicamento.unidade_medida || 'MG');
-    setEditValidade(medicamento.validade);
     setEditQuantidade(medicamento.quantidade);
-    setEditLote(medicamento.lote);
     setEditFabricante(medicamento.fabricante);
     setEditLocalizacao(medicamento.localizacao_detalhe?.id || '');
     setEditTipoLocalidade(medicamento.tipo_de_localidade || 'ATT_BASICA'); 
@@ -230,9 +222,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       dosagem: editDosagem ? Number(editDosagem) : 0,
       forma_farmaceutica: editFormaFarmaceutica,
       unidade_medida: editUnidadeMedida,
-      validade: editValidade,
       quantidade: editQuantidade ? Number(editQuantidade) : 0,
-      lote: editLote,
       fabricante: editFabricante,
       localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
       tipo_de_localidade: editTipoLocalidade,
@@ -346,18 +336,10 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 </select>
               </div>
               <div>
-                <label htmlFor="novaValidade" className="form-label">Validade: <span className="required-asterisk">*</span></label>
-                <input type="date" id="novaValidade" value={novaValidade} onChange={(e) => setNovaValidade(e.target.value)} required className="form-input" />
-              </div>
-              <div>
                 <label htmlFor="novaQuantidade" className="form-label">Quantidade: <span className="required-asterisk">*</span></label>
                 <input type="number" id="novaQuantidade" value={novaQuantidade} onChange={(e) => setNovaQuantidade(e.target.value)} required className="form-input" />
               </div>
 
-              <div>
-                <label htmlFor="novoLote" className="form-label">Lote: <span className="required-asterisk">*</span></label>
-                <input type="text" id="novoLote" value={novoLote} onChange={(e) => setNovoLote(e.target.value)} required className="form-input" />
-              </div>
               <div>
                 <label htmlFor="novoFabricante" className="form-label">Fabricante: <span className="required-asterisk">*</span></label>
                 <input type="text" id="novoFabricante" value={novoFabricante} onChange={(e) => setNovoFabricante(e.target.value)} required className="form-input" />
@@ -446,7 +428,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th><th>Nome</th><th>Dosagem</th><th>Forma</th><th>Unidade</th><th>Validade</th><th>Vencimento</th><th>Qtd</th><th>Lote</th><th>Fabr.</th><th>Local</th><th>Tipo</th>
+                <th>Nome</th><th>Dosagem</th><th>Forma</th><th>Unidade</th><th>Qtd</th><th>Fabr.</th><th>Local</th><th>Tipo</th>
                 {['OPERACIONAL', 'GESTOR', 'ADMINISTRADOR'].includes(userNivelAcesso) && <th>Ações</th>}
               </tr>
             </thead>
@@ -455,7 +437,6 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                 <tr key={medicamento.id}>
                   {editingMedId === medicamento.id ? (
                     <>
-                      <td className="edit-cell"><span className="read-only-id">{medicamento.id}</span></td>
                       <td className="edit-cell"><input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} className="edit-input" /></td>
                       <td className="edit-cell"><input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} className="edit-input" /></td>
                       <td className="edit-cell">
@@ -468,10 +449,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                               <option value="MG">mg</option><option value="G">g</option><option value="ML">ml</option><option value="UNI">uni</option>
                           </select>
                       </td>
-                      <td className="edit-cell"><input type="date" value={editValidade} onChange={(e) => setEditValidade(e.target.value)} className="edit-input" /></td>
-                      <td className="edit-cell" style={{textAlign: 'center', color: '#999'}}>---</td>
                       <td className="edit-cell"><input type="number" value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} className="edit-input" style={{width: '60px'}} /></td>
-                      <td className="edit-cell"><input type="text" value={editLote} onChange={(e) => setEditLote(e.target.value)} className="edit-input" /></td>
                       <td className="edit-cell"><input type="text" value={editFabricante} onChange={(e) => setEditFabricante(e.target.value)} className="edit-input" /></td>
                       <td className="edit-cell">
                         <select value={editLocalizacao} onChange={(e) => setEditLocalizacao(e.target.value)} className="edit-select">
@@ -494,9 +472,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                     </>
                   ) : (
                     <>
-                      <td>{medicamento.id}</td><td>{medicamento.nome}</td><td>{medicamento.dosagem}</td><td>{medicamento.forma_farmaceutica}</td><td>{medicamento.unidade_medida}</td><td>{medicamento.validade}</td>
-                      <td className={getStatusClass(medicamento.vencimento_validade)}>{medicamento.vencimento_validade}</td>
-                      <td>{medicamento.quantidade}</td><td>{medicamento.lote}</td><td>{medicamento.fabricante}</td>
+                      <td>{medicamento.nome}</td><td>{medicamento.dosagem}</td><td>{medicamento.forma_farmaceutica}</td><td>{medicamento.unidade_medida}</td>
+                      <td>{medicamento.quantidade}</td><td>{medicamento.fabricante}</td>
                       <td>{medicamento.localizacao_detalhe?.nome || 'N/A'}</td>
                       <td>{formatTipo(medicamento.tipo_de_localidade)}</td>
                       
