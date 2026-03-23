@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm as DjangoUserChangeForm, UserCreationForm as DjangoUserCreationForm
-from .models import Medicamento, Usuario, Movimentacao
+from .models import Medicamento, Usuario, Movimentacao, Lote
 
 class CustomUserCreationForm(DjangoUserCreationForm):
     class Meta(DjangoUserCreationForm.Meta):
@@ -63,3 +63,4 @@ class CustomUserAdmin(BaseUserAdmin):
 admin.site.register(Medicamento)
 admin.site.register(Movimentacao)
 admin.site.register(Usuario, CustomUserAdmin)
+admin.site.register(Lote)

@@ -77,12 +77,26 @@ class Medicamento(models.Model):
     dosagem = models.IntegerField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
     unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.MG,)
-    validade = models.DateField()
-    quantidade = models.IntegerField(default=0)
-    lote = models.CharField(max_length=100)
-    fabricante = models.CharField(max_length=255)
     localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)
     tipo_de_localidade = models.CharField(max_length=20, choices=TipoLocalidades.choices)
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','localizacao'],
+                name="nome",
+            )
+        ]
+
+class Lote(models.Model):
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE, related_name='lotes')
+    lote = models.CharField(max_length=100)
+    quantidade = models.IntegerField(default=0)
+    validade = models.DateField()
+    fabricante = models.CharField(max_length=255)
 
     @property
     def vencimento_validade(self):
@@ -97,16 +111,15 @@ class Medicamento(models.Model):
             return 'Critico'
         elif vencimento <= 0:
             return 'Vencido'
-
+    
     def __str__(self):
-        return self.nome
-
+        return self.lote
 
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields= ['nome','dosagem','forma_farmaceutica','unidade_medida','validade','lote','fabricante','localizacao'],
-                name="lote_medicamento",
+                fields=['medicamento', 'lote'],
+                name='unique_medicamento_lote'
             )
         ]
 
@@ -117,23 +130,20 @@ class Movimentacao(models.Model):
     ]
     
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMENTACAO_CHOICES)
-    
-    medicamento = models.ForeignKey('Medicamento',  on_delete=models.SET_NULL, related_name='movimentacoes', null=True, blank=True)
-    medicamento_nome_snapshot = models.CharField(max_length=255, blank=True)
-    
+    lote = models.ForeignKey('Lote', on_delete=models.CASCADE, related_name='movimentacoes')
     quantidade = models.IntegerField()
+    justificativa = models.CharField(max_length=300, default="Transição de Sistema")
     data = models.DateField(auto_now_add=True)
-
     responsavel = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
     responsavel_nome_snapshot = models.CharField(max_length=255, blank=True)
-    
+    medicamento_nome_snapshot = models.CharField(max_length=255, blank=True)
     localidade = models.ForeignKey('Localidade', on_delete=models.PROTECT, related_name='movimentacoes')
 
     def save(self, *args, **kwargs):
-        if self.medicamento:
-            self.medicamento_nome_snapshot = self.medicamento.nome
+        if self.lote_id:
+            self.medicamento_nome_snapshot = self.lote.medicamento.nome
             
-        if self.responsavel:
+        if self.responsavel_id:
             self.responsavel_nome_snapshot = self.responsavel.username 
             
         super().save(*args, **kwargs)
