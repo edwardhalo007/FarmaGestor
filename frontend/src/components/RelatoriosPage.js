@@ -11,7 +11,8 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [localidades, setLocalidades] = useState([]);
-  const [filtroLocalidade, setFiltroLocalidade] = useState(''); 
+  const [filtroLocalidade, setFiltroLocalidade] = useState('');
+  const [filtroResponsavel, setFiltroResponsavel] = useState(''); 
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -58,6 +59,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         if (filtroLocalidade) params.append('localidade', filtroLocalidade);
         if (filtroDataInicio) params.append('data_inicio', filtroDataInicio);
         if (filtroDataFim) params.append('data_fim', filtroDataFim);
+        if (filtroResponsavel) params.append('responsavel', filtroResponsavel);
 
         if (params.toString()) apiUrl += `?${params.toString()}`;
 
@@ -89,7 +91,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchLocalidades();
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade]);
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade, filtroResponsavel]);
 
   const handleExportCsv = async () => {
     try {
@@ -100,6 +102,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       if (filtroLocalidade) params.append('localidade', filtroLocalidade);
       if (filtroDataFim) params.append('data_fim', filtroDataFim);
       if (filtroDataInicio) params.append('data_inicio', filtroDataInicio);
+      if (filtroResponsavel) params.append('responsavel', filtroResponsavel);
 
       params.append('export', 'csv');
 
@@ -191,6 +194,17 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
               className="form-input"
             />
           </div>
+          <div>
+            <label htmlFor="responsavelNome" className="form-label" style={{ display: 'block', marginBottom: '9px' }}>Responsável:</label>
+            <input
+              type="text"
+              id="responsavelNome"
+              value={filtroResponsavel}
+              onChange={(e) => setFiltroResponsavel(e.target.value)}
+              className='form-input'
+              placeholder="Ex: admin"
+            />
+          </div>
         </div>
       </div>
       
@@ -217,7 +231,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             <table className="data-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Tipo</th>
                     <th>Medicamento</th>
                     <th>Tipo Loc.</th>
@@ -231,7 +244,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             <tbody>
                 {relatorios.slice(indexOfFirstItem, indexOfLastItem).map((movimentacao) => (
                 <tr key={movimentacao.id}>
-                    <td>{movimentacao.id}</td>
                     <td>
                         <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>
                             {movimentacao.tipo}

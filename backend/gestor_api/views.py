@@ -118,8 +118,8 @@ def dashboard_atividade(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def top_medicamentos(request):
-    top_meds = Movimentacao.objects.values('medicamento__nome') \
-        .annotate(nome=F('medicamento__nome'), total_movimentado=Sum('quantidade')) \
+    top_meds = Movimentacao.objects.values('lote__medicamento__nome') \
+        .annotate(nome=F('lote__medicamento__nome'), total_movimentado=Sum('quantidade')) \
         .order_by('-total_movimentado')[:5]
 
     return Response(top_meds)
@@ -279,6 +279,9 @@ def relatorios_movimentacao(request):
     data_inicio_str = request.query_params.get('data_inicio')
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
+    
+    # 1. CAPTURANDO O PARÂMETRO DA URL
+    responsavel_nome = request.query_params.get('responsavel')
 
     movimentacoes = Movimentacao.objects.select_related('lote__medicamento','responsavel','localidade').all()
 
@@ -305,6 +308,14 @@ def relatorios_movimentacao(request):
     if mov_local:
         movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
 
+    # 2. APLICANDO O FILTRO NO BANCO DE DADOS
+    if responsavel_nome:
+        movimentacoes = movimentacoes.filter(
+            models.Q(responsavel__username__icontains=responsavel_nome) |
+            models.Q(responsavel_nome_snapshot__icontains=responsavel_nome)
+        )
+
+    # 3. EXPORTAÇÃO CSV (Já com o ID removido e recuo correto)
     if export_format == "csv":
         response = HttpResponse(
             content_type='text/csv',
@@ -313,7 +324,7 @@ def relatorios_movimentacao(request):
 
         writer = csv.writer(response, delimiter=";")
         
-        writer.writerow(['ID', 'Data', 'Tipo Mov.', 'Medicamento', 'Tipo Loc.', 'Qtd', 'Local', 'Responsável', 'Justificativa'])
+        writer.writerow(['Data', 'Tipo Mov.', 'Medicamento', 'Tipo Loc.', 'Qtd', 'Local', 'Responsável', 'Justificativa'])
 
         for mov in movimentacoes:
             nome_med = mov.medicamento_nome_snapshot
@@ -324,7 +335,6 @@ def relatorios_movimentacao(request):
             justificativa_texto = mov.justificativa if mov.justificativa else "-"
 
             writer.writerow([
-                mov.id,
                 mov.data.strftime('%d/%m/%Y'),
                 mov.tipo,
                 nome_med,      
@@ -340,7 +350,6 @@ def relatorios_movimentacao(request):
     movimentacoes = movimentacoes.order_by('-data')
     serializer = MovimentacaoSerializer(movimentacoes, many=True)
     return Response(serializer.data)
-
 class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
 
