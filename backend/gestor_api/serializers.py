@@ -139,6 +139,23 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
         if data.get('criacao_lote'):
             if not data.get('numero_lote') or not data.get('data_validade') or not data.get('fabricante'):
                 raise serializers.ValidationError("Para criar um novo lote, número, validade e fabricante são obrigatórios.")
+            medicamento = data.get('medicamento')
+            numero_lote = data.get('numero_lote')
+            data_validade = data.get('data_validade')
+            
+            # Busca no banco se já existe um lote com esse número para esse medicamento
+            lote_existente = Lote.objects.filter(medicamento=medicamento, lote=numero_lote).first()
+            
+            if lote_existente:
+                # Se o lote existe, verificamos a data de validade
+                if lote_existente.validade != data_validade:
+                    data_formatada = lote_existente.validade.strftime('%d/%m/%Y')
+                    raise serializers.ValidationError(
+                        f"Bloqueado: O Lote '{numero_lote}' já existe no sistema com vencimento para {data_formatada}. "
+                        "Não é permitido cadastrar o mesmo lote com validades diferentes por razões de segurança."
+                    )
+                # Se a validade for igualzinha, nós não damos erro! O sistema vai deixar passar.
+
         else:
             if not data.get('lote_id'):
                 raise serializers.ValidationError("Para movimentar um lote existente, o lote_id é obrigatório.")
