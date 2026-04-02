@@ -136,29 +136,38 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
         read_only_fields = ['lote', 'data', 'responsavel']
 
     def validate(self, data):
+        tipo = data.get('tipo')
+        quantidade = data.get('quantidade')
+
         if data.get('criacao_lote'):
             if not data.get('numero_lote') or not data.get('data_validade') or not data.get('fabricante'):
                 raise serializers.ValidationError("Para criar um novo lote, número, validade e fabricante são obrigatórios.")
+            
             medicamento = data.get('medicamento')
             numero_lote = data.get('numero_lote')
             data_validade = data.get('data_validade')
             
-            # Busca no banco se já existe um lote com esse número para esse medicamento
             lote_existente = Lote.objects.filter(medicamento=medicamento, lote=numero_lote).first()
             
             if lote_existente:
-                # Se o lote existe, verificamos a data de validade
                 if lote_existente.validade != data_validade:
                     data_formatada = lote_existente.validade.strftime('%d/%m/%Y')
                     raise serializers.ValidationError(
                         f"Bloqueado: O Lote '{numero_lote}' já existe no sistema com vencimento para {data_formatada}. "
                         "Não é permitido cadastrar o mesmo lote com validades diferentes por razões de segurança."
                     )
-                # Se a validade for igualzinha, nós não damos erro! O sistema vai deixar passar.
 
         else:
-            if not data.get('lote_id'):
+            lote_selecionado = data.get('lote_id')
+            if not lote_selecionado:
                 raise serializers.ValidationError("Para movimentar um lote existente, o lote_id é obrigatório.")
+            if tipo == 'SAIDA' and lote_selecionado and quantidade:
+                if quantidade > lote_selecionado.quantidade:
+                    raise serializers.ValidationError(
+                        f"Estoque insuficiente! Você tentou retirar {quantidade}, mas o lote '{lote_selecionado.lote}' "
+                        f"possui apenas {lote_selecionado.quantidade} itens disponíveis."
+                    )
+
         return data
 
     def create(self, validated_data):

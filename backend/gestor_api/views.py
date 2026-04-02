@@ -210,10 +210,10 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
             elif instance.tipo == 'SAIDA':
                 lote.quantidade += instance.quantidade
             
-            if lote.quantidade <= 0:
-                lote.delete()
-            else:
-                lote.save()
+            if lote.quantidade < 0:
+                lote.quantidade = 0
+                
+            lote.save() 
                 
         instance.delete()
 
