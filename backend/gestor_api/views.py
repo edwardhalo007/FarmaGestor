@@ -202,50 +202,38 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
         serializer.save(responsavel=self.request.user)
 
     @transaction.atomic
-    def perform_destroy(self, instance):
-        lote = instance.lote
-        if lote:
-            if instance.tipo == 'ENTRADA':
-                lote.quantidade -= instance.quantidade
-            elif instance.tipo == 'SAIDA':
-                lote.quantidade += instance.quantidade
-            
-            if lote.quantidade < 0:
-                lote.quantidade = 0
-                
-            lote.save() 
-                
-        instance.delete()
-
-    @transaction.atomic
     def perform_update(self, serializer):
-        movimentacao_antiga = self.get_object()
-        lote = movimentacao_antiga.lote
-        
-        if lote:
-            if movimentacao_antiga.tipo == 'ENTRADA':
-                lote.quantidade -= movimentacao_antiga.quantidade
+        movimentacao_antiga = Movimentacao.objects.get(pk=self.get_object().pk)
+        lote_antigo = movimentacao_antiga.lote
+        qtd_antiga = movimentacao_antiga.quantidade
+        tipo_antigo = movimentacao_antiga.tipo
+
+        if lote_antigo:
+            if tipo_antigo == 'ENTRADA':
+                lote_antigo.quantidade -= qtd_antiga
             else: 
-                lote.quantidade += movimentacao_antiga.quantidade
+                lote_antigo.quantidade += qtd_antiga
+            lote_antigo.save()
                 
         nova_movimentacao = serializer.save()
+        lote_novo = nova_movimentacao.lote 
         
-        if lote:
+        if lote_novo:
             if nova_movimentacao.tipo == 'ENTRADA':
-                lote.quantidade += nova_movimentacao.quantidade
+                lote_novo.quantidade += nova_movimentacao.quantidade
             else:
-                lote.quantidade -= nova_movimentacao.quantidade
+                lote_novo.quantidade -= nova_movimentacao.quantidade
             
             request_data = self.request.data
             if nova_movimentacao.tipo == 'ENTRADA':
                 if 'numero_lote' in request_data:
-                    lote.lote = request_data['numero_lote']
+                    lote_novo.lote = request_data['numero_lote']
                 if 'data_validade' in request_data:
-                    lote.validade = request_data['data_validade']
+                    lote_novo.validade = request_data['data_validade']
                 if 'fabricante' in request_data:
-                    lote.fabricante = request_data['fabricante']
+                    lote_novo.fabricante = request_data['fabricante']
             
-            lote.save()
+            lote_novo.save()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

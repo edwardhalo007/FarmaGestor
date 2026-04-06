@@ -16,10 +16,15 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
+        
+        const tokenAtual = localStorage.getItem('authToken');
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
-          headers: { 'Authorization': `Token ${userToken}` },
+          headers: { 'Authorization': `Token ${tokenAtual}` },
         });
+
+        if (response.status === 401) { onLogout(); return; }
+
         if (!response.ok) throw new Error('Falha ao carregar localidades');
         const data = await response.json();
         setLocalidades(data);
@@ -30,7 +35,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
       }
     };
     if (userToken) fetchLocalidades();
-  }, [userToken, formSuccess]);
+  }, [userToken, formSuccess, onLogout]);
 
   const handleCreateLocalidade = async (e) => {
     e.preventDefault();
@@ -43,14 +48,17 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
+      const tokenAtual = localStorage.getItem('authToken');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ nome: novoNome}),
       });
+
+      if (response.status === 401) { onLogout(); return; }
 
       if (!response.ok) throw new Error('Falha ao criar localidade.');
       
@@ -80,12 +88,15 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
     setFormSuccess('');
 
     try {
+        const tokenAtual = localStorage.getItem('authToken');
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/${id}/`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Token ${userToken}`,
+                'Authorization': `Token ${tokenAtual}`,
             },
         });
+
+        if (response.status === 401) { onLogout(); return; }
 
         if (response.status === 204) {
             setFormSuccess('Localidade excluída com sucesso!');

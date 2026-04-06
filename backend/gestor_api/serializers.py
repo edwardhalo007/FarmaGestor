@@ -97,11 +97,6 @@ class MedicamentoSerializer(serializers.ModelSerializer):
             )
         ]
 
-    def validate_validade(self, value):
-        if value < timezone.now().date():
-            raise serializers.ValidationError("A data de validade não pode ser no passado.")
-        return value
-
 class MovimentacaoSerializer(serializers.ModelSerializer):
     medicamento_nome = serializers.ReadOnlyField(source='lote.medicamento.nome')
     tipo_de_localidade = serializers.ReadOnlyField(source='lote.medicamento.tipo_de_localidade')
@@ -138,6 +133,7 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
     def validate(self, data):
         tipo = data.get('tipo')
         quantidade = data.get('quantidade')
+        localidade_registro = data.get('localidade')
 
         if data.get('criacao_lote'):
             if not data.get('numero_lote') or not data.get('data_validade') or not data.get('fabricante'):
@@ -161,6 +157,15 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
             lote_selecionado = data.get('lote_id')
             if not lote_selecionado:
                 raise serializers.ValidationError("Para movimentar um lote existente, o lote_id é obrigatório.")
+            
+            if tipo == 'SAIDA' and lote_selecionado and localidade_registro:
+                localidade_do_lote = lote_selecionado.medicamento.localizacao
+                
+                if localidade_do_lote and localidade_do_lote != localidade_registro:
+                    raise serializers.ValidationError(
+                        f"Ação negada: O lote '{lote_selecionado.lote}' do medicamento '{lote_selecionado.medicamento.nome}' não está na localidade em questão."
+                    )
+                
             if tipo == 'SAIDA' and lote_selecionado and quantidade:
                 if quantidade > lote_selecionado.quantidade:
                     raise serializers.ValidationError(

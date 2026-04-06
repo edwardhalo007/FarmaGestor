@@ -17,7 +17,6 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- CONFIGURAÇÃO DE TIPOS ---
   const TIPO_OPTIONS = [
     { value: 'ATT_BASICA', label: 'Atenção Básica' },
     { value: 'ANTIBIOTICO', label: 'Antibiótico' },
@@ -34,10 +33,17 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
   useEffect(() => {
     const fetchLocalidades = async () => {
         try {
+            const tokenAtual = localStorage.getItem('authToken');
             const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
                 method: 'GET',
-                headers: { 'Authorization': `Token ${userToken}` },
+                headers: { 'Authorization': `Token ${tokenAtual}` },
             });
+            
+            if (response.status === 401) {
+                onLogout();
+                return;
+            }
+            
             if (!response.ok) throw new Error('Falha ao carregar lista de localidades.');
             const data = await response.json();
             setLocalidades(data);
@@ -63,13 +69,19 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
         if (params.toString()) apiUrl += `?${params.toString()}`;
 
+        const tokenAtual = localStorage.getItem('authToken');
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${userToken}`,
+            'Authorization': `Token ${tokenAtual}`,
             'Content-Type': 'application/json',
           },
         });
+
+        if (response.status === 401) {
+            onLogout();
+            return;
+        }
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -91,7 +103,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchLocalidades();
       fetchRelatorios();
     }
-  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade, filtroResponsavel]);
+  }, [userToken, filtroMedicamentoNome, filtroDataInicio, filtroDataFim, filtroLocalidade, filtroResponsavel, onLogout]);
 
   const handleExportCsv = async () => {
     try {
@@ -108,10 +120,16 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
 
       if (params.toString()) apiUrl += `?${params.toString()}`;
 
+      const tokenAtual = localStorage.getItem('authToken');
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: { 'Authorization': `Token ${userToken}` } 
+        headers: { 'Authorization': `Token ${tokenAtual}` } 
       });
+
+      if (response.status === 401) {
+          onLogout();
+          return;
+      }
 
       if (!response.ok) throw new Error(`Falha na exportação: ${response.status}`);
 
@@ -212,7 +230,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
         <button
               onClick={handleExportCsv}
               disabled={loading}
-              className="btn-primary" // Reutilizando classe padrão
+              className="btn-primary"
               style={{ backgroundColor: '#28a745', border: 'none' }}
           >
               📄 Exportar CSV
@@ -242,7 +260,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
                 </tr>
             </thead>
             <tbody>
-                {relatorios.slice(indexOfFirstItem, indexOfLastItem).map((movimentacao) => (
+                {currentItems.map((movimentacao) => (
                 <tr key={movimentacao.id}>
                     <td>
                         <span className={movimentacao.tipo === 'ENTRADA' ? 'type-entrada' : 'type-saida'}>

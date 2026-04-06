@@ -130,7 +130,7 @@ class Movimentacao(models.Model):
     ]
     
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMENTACAO_CHOICES)
-    lote = models.ForeignKey('Lote', on_delete=models.CASCADE, related_name='movimentacoes')
+    lote = models.ForeignKey('Lote', on_delete=models.PROTECT, related_name='movimentacoes')
     quantidade = models.IntegerField()
     justificativa = models.CharField(max_length=300, default="Transição de Sistema")
     data = models.DateField(auto_now_add=True)

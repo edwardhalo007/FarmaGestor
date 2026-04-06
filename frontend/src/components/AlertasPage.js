@@ -15,13 +15,17 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
     const fetchAlertas = async () => {
       try {
         setLoading(true);
+        const tokenAtual = localStorage.getItem('authToken');
+        
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alertas/validade/`, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${userToken}`,
+            'Authorization': `Token ${tokenAtual}`,
             'Content-Type': 'application/json',
           },
         });
+
+        if (response.status === 401) { onLogout(); return; }
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -76,7 +80,7 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchAlertas();
     }
-  }, [userToken]);
+  }, [userToken, onLogout]);
 
   const getStatusClass = (status) => {
     switch (status) {

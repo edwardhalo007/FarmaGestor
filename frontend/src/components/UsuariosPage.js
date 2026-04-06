@@ -31,10 +31,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         setLoading(true);
         setError(null);
 
+        const tokenAtual = localStorage.getItem('authToken');
         const fetchOptions = {
           method: 'GET',
           headers: {
-            Authorization: `Token ${userToken}`,
+            Authorization: `Token ${tokenAtual}`,
             'Content-Type': 'application/json',
           },
         };
@@ -44,6 +45,11 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/`, fetchOptions);
+
+        if (response.status === 401) {
+          onLogout();
+          return;
+        }
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -59,7 +65,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         setLoading(false);
       }
     },
-    [userToken]
+    [userToken, onLogout]
   );
 
   useEffect(() => {
@@ -107,14 +113,20 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
       const payload = { ...formData };
       delete payload.id;
 
+      const tokenAtual = localStorage.getItem('authToken');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/`, {
         method: 'POST',
         headers: {
-          Authorization: `Token ${userToken}`,
+          Authorization: `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
+
+      if (response.status === 401) {
+        onLogout();
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -162,14 +174,20 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         delete payload.password;
       }
 
+      const tokenAtual = localStorage.getItem('authToken');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/${formData.id}/`, {
         method: 'PATCH',
         headers: {
-          Authorization: `Token ${userToken}`,
+          Authorization: `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
+
+      if (response.status === 401) {
+        onLogout();
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -218,12 +236,18 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
     if (!confirmed) return;
 
     try {
+      const tokenAtual = localStorage.getItem('authToken');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/usuarios/${id}/`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Token ${userToken}`,
+          Authorization: `Token ${tokenAtual}`,
         },
       });
+
+      if (response.status === 401) {
+        onLogout();
+        return;
+      }
 
       if (!response.ok) {
         const errorText = await response.text();

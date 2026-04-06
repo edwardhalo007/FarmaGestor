@@ -53,13 +53,19 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
              params.append('search', searchTerm);
              apiUrl += `?${params.toString()}`;
         }
+        
+        const tokenAtual = localStorage.getItem('authToken'); // Pegando o token real
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${userToken}`,
+            'Authorization': `Token ${tokenAtual}`,
             'Content-Type': 'application/json',
           },
         });
+        
+        // Validação de Segurança 401
+        if (response.status === 401) { onLogout(); return; }
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.detail || 'Falha ao carregar medicamentos');
@@ -76,10 +82,15 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
 
     const fetchLocalidades = async () => {
       try {
+        const tokenAtual = localStorage.getItem('authToken'); // Pegando o token real
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
-          headers: { 'Authorization': `Token ${userToken}` },
+          headers: { 'Authorization': `Token ${tokenAtual}` },
         });
+
+        // Validação de Segurança 401
+        if (response.status === 401) { onLogout(); return; }
+
         if (!response.ok) {
             throw new Error('Falha ao carregar localidades');
         }
@@ -94,7 +105,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-  }, [userToken, triggerSearch, searchTerm]);
+  }, [userToken, triggerSearch, searchTerm, onLogout]); // <-- onLogout adicionado aqui para evitar warning
 
   useEffect(() => {
     if (formSuccess || errorToast) {
@@ -118,10 +129,11 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     }
 
     try {
+      const tokenAtual = localStorage.getItem('authToken'); // Pegando o token real
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -133,6 +145,9 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           tipo_de_localidade: novoTipoLocalidade,
         }),
       });
+
+      // Validação de Segurança 401
+      if (response.status === 401) { onLogout(); return; }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -166,10 +181,14 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     if (!confirmDelete) return;
 
     try {
+      const tokenAtual = localStorage.getItem('authToken'); // Pegando o token real
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/${id}/`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Token ${userToken}` },
+        headers: { 'Authorization': `Token ${tokenAtual}` },
       });
+
+      // Validação de Segurança 401
+      if (response.status === 401) { onLogout(); return; }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -221,14 +240,18 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     };
 
     try {
+      const tokenAtual = localStorage.getItem('authToken'); // Pegando o token real
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/${editingMedId}/`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
+
+      // Validação de Segurança 401
+      if (response.status === 401) { onLogout(); return; }
 
       if (!response.ok) {
         const errorData = await response.json();

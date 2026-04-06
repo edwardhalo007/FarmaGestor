@@ -35,9 +35,14 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         setMovimentacoesAtividade({ entradas: 0, saidas: 0 });
         setChartData([]);
 
+        const tokenAtual = localStorage.getItem('authToken');
+
         const locResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
-            headers: { 'Authorization': `Token ${userToken}` }
+            headers: { 'Authorization': `Token ${tokenAtual}` }
         });
+        
+        if (locResponse.status === 401) { onLogout(); return; }
+
         if (locResponse.ok) {
             setLocalidades(await locResponse.json());
         }
@@ -45,10 +50,13 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         const medicamentosResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
           headers: {
-            'Authorization': `Token ${userToken}`,
+            'Authorization': `Token ${tokenAtual}`,
             'Content-Type': 'application/json',
           },
         });
+        
+        if (medicamentosResponse.status === 401) { onLogout(); return; }
+        
         if (!medicamentosResponse.ok) throw new Error('Falha ao carregar medicamentos');
         const medicamentosData = await medicamentosResponse.json();
 
@@ -97,9 +105,11 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
 
         const atividadeResponse = await fetch(urlAtividade, {
             method: 'GET',
-            headers: { 'Authorization': `Token ${userToken}` },
+            headers: { 'Authorization': `Token ${tokenAtual}` },
         });
         
+        if (atividadeResponse.status === 401) { onLogout(); return; }
+
         if (atividadeResponse.ok) {
             const atividadeData = await atividadeResponse.json();
             setMovimentacoesAtividade({ 
@@ -110,8 +120,11 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         const topMedsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/top/`, {
-            headers: { 'Authorization': `Token ${userToken}` },
+            headers: { 'Authorization': `Token ${tokenAtual}` },
         });
+        
+        if (topMedsResponse.status === 401) { onLogout(); return; }
+
         if (topMedsResponse.ok) {
             setTopMedicamentos(await topMedsResponse.json());
         }
@@ -127,7 +140,7 @@ function DashboardPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchData();
     }
-  }, [userToken, filtroLocalidade]);
+  }, [userToken, filtroLocalidade, onLogout]);
 
   const emFaltaColorClass = medicamentosEmFalta > 0 ? 'color-danger' : 'color-success';
   const atencaoColorClass = medicamentosAtencao > 0 ? 'color-warning' : 'color-success';

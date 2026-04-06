@@ -68,19 +68,24 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       try {
         setLoading(true);
         setError(null);
+        const tokenAtual = localStorage.getItem('authToken');
         
         const medsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/medicamentos/`, {
           method: 'GET',
-          headers: { 'Authorization': `Token ${userToken}` },
+          headers: { 'Authorization': `Token ${tokenAtual}` },
         });
+        // Validação de Segurança 401
+        if (medsResponse.status === 401) { onLogout(); return; }
         if (!medsResponse.ok) throw new Error('Falha ao carregar lista de medicamentos.');
         const medsData = await medsResponse.json();
         setMedicamentos(medsData);
 
         const locsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
-          headers: { 'Authorization': `Token ${userToken}` },
+          headers: { 'Authorization': `Token ${tokenAtual}` },
         });
+        // Validação de Segurança 401
+        if (locsResponse.status === 401) { onLogout(); return; }
         if (!locsResponse.ok) throw new Error('Falha ao carregar lista de localidades.');
         const locsData = await locsResponse.json();
         setLocalidades(locsData);
@@ -102,12 +107,14 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         }
         const movsResponse = await fetch(apiUrl, {
             method: 'GET',
-            headers: { 'Authorization': `Token ${userToken}` },
+            headers: { 'Authorization': `Token ${tokenAtual}` },
         });
 
+        // Validação de Segurança 401
+        if (movsResponse.status === 401) { onLogout(); return; }
         if (!movsResponse.ok) throw new Error('Falha ao carregar movimentações.');
+        
         let movsData = await movsResponse.json();
-
         setMovimentacoes(movsData);
         setCurrentPage(1);
       } catch (err) {
@@ -121,7 +128,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
     if (userToken) {
       fetchData();
     }
-  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, filtroLocalidade, filtroTipo, refetchTrigger]);
+  }, [userToken, filtroData, filtroMedicamento, filtroResponsavel, filtroLocalidade, filtroTipo, refetchTrigger, onLogout]);
 
   useEffect(() => {
     if (formSuccess || errorToast) { 
@@ -154,6 +161,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         }
     }
     
+    const tokenAtual = localStorage.getItem('authToken');
     try {
       const payload = {
         tipo: modoOperacao === 'NOVO' ? 'ENTRADA' : tipoMovimentacao,
@@ -172,39 +180,33 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         payload.lote_id = selectedLoteId;
       }
 
-      console.log("PAYLOAD QUE SERÁ ENVIADO:", payload);
-
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
+
+      // Validação de Segurança 401
+      if (response.status === 401) {
+          onLogout();
+          return;
+      }
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
             const errorData = await response.json();
             let errorMessage = 'Falha ao registrar movimentação.';
-            if (errorData.detail) {
-                errorMessage = errorData.detail;
-            } else if (errorData.non_field_errors) {
-                errorMessage = errorData.non_field_errors[0];
-            }
-            setErrorToast(errorMessage);
+            if (errorData.detail) errorMessage = errorData.detail;
+            else if (errorData.non_field_errors) errorMessage = errorData.non_field_errors[0];
             throw new Error(errorMessage);
         } else {
-            const errorText = await response.text();
-            console.error("Server Error (HTML):", errorText);
-            const errorMessage = `Erro Interno do Servidor (${response.status}). Verifique o console.`;
-            setErrorToast(errorMessage);
-            throw new Error(errorMessage);
+            throw new Error(`Erro Interno do Servidor (${response.status}). Verifique o console.`);
         }
       }
-
-      
 
       setFormSuccess('Movimentação registrada com sucesso!');
       setTipoMovimentacao('ENTRADA');
@@ -215,12 +217,10 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
       setNumeroLote('');
       setDataValidade('');
       setFabricante('');
+      setJustificativa('');
       setRefetchTrigger(t => t + 1);
     } catch (err) {
-      if (!errorToast) {
-           setErrorToast(err.message);
-      }
-      console.error('Erro ao criar movimentação:', err);
+      if (!errorToast) setErrorToast(err.message);
     }
   };
 
@@ -239,27 +239,28 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
     setFormSuccess('');
     setErrorToast('');
+    const tokenAtual = localStorage.getItem('authToken');
 
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/${id}/`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
         },
       });
 
+      // Validação de Segurança 401
+      if (response.status === 401) { onLogout(); return; }
+
       if (!response.ok) {
         const errorText = await response.text();
-        const errorMessage = `Falha ao excluir movimentação: ${response.status} - ${errorText || 'Erro desconhecido'}`;
-        setErrorToast(errorMessage);
-        throw new Error(errorMessage);
+        throw new Error(`Falha ao excluir movimentação: ${response.status} - ${errorText || 'Erro desconhecido'}`);
       }
 
       setFormSuccess('Movimentação excluída e estoque revertido com sucesso!');
       setRefetchTrigger(t => t + 1);
-    } catch (err)      {
+    } catch (err) {
       if (!errorToast) setErrorToast(err.message);
-      console.error('Erro ao excluir movimentação:', err);
     }
   };
 
@@ -279,11 +280,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
   };
 
   const handleUpdateMovimentacao = async () => {
+    const tokenAtual = localStorage.getItem('authToken');
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/movimentacoes/${editingId}/`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Token ${userToken}`,
+          'Authorization': `Token ${tokenAtual}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -299,11 +301,12 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         }),
       });
 
+      // Validação de Segurança 401
+      if (response.status === 401) { onLogout(); return; }
+
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.detail || 'Erro ao atualizar movimentação';
-        setErrorToast(errorMessage);
-        throw new Error(errorMessage);
+        throw new Error(errorData.detail || 'Erro ao atualizar movimentação');
       }
 
       setFormSuccess('Movimentação atualizada com sucesso!');
