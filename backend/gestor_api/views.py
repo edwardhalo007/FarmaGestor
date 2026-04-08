@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
 
-#Novos imports
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.authtoken.models import Token
@@ -51,21 +50,6 @@ class CustomAuthToken(ObtainAuthToken):
             'username': user.username,
             'nivel_acesso': user.nivel_acesso
         }) 
-"""
-class CustomAuthToken(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user_id': user.pk,
-            'username': user.username,
-            'nivel_acesso': user.nivel_acesso
-        })
-"""
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -129,7 +113,6 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
     serializer_class = MedicamentoSerializer
 
     def get_queryset(self):
-
         queryset = Medicamento.objects.all()
         search_term = self.request.query_params.get('search', None)
 
@@ -234,6 +217,25 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
                     lote_novo.fabricante = request_data['fabricante']
             
             lote_novo.save()
+            
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        lote = instance.lote
+        
+        if lote:
+            if instance.tipo == 'ENTRADA':
+                if lote.quantidade < instance.quantidade:
+                    raise ValidationError({
+                        "detail": f"Operação negada. A entrada original era de {instance.quantidade}, mas o lote possui apenas {lote.quantidade} itens agora."
+                    })
+                lote.quantidade -= instance.quantidade
+                
+            elif instance.tipo == 'SAIDA':
+                lote.quantidade += instance.quantidade
+                
+            lote.save()
+            
+        instance.delete()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -394,3 +396,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"detail": "Gestores não podem atribuir níveis de Administrador ou Gestor."})
 
         serializer.save()
+
+    def perform_destroy(self, instance):
+        request_user_nivel = self.request.user.nivel_acesso
+        if request_user_nivel == NivelAcesso.GESTOR:
+            if instance.nivel_acesso in [NivelAcesso.ADMINISTRADOR, NivelAcesso.GESTOR] and instance.pk != self.request.user.pk:
+                raise ValidationError({"detail": "Gestores não podem excluir usuários Administradores ou outros Gestores."})
+
+        instance.delete()

@@ -74,7 +74,7 @@ class Medicamento(models.Model):
         HOSPITALAR = 'HOSPITALAR', 'Hospitalar'
     
     nome = models.CharField(max_length=255)
-    dosagem = models.IntegerField(default=0)
+    dosagem = models.CharField(default=0)
     forma_farmaceutica = models.CharField(max_length=20, choices=FormaFarmaceuticaChoices.choices, default=FormaFarmaceuticaChoices.COMPRIMIDO, )
     unidade_medida = models.CharField(max_length=10, choices=UnidadeMedidaChoices.choices, default=UnidadeMedidaChoices.MG,)
     localizacao = models.ForeignKey(Localidade, on_delete=models.SET_NULL, null=True, blank=True)

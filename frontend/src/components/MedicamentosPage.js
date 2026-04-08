@@ -138,7 +138,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
         },
         body: JSON.stringify({
           nome: novoNome,
-          dosagem: parseInt(novaDosagem),
+          dosagem: novaDosagem, 
           forma_farmaceutica: novaFormaFarmaceutica,
           unidade_medida: novaUnidadeMedida,
           localizacao: novaLocalizacao,
@@ -232,7 +232,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
     const payload = {
       id: editingMedId,
       nome: editNome,
-      dosagem: editDosagem ? Number(editDosagem) : 0,
+      dosagem: editDosagem,
       forma_farmaceutica: editFormaFarmaceutica,
       unidade_medida: editUnidadeMedida,
       localizacao: editLocalizacao ? parseInt(editLocalizacao) : null, 
@@ -450,7 +450,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
                         <>
                           <td></td>
                           <td><input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} className="edit-input" style={{ width: '95%' }} /></td>
-                          <td style={{ textAlign: 'center' }}><input type="number" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} className="edit-input" style={{ width: '80%' }} /></td>
+                          <td style={{ textAlign: 'center' }}><input type="text" value={editDosagem} onChange={(e) => setEditDosagem(e.target.value)} className="edit-input" style={{ width: '80%' }} /></td>
                           <td style={{ textAlign: 'center' }}>
                             <select value={editFormaFarmaceutica} onChange={(e) => setEditFormaFarmaceutica(e.target.value)} className="edit-select" style={{ width: '90%' }}>
                               <option value="COMPRIMIDO">Comp.</option><option value="CAPSULA">Cáps.</option><option value="INJETAVEL">Inj.</option><option value="SOLUCAO">Sol.</option><option value="SUSPENSAO">Susp.</option><option value="XAROPE">Xpe.</option><option value="POMADA">Pom.</option><option value="CREME">Creme</option><option value="GEL">Gel</option><option value="SUPOSITORIO">Sup.</option>
