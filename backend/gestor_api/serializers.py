@@ -130,6 +130,11 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['lote', 'data', 'responsavel']
 
+    def validate_quantidade(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("A quantidade deve ser um valor estritamente positivo.")
+        return value
+
     def validate(self, data):
         tipo = data.get('tipo')
         quantidade = data.get('quantidade')
@@ -152,21 +157,17 @@ class MovimentacaoSerializer(serializers.ModelSerializer):
                         f"Bloqueado: O Lote '{numero_lote}' já existe no sistema com vencimento para {data_formatada}. "
                         "Não é permitido cadastrar o mesmo lote com validades diferentes por razões de segurança."
                     )
-
         else:
             lote_selecionado = data.get('lote_id')
             if not lote_selecionado:
                 raise serializers.ValidationError("Para movimentar um lote existente, o lote_id é obrigatório.")
             
-            if tipo == 'SAIDA' and lote_selecionado and localidade_registro:
-                localidade_do_lote = lote_selecionado.medicamento.localizacao
-                
-                if localidade_do_lote and localidade_do_lote != localidade_registro:
+            if tipo == 'SAIDA':
+                if lote_selecionado.medicamento.localizacao and lote_selecionado.medicamento.localizacao != localidade_registro:
                     raise serializers.ValidationError(
                         f"Ação negada: O lote '{lote_selecionado.lote}' do medicamento '{lote_selecionado.medicamento.nome}' não está na localidade em questão."
                     )
                 
-            if tipo == 'SAIDA' and lote_selecionado and quantidade:
                 if quantidade > lote_selecionado.quantidade:
                     raise serializers.ValidationError(
                         f"Estoque insuficiente! Você tentou retirar {quantidade}, mas o lote '{lote_selecionado.lote}' "

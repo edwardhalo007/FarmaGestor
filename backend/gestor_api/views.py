@@ -7,12 +7,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.pagination import LimitOffsetPagination
 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
-from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade
+from .models import Medicamento, Usuario, Movimentacao, NivelAcesso, Localidade, Lote
 from .serializers import MedicamentoSerializer, UsuarioSerializer, MovimentacaoSerializer, LocalidadeSerializer
 from django.db import models, transaction
 from django.http import HttpResponse
@@ -111,6 +112,8 @@ def top_medicamentos(request):
 class MedicamentoViewSet(viewsets.ModelViewSet):
     queryset = Medicamento.objects.all()
     serializer_class = MedicamentoSerializer
+    pagination_class = LimitOffsetPagination
+
 
     def get_queryset(self):
         queryset = Medicamento.objects.all()
@@ -186,56 +189,51 @@ class MovimentacaoViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_update(self, serializer):
-        movimentacao_antiga = Movimentacao.objects.get(pk=self.get_object().pk)
-        lote_antigo = movimentacao_antiga.lote
-        qtd_antiga = movimentacao_antiga.quantidade
-        tipo_antigo = movimentacao_antiga.tipo
-
-        if lote_antigo:
-            if tipo_antigo == 'ENTRADA':
-                lote_antigo.quantidade -= qtd_antiga
-            else: 
-                lote_antigo.quantidade += qtd_antiga
-            lote_antigo.save()
-                
-        nova_movimentacao = serializer.save()
-        lote_novo = nova_movimentacao.lote 
+        movimentacao_antiga = Movimentacao.objects.select_related('lote').get(pk=self.get_object().pk)
         
-        if lote_novo:
+        with transaction.atomic():
+            if movimentacao_antiga.lote:
+                lote_antigo = Lote.objects.select_for_update().get(pk=movimentacao_antiga.lote.pk)
+                if movimentacao_antiga.tipo == 'ENTRADA':
+                    lote_antigo.quantidade -= movimentacao_antiga.quantidade
+                else:
+                    lote_antigo.quantidade += movimentacao_antiga.quantidade
+                lote_antigo.save()
+
+            nova_movimentacao = serializer.save()
+            
+            lote_novo = Lote.objects.select_for_update().get(pk=nova_movimentacao.lote.pk)
             if nova_movimentacao.tipo == 'ENTRADA':
                 lote_novo.quantidade += nova_movimentacao.quantidade
-            else:
-                lote_novo.quantidade -= nova_movimentacao.quantidade
-            
-            request_data = self.request.data
-            if nova_movimentacao.tipo == 'ENTRADA':
+                
+                request_data = self.request.data
                 if 'numero_lote' in request_data:
                     lote_novo.lote = request_data['numero_lote']
                 if 'data_validade' in request_data:
                     lote_novo.validade = request_data['data_validade']
                 if 'fabricante' in request_data:
                     lote_novo.fabricante = request_data['fabricante']
+            else:
+                lote_novo.quantidade -= nova_movimentacao.quantidade
             
             lote_novo.save()
             
     @transaction.atomic
     def perform_destroy(self, instance):
-        lote = instance.lote
-        
-        if lote:
+        with transaction.atomic():
+            lote = Lote.objects.select_for_update().get(pk=instance.lote.pk)
+            
             if instance.tipo == 'ENTRADA':
                 if lote.quantidade < instance.quantidade:
                     raise ValidationError({
-                        "detail": f"Operação negada. A entrada original era de {instance.quantidade}, mas o lote possui apenas {lote.quantidade} itens agora."
+                        "detail": f"Operação negada. Saldo insuficiente no lote para estornar entrada."
                     })
                 lote.quantidade -= instance.quantidade
-                
             elif instance.tipo == 'SAIDA':
                 lote.quantidade += instance.quantidade
                 
             lote.save()
-            
-        instance.delete()
+            instance.delete()
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -244,7 +242,8 @@ def alertas_validade(request):
     data_limite = data_hoje + timedelta(days=30)
     
     medicamentos_alertas = Medicamento.objects.filter(
-        lotes__validade__lte=data_limite
+        lotes__validade__lte=data_limite,
+        lotes__quantidade__gt=0
     ).distinct()
 
     serializer = MedicamentoSerializer(medicamentos_alertas, many=True)
