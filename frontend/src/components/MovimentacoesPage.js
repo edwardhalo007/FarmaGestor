@@ -78,7 +78,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         if (medsResponse.status === 401) { onLogout(); return; }
         if (!medsResponse.ok) throw new Error('Falha ao carregar lista de medicamentos.');
         const medsData = await medsResponse.json();
-        setMedicamentos(medsData);
+        setMedicamentos(medsData.results);
 
         const locsResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/localidades/`, {
           method: 'GET',
@@ -88,7 +88,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         if (locsResponse.status === 401) { onLogout(); return; }
         if (!locsResponse.ok) throw new Error('Falha ao carregar lista de localidades.');
         const locsData = await locsResponse.json();
-        setLocalidades(locsData);
+        setLocalidades(locsData.results);
 
         const params = new URLSearchParams();
 
@@ -115,7 +115,7 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
         if (!movsResponse.ok) throw new Error('Falha ao carregar movimentações.');
         
         let movsData = await movsResponse.json();
-        setMovimentacoes(movsData);
+        setMovimentacoes(movsData.results);
         setCurrentPage(1);
       } catch (err) {
         setError(err.message);

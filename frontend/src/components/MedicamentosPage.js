@@ -71,7 +71,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
           throw new Error(errorData.detail || 'Falha ao carregar medicamentos');
         }
         const data = await response.json();
-        setMedicamentos(data);
+        setMedicamentos(data.results);
         setCurrentPage(1);
       } catch (err) {
         setError(err.message);
@@ -95,7 +95,7 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
             throw new Error('Falha ao carregar localidades');
         }
         const data = await response.json();
-        setLocalidades(data);
+        setLocalidades(data.results);
       } catch (err) {
         console.error("Erro ao buscar localidades:", err);
       }

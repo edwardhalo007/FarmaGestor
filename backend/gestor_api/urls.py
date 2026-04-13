@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (CustomAuthToken, alertas_validade, MedicamentoViewSet, UsuarioViewSet, 
+from .views import (CustomAuthToken, alertas_validade, MedicamentoViewSet, UsuarioViewSet, dashboard_info, 
                     relatorios_movimentacao, MovimentacaoViewSet, LocalidadeViewSet, dashboard_atividade, 
                     top_medicamentos)
 
@@ -16,5 +16,6 @@ urlpatterns = [
     path('relatorios/', relatorios_movimentacao, name='relatorios_movimentacao'),
     path('movimentacoes/atividade/', dashboard_atividade, name='dashboard_atividade'),
     path('medicamentos/top/', top_medicamentos, name='top_medicamentos'),
+    path('medicamentos/dashboard_info/', dashboard_info, name='dashboard_info'),
     path('', include(router.urls)),
 ]

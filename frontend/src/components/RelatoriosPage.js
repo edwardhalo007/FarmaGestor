@@ -46,7 +46,7 @@ function RelatoriosPage({ onLogout, userNivelAcesso, userToken }) {
             
             if (!response.ok) throw new Error('Falha ao carregar lista de localidades.');
             const data = await response.json();
-            setLocalidades(data);
+            setLocalidades(data.results);
         } catch (err) {
             console.error("Erro ao buscar localidades:", err);
             setError('Erro ao carregar lista de localidades.');

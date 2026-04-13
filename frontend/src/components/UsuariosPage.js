@@ -57,7 +57,7 @@ function UsuariosPage({ onLogout, userNivelAcesso, userToken }) {
         }
 
         const data = await response.json();
-        setUsuarios(data);
+        setUsuarios(data.results);
       } catch (err) {
         setError(err.message || 'Erro desconhecido ao carregar usuários.');
         console.error('Erro ao buscar usuários:', err);

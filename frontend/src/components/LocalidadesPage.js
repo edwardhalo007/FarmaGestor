@@ -27,7 +27,7 @@ function LocalidadesPage({ onLogout, userNivelAcesso, userToken }) {
 
         if (!response.ok) throw new Error('Falha ao carregar localidades');
         const data = await response.json();
-        setLocalidades(data);
+        setLocalidades(data.results);
       } catch (err) {
         setError(err.message);
       } finally {

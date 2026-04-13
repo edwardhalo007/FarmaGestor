@@ -1,8 +1,8 @@
 from datetime import date, timedelta
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from django.db.models import Sum, F, query
-from rest_framework import viewsets, status, serializers
+from django.db.models import Sum, F, Q
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
@@ -403,3 +403,38 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"detail": "Gestores não podem excluir usuários Administradores ou outros Gestores."})
 
         instance.delete()
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_info(request):
+    hoje = timezone.now().date()
+    limite_atencao = hoje + timedelta(days=90)
+    limite_critico = hoje + timedelta(days=30)
+
+    total_unidades = Lote.objects.aggregate(total=Sum('quantidade'))['total'] or 0
+
+    meds_anotados = Medicamento.objects.annotate(total_estoque=Sum('lotes__quantidade'))
+
+    total_medicamentos = meds_anotados.count()
+
+    medicamentos_em_falta = meds_anotados.filter(
+        Q(total_estoque__lte=20) | Q(total_estoque__isnull=True)
+    ).count()
+
+    total_alertas = meds_anotados.filter(
+        lotes__validade__lte=limite_atencao,
+        lotes__quantidade__gt=0
+    ).distinct().count()
+
+    medicamentos_atencao = meds_anotados.filter(
+        lotes__validade__lte=limite_critico,
+        lotes__quantidade__gt=0
+    ).distinct().count()
+
+    return Response({
+        "total_medicamentos": total_medicamentos,
+        "total_unidades": total_unidades,
+        "medicamentos_em_falta": medicamentos_em_falta,
+        "total_alertas": total_alertas,
+        "medicamentos_atencao": medicamentos_atencao
+    })
