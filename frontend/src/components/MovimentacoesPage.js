@@ -153,6 +153,11 @@ function MovimentacoesPage({ onLogout, userNivelAcesso, userToken }) {
 
     const quantidadeNum = parseInt(quantidade);
 
+    if (isNaN(quantidadeNum) || quantidadeNum <= 0) {
+      setErrorToast('Por favor, insira uma quantidade válida e maior que zero.');
+      return;
+    }
+
     if (modoOperacao === 'EXISTENTE' && tipoMovimentacao === 'SAIDA' && selectedLoteId) {
         const loteTarget = lotesDisponiveis.find(l => String(l.id) === String(selectedLoteId));
         if (loteTarget && loteTarget.quantidade < quantidadeNum) {

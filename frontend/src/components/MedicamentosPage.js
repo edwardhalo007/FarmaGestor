@@ -105,7 +105,8 @@ function MedicamentosPage({ onLogout, userNivelAcesso, userToken }) {
       fetchMedicamentos();
       fetchLocalidades();
     }
-  }, [userToken, triggerSearch, searchTerm, onLogout]); // <-- onLogout adicionado aqui para evitar warning
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken, triggerSearch, onLogout]); 
 
   useEffect(() => {
     if (formSuccess || errorToast) {

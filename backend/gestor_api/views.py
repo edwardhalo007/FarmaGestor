@@ -158,6 +158,28 @@ class LocalidadeViewSet(viewsets.ModelViewSet):
 class MovimentacaoViewSet(viewsets.ModelViewSet):
     serializer_class = MovimentacaoSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        
+        elif self.action == 'create':
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[NivelAcesso.OPERACIONAL, NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                )
+            ]
+            
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            return [
+                IsAuthenticated(),
+                NivelAcessoPermission(
+                    allowed_levels=[NivelAcesso.GESTOR, NivelAcesso.ADMINISTRADOR]
+                )
+            ]
+            
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         queryset = Movimentacao.objects.select_related(
             'lote__medicamento', 'localidade', 'responsavel'
@@ -269,7 +291,6 @@ def relatorios_movimentacao(request):
     data_fim_str = request.query_params.get('data_fim')
     export_format = request.query_params.get('export')
     
-    # 1. CAPTURANDO O PARÂMETRO DA URL
     responsavel_nome = request.query_params.get('responsavel')
 
     movimentacoes = Movimentacao.objects.select_related('lote__medicamento','responsavel','localidade').all()
@@ -297,14 +318,12 @@ def relatorios_movimentacao(request):
     if mov_local:
         movimentacoes = movimentacoes.filter(localidade__pk=mov_local)
 
-    # 2. APLICANDO O FILTRO NO BANCO DE DADOS
     if responsavel_nome:
         movimentacoes = movimentacoes.filter(
             models.Q(responsavel__username__icontains=responsavel_nome) |
             models.Q(responsavel_nome_snapshot__icontains=responsavel_nome)
         )
 
-    # 3. EXPORTAÇÃO CSV (Já com o ID removido e recuo correto)
     if export_format == "csv":
         response = HttpResponse(
             content_type='text/csv',
