@@ -3,3 +3,33 @@
 #dataFim {
     cursor: pointer;
 }
+
+.btn-pagination {
+    padding: 8px 12px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    color: #333;
+    border-radius: 4px;
+    font-weight: normal;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.btn-pagination.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+    font-weight: bold;
+}
+
+.btn-pagination:disabled {
+    padding: 8px 12px;
+    cursor: not-allowed;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    color: #aaa;
+    border-radius: 4px;
+}
