@@ -113,7 +113,7 @@ function AlertasPage({ onLogout, userNivelAcesso, userToken }) {
             </div>
             <div className="alerta-card card-critico">
               <p className="alerta-card-value">{criticoCount}</p>
-              <p className="alerta-card-label">Atenção (31 - 90 dias)</p>
+              <p className="alerta-card-label">Atenção (1 - 30 dias)</p>
             </div>
             <div className="alerta-card card-atencao">
               <p className="alerta-card-value">{atencaoCount}</p>
